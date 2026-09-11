@@ -1,0 +1,13 @@
+{
+  "id": "templates.path.malformed_unclosed_index",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 2: an unclosed bracket is a RESOLUTION FAILURE, not the root value. The whole step output must not be handed over.",
+  "input": {
+    "outputs": { "ssh": { "results": [ { "output": "x" } ] } },
+    "template": "{{ steps.ssh.output.results[0 }}"
+  },
+  "expected": { "resolved": "unresolved" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

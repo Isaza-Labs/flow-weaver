@@ -1,0 +1,10 @@
+{
+  "id": "templates.filter.unknown_is_ignored",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 4: unknown filters are ignored. The residual scan, not the resolver, is what flags a typo.",
+  "input": { "outputs": { "x": { "v": "ok" } }, "template": "{{ steps.x.output.v | bogus }}" },
+  "expected": { "resolved": "ok" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

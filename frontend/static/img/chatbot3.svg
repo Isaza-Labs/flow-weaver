@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 viewBox="0 0 512 512" xml:space="preserve">
+<polygon style="fill:#E21B1B;" points="420.473,355.778 420.473,499.68 238.196,355.778 "/>
+<path d="M485.224,380.418H26.776c-14.768-0.04-26.736-12-26.776-26.768V39.095C0.04,24.32,12.008,12.352,26.776,12.32h458.449
+	C499.992,12.36,511.96,24.328,512,39.095V353.65C511.96,368.418,499.992,380.378,485.224,380.418z"/>
+<g>
+	<rect x="255.996" y="75.023" style="fill:#FFFFFF;" width="133.078" height="16"/>
+	<rect x="122.918" y="125.054" style="fill:#FFFFFF;" width="266.156" height="16"/>
+	<rect x="255.996" y="175.093" style="fill:#FFFFFF;" width="133.078" height="16"/>
+	<rect x="122.918" y="225.116" style="fill:#FFFFFF;" width="266.156" height="16"/>
+	<rect x="255.996" y="275.164" style="fill:#FFFFFF;" width="133.078" height="16"/>
+</g>
+<polygon style="fill:#C91818;" points="420.473,380.418 267.812,380.418 295.507,401.034 420.473,401.034 "/>
+</svg>

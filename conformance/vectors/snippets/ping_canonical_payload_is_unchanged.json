@@ -1,0 +1,10 @@
+{
+  "id": "snippets.ping.canonical_payload_is_unchanged",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "ping: a payload already written in canonical keys passes through untouched, extensions included (rule 3: extra keys are allowed).",
+  "input": { "type": "ping", "input": { "host": "10.0.0.1", "count": 4, "timeout_ms": 500, "port": 22 } },
+  "expected": { "normalized_input": { "host": "10.0.0.1", "count": 4, "timeout_ms": 500, "port": 22 } },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

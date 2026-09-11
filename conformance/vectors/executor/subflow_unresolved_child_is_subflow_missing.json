@@ -1,0 +1,30 @@
+{
+  "id": "executor.subflow.unresolved_child_is_subflow_missing",
+  "family": "executor",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 5: a child workflow id that names nothing on this instance is a broken reference, coded subflow_missing. Sending an operator to read a child run that does not exist is the wrong next step.",
+  "input": {
+    "workflow": {
+      "nodes": [
+        {
+          "id": "child",
+          "type": "subflow",
+          "snippet_id": "subflow",
+          "config_overrides": { "subflow_workflow_id": "99999999-9999-9999-9999-999999999999" }
+        }
+      ],
+      "edges": []
+    },
+    "context": {
+      "workflow_id": "22222222-2222-2222-2222-222222222222",
+      "subflows": { "child": { "unresolved": true, "status": "failed", "final_state": "refused", "error": "the child does not exist", "steps": [] } }
+    }
+  },
+  "expected": {
+    "status": "failed",
+    "steps": [ { "node_id": "child", "result": "failed" } ],
+    "errors": { "child": "subflow_missing" }
+  },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

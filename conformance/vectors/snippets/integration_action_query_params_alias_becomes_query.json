@@ -1,0 +1,15 @@
+{
+  "id": "snippets.integration_action.query_params_alias_becomes_query",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "integration_action: query is canonical, query_params is the alias.",
+  "input": {
+    "type": "integration_action",
+    "input": { "integration": "netbox", "action": "list-devices", "query_params": { "site": "bog" } }
+  },
+  "expected": {
+    "normalized_input": { "integration": "netbox", "action": "list-devices", "query": { "site": "bog" } }
+  },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

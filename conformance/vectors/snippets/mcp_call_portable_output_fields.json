@@ -1,0 +1,11 @@
+{
+  "id": "snippets.mcp_call.portable_output_fields",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "mcp_call portable output: { ok, result, error }. A downstream template may address exactly these.",
+  "input": { "type": "mcp_call", "probe": { "server": "ops", "tool": "read_config", "arguments": {} } },
+  "expected": { "output": { "ok": true, "result": null, "error": null } },
+  "equivalence": "fields-present",
+  "oracle_commit": "fw@1a11ea3",
+  "notes": "A null in the expected shape asserts presence only: result is `any` in the contract and error is string|null."
+}

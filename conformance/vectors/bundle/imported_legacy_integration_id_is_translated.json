@@ -1,0 +1,36 @@
+{
+  "id": "bundle.imported.legacy_integration_id_is_translated",
+  "family": "bundle",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 4, both halves. On the way IN: a legacy id key is accepted only because dependencies carries the mapping, and it is translated to the canonical name key and then DROPPED — the vector asserts the exact key set, because an id left lying beside the name makes the node's hash instance-specific and the same workflow exported from two instances would never come back equal to itself. On the way OUT: the value on the wire MUST be the portable identity — the integration's SLUG — never the exporting instance's display name, which here differs from it on purpose. What a product stores in between is its own business.",
+  "input": {
+    "round_trip": true,
+    "bundle": {
+      "schema_version": "v3",
+      "kind": "flow_weaver.workflow_bundle",
+      "requires": { "snippet_types": [ "integration_action" ], "capabilities": [], "secrets": [] },
+      "workflow": { "name": "audit" },
+      "nodes": [
+        { "id": "start", "snippet_id": "__start__" },
+        { "id": "call", "snippet_id": "aaaaaaaa-0000-0000-0000-000000000001", "config_overrides": { "integration_id": "dddddddd-0000-0000-0000-00000000000d", "action": "list-devices" } }
+      ],
+      "edges": [ { "source": "start", "target": "call", "type": "success" } ],
+      "dependencies": {
+        "snippets": [ { "id": "aaaaaaaa-0000-0000-0000-000000000001", "slug": "call-action", "name": "Call action", "type": "integration_action", "target_mode": "once", "timeout_seconds": 30 } ],
+        "integrations": [ { "id": "dddddddd-0000-0000-0000-00000000000d", "slug": "netbox", "name": "NetBox", "type": "rest", "actions": [ { "id": "eeeeeeee-0000-0000-0000-00000000000e", "name": "list-devices" } ] } ]
+      }
+    },
+    "local": {
+      "snippet_types": [ "integration_action" ],
+      "integrations": [ { "slug": "netbox", "name": "NetBox Bogota", "type": "rest", "actions": [ { "name": "list-devices" } ] } ]
+    }
+  },
+  "expected": {
+    "outcome": "imported",
+    "node_override_keys": { "call": [ "action", "integration" ] },
+    "exported_node_overrides": { "call": { "integration": "netbox", "action": "list-devices" } },
+    "exported_node_override_keys": { "call": [ "action", "integration" ] }
+  },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

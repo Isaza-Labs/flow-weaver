@@ -1,0 +1,23 @@
+{
+  "id": "bundle.refused.incomplete_missing_snippet_definition",
+  "family": "bundle",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 5: the bundle must carry the full definition of every snippet its nodes reference. One that does not is incomplete — creating a placeholder that returns nothing would be worse than refusing.",
+  "input": {
+    "bundle": {
+      "schema_version": "v3",
+      "kind": "flow_weaver.workflow_bundle",
+      "requires": { "snippet_types": [ "ping" ], "capabilities": [], "secrets": [] },
+      "workflow": { "name": "probe" },
+      "nodes": [
+        { "id": "start", "snippet_id": "__start__" },
+        { "id": "probe", "snippet_id": "aaaaaaaa-0000-0000-0000-000000000001" }
+      ],
+      "edges": [ { "source": "start", "target": "probe", "type": "success" } ],
+      "dependencies": { "snippets": [] }
+    }
+  },
+  "expected": { "outcome": "refused", "codes": [ "bundle_incomplete" ] },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

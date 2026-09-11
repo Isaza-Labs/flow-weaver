@@ -1,0 +1,166 @@
+device_type: cisco_xe
+vendor_family: cisco
+description: Command semantics for Cisco IOS-XE. Backfills Description/Intent onto the in-code cisco_xe catalog for find_command.
+commands:
+  - command: show version
+    intent: read
+    description: Software version, model, uptime and hardware summary.
+  - command: show running-config
+    intent: read
+    description: Active running-config of the device including interface and routing configuration.
+  - command: show startup-config
+    intent: read
+    description: Saved startup-config stored in NVRAM applied at next boot.
+  - command: show ip interface brief
+    intent: read
+    description: Brief list of interfaces with IPv4 address, status and protocol state.
+  - command: show ipv6 interface brief
+    intent: read
+    description: Brief list of interfaces with IPv6 address, status and protocol state.
+  - command: show interfaces
+    intent: read
+    description: Detailed interface counters, errors, duplex, speed and link status.
+  - command: show interfaces description
+    intent: read
+    description: Interface description labels with admin and line protocol status.
+  - command: show interfaces status
+    intent: read
+    description: Switchport interface status, vlan, duplex, speed and connection type.
+  - command: show interfaces transceiver
+    intent: read
+    description: Optical transceiver SFP power levels, temperature and DOM diagnostics per interface.
+  - command: show ip route
+    intent: read
+    description: IPv4 routing table with connected, static and dynamic routes.
+  - command: show ipv6 route
+    intent: read
+    description: IPv6 routing table with connected, static and dynamic routes.
+  - command: show ip route summary
+    intent: read
+    description: Summary counts of IPv4 routes per protocol in the routing table.
+  - command: show ip arp
+    intent: read
+    description: ARP table mapping IPv4 addresses to MAC addresses and interfaces.
+  - command: show platform
+    intent: read
+    description: Platform hardware slot, module and component status overview.
+  - command: show platform software
+    intent: read
+    description: Platform software process, forwarding and subsystem state details.
+  - command: show platform hardware
+    intent: read
+    description: Platform hardware ASIC, forwarding and component diagnostic details.
+  - command: show inventory
+    intent: read
+    description: Hardware inventory of chassis, modules and transceivers with serial numbers.
+  - command: show install summary
+    intent: read
+    description: Summary of installed software packages and SMU install state.
+  - command: show install active
+    intent: read
+    description: Currently active installed software packages and patches.
+  - command: show install committed
+    intent: read
+    description: Committed software install packages persisted across reload.
+  - command: show environment
+    intent: read
+    description: Environmental sensors for temperature, fan and power supply status.
+  - command: show environment all
+    intent: read
+    description: Full environmental readings for temperature, fans, power and voltage sensors.
+  - command: show power
+    intent: read
+    description: Power supply and power budget status for the chassis.
+  - command: show clock
+    intent: read
+    description: Current system date and time clock with timezone.
+  - command: show users
+    intent: read
+    description: Active console and vty user sessions connected to the device.
+  - command: show logging
+    intent: read
+    description: Syslog buffer log messages and logging configuration.
+  - command: show processes cpu
+    intent: read
+    description: CPU utilization per process and overall load history.
+  - command: show processes memory
+    intent: read
+    description: Memory allocation and usage per process on the device.
+  - command: show vlan brief
+    intent: read
+    description: Brief vlan list with names and assigned switchport interfaces.
+  - command: show vlan
+    intent: read
+    description: Detailed vlan configuration with ports, status and type.
+  - command: show mac address-table
+    intent: read
+    description: MAC address table mapping learned MAC addresses to vlan and interface.
+  - command: show spanning-tree
+    intent: read
+    description: Spanning-tree STP topology, root bridge and port roles per vlan.
+  - command: show cdp neighbors
+    intent: read
+    description: CDP neighbor devices discovered on connected interfaces.
+  - command: show cdp neighbors detail
+    intent: read
+    description: Detailed CDP neighbor info with IP address, platform and capabilities.
+  - command: show lldp neighbors
+    intent: read
+    description: LLDP neighbor devices discovered on connected interfaces.
+  - command: show lldp neighbors detail
+    intent: read
+    description: Detailed LLDP neighbor info with system name, port and capabilities.
+  - command: show ip bgp summary
+    intent: read
+    description: BGP neighbor sessions, peer state and prefixes received summary.
+  - command: show ip ospf neighbor
+    intent: read
+    description: OSPF neighbor adjacencies, state and designated router per interface.
+  - command: show ip protocols
+    intent: read
+    description: Active IPv4 routing protocols with networks, timers and redistribution.
+  - command: show vrf
+    intent: read
+    description: VRF instances with route-distinguisher and assigned interfaces.
+  - command: show vrf brief
+    intent: read
+    description: Brief list of VRF instances and their interfaces.
+  - command: show etherchannel summary
+    intent: read
+    description: EtherChannel port-channel bundles with member ports and LACP status.
+  - command: show standby brief
+    intent: read
+    description: HSRP standby groups, virtual IP, priority and active router state.
+  - command: show ip access-lists
+    intent: read
+    description: Configured IPv4 access-list ACL entries with permit and deny hit counts.
+  - command: show tech-support
+    intent: read
+    description: Comprehensive diagnostic tech-support output bundling many show commands.
+  - command: terminal length 0
+    intent: read
+    description: Disable terminal paging so output scrolls without more prompts.
+  - command: enable
+    intent: write
+    description: Enter privileged exec mode to access configuration and management commands.
+  - command: configure terminal
+    intent: write
+    description: Enter global configuration mode to change device running-config.
+  - command: exit
+    intent: write
+    description: Leave the current configuration mode or close the session.
+  - command: end
+    intent: write
+    description: Return from configuration mode to privileged exec mode.
+  - command: ping
+    intent: read
+    description: Send ICMP echo to test reachability and latency to a destination.
+  - command: traceroute
+    intent: read
+    description: Trace the hop-by-hop network path to a destination address.
+  - command: write memory
+    intent: write
+    description: Save the running-config to startup-config in NVRAM.
+  - command: copy running-config startup-config
+    intent: write
+    description: Copy running-config into startup-config to persist changes across reload.

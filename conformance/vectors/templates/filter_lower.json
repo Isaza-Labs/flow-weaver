@@ -1,0 +1,10 @@
+{
+  "id": "templates.filter.lower",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 4: lower.",
+  "input": { "outputs": { "x": { "v": "OK" } }, "template": "{{ steps.x.output.v | lower }}" },
+  "expected": { "resolved": "ok" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

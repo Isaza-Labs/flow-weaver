@@ -1,0 +1,36 @@
+{
+  "id": "executor.subflow.changed_when_any_child_step_changed",
+  "family": "executor",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 5: the step is changed if ANY child step changed, else no_change.",
+  "input": {
+    "workflow": {
+      "nodes": [
+        {
+          "id": "child",
+          "type": "subflow",
+          "snippet_id": "subflow",
+          "config_overrides": { "subflow_workflow_id": "99999999-9999-9999-9999-999999999999" }
+        }
+      ],
+      "edges": []
+    },
+    "context": {
+      "workflow_id": "22222222-2222-2222-2222-222222222222",
+      "subflows": {
+        "child": {
+          "run_id": "77777777-7777-7777-7777-777777777777",
+          "status": "completed",
+          "final_state": "completed",
+          "steps": [
+            { "node_id": "probe", "result": "no_change", "tier": "idempotent" },
+            { "node_id": "patch", "result": "changed", "tier": "idempotent" }
+          ]
+        }
+      }
+    }
+  },
+  "expected": { "status": "completed", "steps": [ { "node_id": "child", "result": "changed" } ] },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

@@ -1,0 +1,13 @@
+{
+  "id": "templates.condition.short_circuit_or_with_unresolved_right",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 9: both connectives short-circuit, so a true left operand carries the OR even when the right operand is unresolved.",
+  "input": {
+    "context": { "input": { "apply": true } },
+    "condition": "{{ input.apply }} == true || {{ steps.typo.output.x }} == 1"
+  },
+  "expected": { "result": true },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

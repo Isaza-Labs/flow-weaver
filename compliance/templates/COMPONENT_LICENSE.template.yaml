@@ -1,0 +1,15 @@
+schema_version: 1
+component: "[name]"
+version_or_commit: "[version/SHA]"
+supplier: "[upstream/vendor]"
+source_url: "[immutable URL]"
+license_expression: "[SPDX expression]"
+distribution_form: "[source/library/binary/container/build-only/service]"
+modified: false
+copyright_notices: []
+required_actions: []
+decision: "[ALLOW/ALLOW_WITH_CONDITIONS/ESCALATE/DENY]"
+reviewer: "[name or role]"
+reviewed_at: "[YYYY-MM-DD]"
+evidence: []
+

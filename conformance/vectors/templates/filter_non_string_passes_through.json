@@ -1,0 +1,10 @@
+{
+  "id": "templates.filter.non_string_passes_through",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 4: trim/upper/lower act on strings; non-strings pass through unchanged and keep their type.",
+  "input": { "outputs": { "x": { "v": 5 } }, "template": "{{ steps.x.output.v | upper }}" },
+  "expected": { "resolved": 5 },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

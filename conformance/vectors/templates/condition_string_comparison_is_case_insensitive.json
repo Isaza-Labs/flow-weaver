@@ -1,0 +1,10 @@
+{
+  "id": "templates.condition.string_comparison_is_case_insensitive",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 9: when either side is not a number the comparison is case-insensitive string comparison.",
+  "input": { "context": { "outputs": { "s": { "out": "ok" } } }, "condition": "{{ steps.s.output.out }} == 'OK'" },
+  "expected": { "result": true },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

@@ -1,0 +1,15 @@
+{
+  "id": "snippets.integration_action.identity_keys_are_names_not_ids",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "Rule 2: identity keys are names, not ids. integration is the slug and action is the action name; the handler resolves them locally, so a canonical payload passes through untouched.",
+  "input": {
+    "type": "integration_action",
+    "input": { "integration": "netbox", "action": "list-devices", "body": { "q": 1 } }
+  },
+  "expected": {
+    "normalized_input": { "integration": "netbox", "action": "list-devices", "body": { "q": 1 } }
+  },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

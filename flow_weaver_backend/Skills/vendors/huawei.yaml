@@ -1,0 +1,235 @@
+device_type: huawei
+vendor_family: huawei
+description: Command semantics for Huawei VRP. Backfills Description/Intent onto the in-code huawei catalog for find_command.
+commands:
+  - command: display version
+    intent: read
+    description: Software VRP version and device model.
+  - command: display device
+    intent: read
+    description: Hardware device inventory of cards modules and slots.
+  - command: display device manufacture-info
+    intent: read
+    description: Device manufacture information serial numbers and part data.
+  - command: display elabel
+    intent: read
+    description: Electronic label inventory serial number and manufacturing data.
+  - command: display power
+    intent: read
+    description: Power supply module status and consumption.
+  - command: display environment
+    intent: read
+    description: Environmental sensor data for power voltage and temperature.
+  - command: display fan
+    intent: read
+    description: Fan tray status and speed.
+  - command: display temperature all
+    intent: read
+    description: Temperature sensor readings across the chassis.
+  - command: display cpu-usage
+    intent: read
+    description: CPU utilization statistics.
+  - command: display memory-usage
+    intent: read
+    description: Memory utilization statistics.
+  - command: display clock
+    intent: read
+    description: System date and time clock.
+  - command: display users
+    intent: read
+    description: Logged in users and active terminal sessions.
+  - command: display history-command
+    intent: read
+    description: History of commands entered in the session.
+  - command: display diagnostic-information
+    intent: read
+    description: Aggregated diagnostic information for troubleshooting.
+  - command: display logbuffer
+    intent: read
+    description: System log buffer messages.
+  - command: display trapbuffer
+    intent: read
+    description: SNMP trap buffer messages.
+  - command: display alarm all
+    intent: read
+    description: Active alarms on the device.
+  - command: display saved-configuration
+    intent: read
+    description: Saved startup configuration stored on the device.
+  - command: display current-configuration
+    intent: read
+    description: Running configuration currently active on the device.
+  - command: display current-configuration interface
+    intent: read
+    description: Running configuration for interface sections.
+  - command: display startup
+    intent: read
+    description: Startup configuration and software image used at boot.
+  - command: display interface
+    intent: read
+    description: Interface status counters and details equivalent to show interfaces.
+  - command: display interface brief
+    intent: read
+    description: Brief one line interface status summary like show interface brief.
+  - command: display interface description
+    intent: read
+    description: Interface description labels and link status.
+  - command: display ip interface
+    intent: read
+    description: IP interface addressing and status details.
+  - command: display ip interface brief
+    intent: read
+    description: Brief IPv4 interface addressing summary like show ip interface brief.
+  - command: display ipv6 interface
+    intent: read
+    description: IPv6 interface addressing and status details.
+  - command: display ipv6 interface brief
+    intent: read
+    description: Brief IPv6 interface addressing summary.
+  - command: display arp
+    intent: read
+    description: ARP table mapping IP addresses to mac addresses.
+  - command: display arp brief
+    intent: read
+    description: Brief ARP table summary of IP to mac bindings.
+  - command: display ipv6 neighbors
+    intent: read
+    description: IPv6 neighbor discovery cache equivalent to ARP neighbor table.
+  - command: display vlan
+    intent: read
+    description: VLAN database with member ports.
+  - command: display vlan brief
+    intent: read
+    description: Brief VLAN summary with port membership.
+  - command: display mac-address
+    intent: read
+    description: MAC address table of learned mac entries per vlan and interface.
+  - command: display stp
+    intent: read
+    description: Spanning tree protocol state per interface.
+  - command: display stp brief
+    intent: read
+    description: Brief spanning tree protocol port roles and states.
+  - command: display lldp neighbor
+    intent: read
+    description: LLDP neighbor devices discovered on each interface.
+  - command: display lldp neighbor brief
+    intent: read
+    description: Brief LLDP neighbor summary per interface.
+  - command: display lldp local
+    intent: read
+    description: Local LLDP information advertised by this device.
+  - command: display ip routing-table
+    intent: read
+    description: IP route table of routes equivalent to show ip route.
+  - command: display ip routing-table statistics
+    intent: read
+    description: IP route table statistics and route counts.
+  - command: display ipv6 routing-table
+    intent: read
+    description: IPv6 route table of routes.
+  - command: display ip routing-table protocol bgp
+    intent: read
+    description: IP routes learned via bgp in the route table.
+  - command: display ip routing-table protocol ospf
+    intent: read
+    description: IP routes learned via ospf in the route table.
+  - command: display ip routing-table protocol isis
+    intent: read
+    description: IP routes learned via isis in the route table.
+  - command: display ip routing-table protocol static
+    intent: read
+    description: Static IP routes in the route table.
+  - command: display ip vpn-instance
+    intent: read
+    description: VPN instance vrf list and details.
+  - command: display vrf
+    intent: read
+    description: VRF instances configured on the device.
+  - command: display bgp peer
+    intent: read
+    description: BGP peer neighbor sessions and state equivalent to show bgp summary.
+  - command: display bgp peer verbose
+    intent: read
+    description: Detailed BGP peer neighbor session information.
+  - command: display bgp routing-table
+    intent: read
+    description: BGP route table of bgp learned prefixes.
+  - command: display bgp ipv4 unicast peer
+    intent: read
+    description: BGP IPv4 unicast peer neighbor sessions.
+  - command: display ospf peer
+    intent: read
+    description: OSPF neighbor adjacencies and state.
+  - command: display ospf peer brief
+    intent: read
+    description: Brief OSPF neighbor adjacency summary.
+  - command: display ospf interface
+    intent: read
+    description: OSPF enabled interface parameters and state.
+  - command: display ospf lsdb
+    intent: read
+    description: OSPF link state database lsdb contents.
+  - command: display isis peer
+    intent: read
+    description: IS-IS neighbor adjacencies and state.
+  - command: display isis interface
+    intent: read
+    description: IS-IS enabled interface parameters and state.
+  - command: display isis lsdb
+    intent: read
+    description: IS-IS link state database lsdb contents.
+  - command: display mpls lsp
+    intent: read
+    description: MPLS label switched paths and labels.
+  - command: display mpls interface
+    intent: read
+    description: MPLS enabled interface details.
+  - command: display mpls ldp peer
+    intent: read
+    description: MPLS LDP peer neighbor sessions.
+  - command: display ssh server status
+    intent: read
+    description: SSH server status and enabled settings.
+  - command: display ssh user-information
+    intent: read
+    description: SSH user account information and authentication settings.
+  - command: display ntp-service status
+    intent: read
+    description: NTP synchronization status and stratum.
+  - command: display ntp-service sessions
+    intent: read
+    description: NTP peer and server sessions.
+  - command: display snmp-agent statistics
+    intent: read
+    description: SNMP agent packet statistics.
+  - command: screen-length 0 temporary
+    intent: read
+    description: Disable terminal output paging for the current session.
+  - command: screen-length disable
+    intent: read
+    description: Disable terminal output paging.
+  - command: system-view
+    intent: write
+    description: Enter system configuration view to change configuration.
+  - command: quit
+    intent: read
+    description: Exit the current command view one level up.
+  - command: return
+    intent: read
+    description: Return to the user view from any configuration view.
+  - command: save
+    intent: write
+    description: Save the running configuration to startup configuration.
+  - command: ping
+    intent: read
+    description: Send ICMP echo to test reachability to a host.
+  - command: tracert
+    intent: read
+    description: Trace the route hops to a destination host.
+  - command: telnet
+    intent: read
+    description: Open a telnet connection to a remote host.
+  - command: ssh
+    intent: read
+    description: Open an ssh connection to a remote host.

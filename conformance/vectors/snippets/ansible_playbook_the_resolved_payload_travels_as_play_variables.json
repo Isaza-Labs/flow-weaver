@@ -1,0 +1,18 @@
+{
+  "id": "snippets.ansible_playbook.the_resolved_payload_travels_as_play_variables",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "ansible_playbook: the resolved step payload is handed to the play as variables, so a playbook reads any runtime parameter the node supplied through an ordinary {{ key }} lookup. Targeting keys travel with it.",
+  "input": {
+    "type": "ansible_playbook",
+    "probe": { "hosts": [ "core-1" ], "extra_vars": { "version": "15.2" }, "timeout_seconds": 30 }
+  },
+  "expected": {
+    "sent": {
+      "play_variables": { "hosts": [ "core-1" ], "extra_vars": { "version": "15.2" }, "timeout_seconds": 30 }
+    }
+  },
+  "equivalence": "subset",
+  "oracle_commit": "fw@fe07550",
+  "notes": "REPLACES snippets.ansible_playbook.extra_vars_is_a_key_not_the_payload, which asserted that ONLY a declared variables key reached the play. No implementation has ever done that: the oracle passes input.GetRawText() (AnsibleHandler.cs) and so does Nashira, both with a comment saying the payload is how a playbook reads runtime parameters. The old assertion was written from the specification's prose rather than reified from the oracle, which is the kit's own rule; the specification was corrected instead. What the play receives is invisible in the step's output, so this asserts the process arguments."
+}

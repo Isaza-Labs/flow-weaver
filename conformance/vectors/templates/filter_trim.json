@@ -1,0 +1,10 @@
+{
+  "id": "templates.filter.trim",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 4: trim.",
+  "input": { "outputs": { "x": { "v": "  hi  " } }, "template": "{{ steps.x.output.v | trim }}" },
+  "expected": { "resolved": "hi" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

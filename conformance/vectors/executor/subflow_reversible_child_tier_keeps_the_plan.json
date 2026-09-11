@@ -1,0 +1,70 @@
+{
+  "id": "executor.subflow.reversible_child_tier_keeps_the_plan",
+  "family": "executor",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 5, the other side of the strictest-tier rule: a child whose executed nodes are all reversible gives the parent step a reversible tier, so the subflow node IS in the plan.",
+  "input": {
+    "workflow": {
+      "nodes": [
+        {
+          "id": "child",
+          "type": "subflow",
+          "snippet_id": "subflow",
+          "config_overrides": {
+            "subflow_workflow_id": "99999999-9999-9999-9999-999999999999"
+          }
+        },
+        {
+          "id": "after",
+          "snippet_id": "__end__"
+        }
+      ],
+      "edges": [
+        {
+          "source": "child",
+          "target": "after",
+          "type": "success"
+        }
+      ]
+    },
+    "context": {
+      "workflow_id": "22222222-2222-2222-2222-222222222222",
+      "nodes": {
+        "after": {
+          "result": "failed"
+        }
+      },
+      "subflows": {
+        "child": {
+          "run_id": "77777777-7777-7777-7777-777777777777",
+          "status": "completed",
+          "final_state": "completed",
+          "steps": [
+            {
+              "node_id": "probe",
+              "result": "changed",
+              "tier": "idempotent"
+            },
+            {
+              "node_id": "patch",
+              "result": "changed",
+              "tier": "requires_compensation"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "expected": {
+    "status": "failed",
+    "final_state": "rolled_back",
+    "rollback_plan": [
+      "child"
+    ],
+    "tiers": {
+      "child": "requires_compensation"
+    }
+  },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

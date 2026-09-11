@@ -1,0 +1,16 @@
+{
+  "id": "canon.hash.stable_under_key_reordering",
+  "family": "canonicalization",
+  "contract_version": "1.0.0",
+  "description": "The same logical workflow with object keys in a different order hashes equal.",
+  "input": {
+    "variants": [
+      { "nodes": [ { "id": "a", "snippet_id": "__start__", "type": "task" } ], "edges": [] },
+      { "edges": [], "nodes": [ { "type": "task", "snippet_id": "__start__", "id": "a" } ] }
+    ]
+  },
+  "expected": { "all_schema_hashes_equal": true, "all_canonical_forms_equal": true },
+  "equivalence": "subset",
+  "oracle_commit": "fw@95fc69e",
+  "notes": "Object keys are sorted in the canonical form; array element order is preserved (kept identical across variants here)."
+}

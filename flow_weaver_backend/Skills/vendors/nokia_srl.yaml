@@ -1,0 +1,323 @@
+device_type: nokia_srl
+vendor_family: nokia
+description: Command semantics for Nokia SR Linux (info-tree CLI). Backfills Description/Intent onto the in-code nokia_srl catalog so find_command can map a task to the right SR Linux command instead of an IOS-style guess.
+commands:
+  # Identity / platform / chassis
+  - command: show version
+    intent: read
+    description: Software version, model and platform summary.
+  - command: show platform
+    intent: read
+    description: Platform component summary (cards, fans, power).
+  - command: show platform chassis
+    intent: read
+    description: Chassis hardware details and serials.
+  - command: show platform environment
+    intent: read
+    description: Temperature, fan and power environment readings.
+  - command: show platform redundancy
+    intent: read
+    description: Control-plane redundancy and failover state.
+  - command: show platform fan-tray
+    intent: read
+    description: Fan tray status and speed.
+  - command: show platform power-supply
+    intent: read
+    description: Power supply unit status.
+  # Interfaces
+  - command: show interface
+    intent: read
+    description: Interface state, addresses and counters.
+  - command: show interface brief
+    intent: read
+    description: Brief interface status, admin and operational state.
+  - command: show interface all
+    intent: read
+    description: All interfaces including subinterfaces.
+  - command: show interface mgmt0
+    intent: read
+    description: Management interface mgmt0 state.
+  # LAG
+  - command: show lag
+    intent: read
+    description: Link aggregation group LAG members and status.
+  # ACL
+  - command: show acl summary
+    intent: read
+    description: Access control list ACL summary.
+  - command: show acl cpm-filter ipv4-filter
+    intent: read
+    description: Control-plane CPM IPv4 ACL filter.
+  # ARP / ND
+  - command: show arpnd arp-entries
+    intent: read
+    description: ARP table entries, IPv4 address to MAC.
+  - command: show arpnd neighbors
+    intent: read
+    description: IPv6 neighbor discovery ND entries.
+  # Network-instance routing / protocols (default VRF)
+  - command: show network-instance summary
+    intent: read
+    description: Network-instance VRF summary.
+  - command: show network-instance default interfaces
+    intent: read
+    description: Interfaces bound to the default network-instance.
+  - command: show network-instance default route-table summary
+    intent: read
+    description: Routing table summary for the default VRF, the show ip route equivalent.
+  - command: show network-instance default protocols bgp summary
+    intent: read
+    description: BGP neighbor summary and session state, the show ip bgp summary equivalent.
+  - command: show network-instance default protocols bgp neighbor
+    intent: read
+    description: BGP neighbor detail and capabilities.
+  - command: show network-instance default protocols bgp routes ipv4 summary
+    intent: read
+    description: BGP IPv4 route summary.
+  - command: show network-instance default protocols ospf status
+    intent: read
+    description: OSPF process status.
+  - command: show network-instance default protocols ospf neighbor
+    intent: read
+    description: OSPF neighbor adjacencies.
+  - command: show network-instance default protocols ospf database
+    intent: read
+    description: OSPF link-state database.
+  - command: show network-instance default protocols ospf statistics
+    intent: read
+    description: OSPF statistics and counters.
+  - command: show network-instance default protocols isis summary
+    intent: read
+    description: IS-IS protocol summary.
+  - command: show network-instance default protocols isis adjacency
+    intent: read
+    description: IS-IS adjacencies.
+  - command: show network-instance default protocols isis database
+    intent: read
+    description: IS-IS link-state database.
+  - command: show network-instance default tunnel-table all
+    intent: read
+    description: Tunnel table, all tunnels for the default VRF.
+  # LLDP — lives under `system`, NOT at the top level
+  - command: show system lldp neighbor
+    intent: read
+    description: LLDP neighbor table, the show lldp neighbors equivalent (LLDP lives under system).
+  - command: show system lldp neighbor detail
+    intent: read
+    description: Detailed LLDP neighbor information.
+  - command: show system lldp interface
+    intent: read
+    description: Per-interface LLDP state.
+  - command: show system lldp statistics
+    intent: read
+    description: LLDP transmit and receive statistics.
+  - command: info from state system lldp
+    intent: read
+    description: LLDP operational state from the state datastore.
+  - command: info from state system lldp neighbor
+    intent: read
+    description: LLDP neighbors from the state datastore.
+  - command: info from state system lldp interface
+    intent: read
+    description: LLDP interface state from the state datastore.
+  - command: info system lldp
+    intent: read
+    description: LLDP configuration.
+  # Config / state browsing
+  - command: info
+    intent: read
+    description: Show the running configuration of the current context.
+  - command: info detail
+    intent: read
+    description: Running configuration including default values.
+  - command: info flat
+    intent: read
+    description: Running configuration in flat set-style form.
+  - command: info from state
+    intent: read
+    description: Operational state from the state datastore.
+  - command: info from state system information
+    intent: read
+    description: System information version and hostname from state.
+  - command: info from state interface
+    intent: read
+    description: Interface operational state from the state datastore.
+  - command: info from state network-instance
+    intent: read
+    description: Network-instance operational state.
+  - command: info from state platform
+    intent: read
+    description: Platform operational state.
+  - command: info from state tunnel vxlan-tunnel
+    intent: read
+    description: VXLAN tunnel operational state.
+  - command: info system mirroring
+    intent: read
+    description: Port mirroring SPAN configuration.
+  # Config edit mode / context
+  - command: enter candidate
+    intent: write
+    description: Enter candidate configuration mode to make changes.
+  - command: enter candidate exclusive
+    intent: write
+    description: Enter candidate config with an exclusive lock.
+  - command: enter candidate private
+    intent: write
+    description: Enter a private candidate configuration.
+  - command: enter running
+    intent: write
+    description: Enter the running datastore for direct edits.
+  - command: enter show
+    intent: read
+    description: Enter show operational mode.
+  - command: enter state
+    intent: read
+    description: Enter state-browsing mode.
+  # Commit / discard / save
+  - command: commit now
+    intent: write
+    description: Apply and save the candidate configuration.
+  - command: commit stay
+    intent: write
+    description: Apply the candidate but stay in candidate mode.
+  - command: commit save
+    intent: write
+    description: Apply the candidate and persist to startup.
+  - command: commit validate
+    intent: read
+    description: Validate the candidate without applying it.
+  - command: commit confirmed
+    intent: write
+    description: Apply with automatic rollback unless confirmed.
+  - command: discard now
+    intent: write
+    description: Discard candidate configuration changes.
+  - command: discard stay
+    intent: write
+    description: Discard changes but stay in candidate mode.
+  - command: save
+    intent: write
+    description: Save the running configuration to startup.
+  - command: save detail
+    intent: write
+    description: Save configuration including default values.
+  - command: save text
+    intent: write
+    description: Save configuration in text format.
+  # Diff / compare
+  - command: diff
+    intent: read
+    description: Show pending candidate versus running differences.
+  - command: diff baseline
+    intent: read
+    description: Diff the candidate against the baseline.
+  - command: diff candidate
+    intent: read
+    description: Diff the candidate datastore.
+  - command: diff running
+    intent: read
+    description: Diff against the running configuration.
+  - command: diff startup
+    intent: read
+    description: Diff against the startup configuration.
+  # Environment / OAM / tools
+  - command: environment show
+    intent: read
+    description: Show CLI environment settings.
+  - command: environment save
+    intent: read
+    description: Persist CLI environment settings.
+  - command: environment save home
+    intent: read
+    description: Save CLI environment to the home directory.
+  - command: ping
+    intent: read
+    description: ICMP reachability test to a destination.
+  - command: ping6
+    intent: read
+    description: IPv6 ICMP reachability test.
+  - command: traceroute
+    intent: read
+    description: Trace the network path to a destination.
+  - command: traceroute6
+    intent: read
+    description: IPv6 path trace to a destination.
+  - command: tcptraceroute
+    intent: read
+    description: TCP-based path trace to a destination.
+  - command: tools
+    intent: write
+    description: Enter the tools context for operational actions like clearing counters.
+  - command: monitor
+    intent: read
+    description: Stream live counters and operational state.
+  - command: tech-support
+    intent: read
+    description: Generate a tech-support diagnostic bundle.
+  - command: bash
+    intent: write
+    description: Drop to the underlying Linux shell.
+  - command: file ls
+    intent: read
+    description: List files in the current directory.
+  - command: file pwd
+    intent: read
+    description: Show the current file working directory.
+  # Configuration (candidate datastore). SR Linux SNMP uses an
+  # access-group + community-entry model — there is no flat `community`
+  # node, so IOS-style `set system snmp community ...` is invalid here.
+  - command: set / system snmp access-group <name> admin-state enable
+    intent: write
+    description: Enable an SNMP access-group when configuring SNMP. SR Linux SNMPv2c uses access-group plus community-entry, not a flat community. Replace <name>.
+  - command: set / system snmp access-group <name> security-level no-auth-no-priv
+    intent: write
+    description: Set the SNMPv2c security level for an SNMP access-group. Replace <name>.
+  - command: set / system snmp access-group <name> community-entry <entry> community <community>
+    intent: write
+    description: Configure or change the SNMP read community string under an access-group community-entry. Replace <name> <entry> <community>.
+  - command: set / system snmp network-instance default admin-state enable
+    intent: write
+    description: Enable the SNMP server in the default network-instance.
+  - command: set / system snmp network-instance mgmt admin-state enable
+    intent: write
+    description: Enable the SNMP server in the mgmt network-instance.
+  - command: set / system ntp admin-state enable
+    intent: write
+    description: Enable and configure the NTP client.
+  - command: set / system ntp network-instance mgmt
+    intent: write
+    description: Bind the NTP client to a network-instance, usually mgmt.
+  - command: set / system ntp server <ip>
+    intent: write
+    description: Add or change an NTP server by IP address or hostname. Replace <ip>.
+  # Validation patterns so validate_ssh_commands accepts the correct SR
+  # Linux config lines above (with real values) and still rejects the
+  # IOS-style `set system snmp community ...` the agent must never use.
+  - command: '^set / system snmp access-group \S+ admin-state (enable|disable)$'
+    kind: pattern
+    intent: write
+    description: SR Linux SNMP access-group admin-state config line.
+  - command: '^set / system snmp access-group \S+ security-level \S+$'
+    kind: pattern
+    intent: write
+    description: SR Linux SNMP access-group security-level config line.
+  - command: '^set / system snmp access-group \S+ community-entry \S+ community \S+$'
+    kind: pattern
+    intent: write
+    description: SR Linux SNMP community-entry community config line.
+  - command: '^set / system snmp network-instance \S+ admin-state (enable|disable)$'
+    kind: pattern
+    intent: write
+    description: SR Linux SNMP network-instance admin-state config line.
+  - command: '^set / system ntp admin-state (enable|disable)$'
+    kind: pattern
+    intent: write
+    description: SR Linux NTP admin-state config line.
+  - command: '^set / system ntp network-instance \S+$'
+    kind: pattern
+    intent: write
+    description: SR Linux NTP network-instance config line.
+  - command: '^set / system ntp server \S+$'
+    kind: pattern
+    intent: write
+    description: SR Linux NTP server config line.

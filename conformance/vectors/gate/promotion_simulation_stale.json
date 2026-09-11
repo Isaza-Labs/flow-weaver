@@ -1,0 +1,16 @@
+{
+  "id": "gate.promote.simulation_stale",
+  "family": "gate",
+  "contract_version": "1.0.0",
+  "description": "Promoting draft->qa when the current schema hash differs from the simulated one is refused 412 simulation_stale.",
+  "input": {
+    "workflow_state": "draft",
+    "simulation": { "schema_hash": "H_old", "ok": true },
+    "current_schema_hash": "H_new",
+    "action": "promote:draft->qa"
+  },
+  "expected": { "http_status": 412, "code": "simulation_stale" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@95fc69e",
+  "notes": "Corrected during reification (kit spec §4.3 bucket 3, pre-1.0 draft): the kit-spec example showed qa->production illustratively, but the oracle applies the simulation gate on draft->qa (PromotionService.CheckSimulationGateAsync). Links to canon.hash.changes_on_input_edit."
+}

@@ -1,0 +1,16 @@
+{
+  "id": "templates.condition.device_namespace_is_never_in_scope",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 9: {{ device.* }} does NOT resolve in a condition and always reads as unresolved, so the comparison is false. An edge fires once at DAG level after its source node completes, so there is no single current device even when the source fanned out. The context deliberately offers a device to prove the engine does not use it.",
+  "input": {
+    "context": {
+      "device": { "id": "aaaaaaaa-1111-2222-3333-444444444444", "name": "core-1", "ip": "10.0.0.1", "status": "active" }
+    },
+    "condition": "{{ device.status }} == 'active'"
+  },
+  "expected": { "result": false },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3",
+  "notes": "The condition adapter never passes a device view to the evaluator, which is the section 9 rule; in Nashira the rule lives at the call site (WorkflowExecutor.EvaluateCondition passes deviceContext: null). executor.conditional.device_reference_does_not_fire covers the same rule end to end through the DAG walk."
+}

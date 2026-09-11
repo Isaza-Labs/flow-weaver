@@ -1,0 +1,10 @@
+{
+  "id": "snippets.idempotency_override_key_survives_normalisation",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "execution/SPEC.md section 2: config_overrides.idempotency is an accepted stricter-only override on every type. It is part of the payload the handler is given and is not an alias of anything, so normalisation leaves it in place.",
+  "input": { "type": "ping", "input": { "device": "core-1", "idempotency": "non_reversible" } },
+  "expected": { "normalized_input": { "host": "core-1", "idempotency": "non_reversible" } },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

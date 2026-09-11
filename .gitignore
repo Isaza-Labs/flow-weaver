@@ -1,0 +1,47 @@
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+secrets/
+
+# .NET
+bin/
+obj/
+TestResults/
+coverage/
+
+# Node / frontend
+node_modules/
+.svelte-kit/
+dist/
+build/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Local tools and IDEs
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# OS and temporary files
+.DS_Store
+Thumbs.db
+*.tmp
+*.log
+
+# Private compliance evidence
+internal-compliance/
+release-evidence/
+*.bundle
+

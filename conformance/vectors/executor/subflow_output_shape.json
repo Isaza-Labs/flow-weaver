@@ -1,0 +1,61 @@
+{
+  "id": "executor.subflow.output_shape",
+  "family": "executor",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 5: the step's output is { run_id, status, final_state, steps: { <node_id>: <output> } }, so a downstream template reads steps.<subflow-node>.output.steps.<child-node>.<field>.",
+  "input": {
+    "workflow": {
+      "nodes": [
+        {
+          "id": "child",
+          "type": "subflow",
+          "snippet_id": "subflow",
+          "config_overrides": {
+            "subflow_workflow_id": "99999999-9999-9999-9999-999999999999"
+          }
+        }
+      ],
+      "edges": []
+    },
+    "context": {
+      "workflow_id": "22222222-2222-2222-2222-222222222222",
+      "subflows": {
+        "child": {
+          "run_id": "77777777-7777-7777-7777-777777777777",
+          "status": "completed",
+          "final_state": "completed",
+          "steps": [
+            {
+              "node_id": "probe",
+              "result": "changed",
+              "tier": "idempotent",
+              "output": {
+                "rtt_avg_ms": 3
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "expected": {
+    "outputs": {
+      "child": {
+        "run_id": "<redacted>",
+        "status": "completed",
+        "final_state": "completed",
+        "steps": {
+          "probe": {
+            "rtt_avg_ms": 3
+          }
+        }
+      }
+    }
+  },
+  "equivalence": "subset",
+  "oracle_commit": "fw@fe07550",
+  "normalize": [
+    "redact:run_id"
+  ],
+  "notes": "CORRECTED 2026-08-29. `run_id` was pinned to a fixed GUID, which only an implementation whose harness SUPPLIES the child run's id can satisfy — the other generates it, so the vector was testing the harness rather than the engine. It is the same class of value as `event_id` and `timestamp` in `executor.audit.v1_event_shape`, which are redacted for exactly this reason. What the vector is for is the SHAPE: run_id present, status, final_state, and the child's steps nested under `steps` rather than spread at the top level."
+}

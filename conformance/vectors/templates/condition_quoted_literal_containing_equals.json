@@ -1,0 +1,13 @@
+{
+  "id": "templates.condition.quoted_literal_containing_equals",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 9: an == inside a quoted literal is data, not the operator.",
+  "input": {
+    "context": { "outputs": { "s": { "out": "a==b" } } },
+    "condition": "{{ steps.s.output.out }} == \"a==b\""
+  },
+  "expected": { "result": true },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

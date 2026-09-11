@@ -1,0 +1,16 @@
+{
+  "id": "snippets.slack_message.thread_ts_is_honoured",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "slack_message: text, thread_ts and channel are all CANONICAL keys. A message carrying thread_ts is posted as a reply inside that thread.",
+  "input": {
+    "type": "slack_message",
+    "probe": { "channel": "#netops", "text": "audit finished", "thread_ts": "1724750400.000100" }
+  },
+  "expected": {
+    "sent": { "called": true, "channel": "#netops", "thread_ts": "1724750400.000100" }
+  },
+  "equivalence": "subset",
+  "oracle_commit": "fw@fe07550",
+  "notes": "Asserts the OUTBOUND CALL, not the step output, because the two are indistinguishable when this fails: a reply flattened to the root of the channel returns ok:true with the same fields. Which transport an implementation needs in order to honour the key is its own business — Nashira has two and only one of them can thread, so its adapter reaches for that one; the oracle has a single transport and its adapter does nothing special. A vector naming a transport would be a vector describing one product's plumbing."
+}

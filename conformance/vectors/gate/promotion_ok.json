@@ -1,0 +1,15 @@
+{
+  "id": "gate.promote.draft_to_qa_ok",
+  "family": "gate",
+  "contract_version": "1.0.0",
+  "description": "Promoting draft->qa with a fresh, successful simulation passes the gate.",
+  "input": {
+    "workflow_state": "draft",
+    "simulation": { "schema_hash": "H1", "ok": true },
+    "current_schema_hash": "H1",
+    "action": "promote:draft->qa"
+  },
+  "expected": { "http_status": 200, "code": "ok" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@95fc69e"
+}

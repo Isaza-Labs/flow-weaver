@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs>
+    <polygon id="alert-a" points="2.758 .388 19.133 .388 21.288 4.068 19.896 4.965 2.592 4.965 .87 4.068"/>
+    <path id="alert-c" d="M12,2 L3,18 L21,18 L12,2 Z M10.2568489,1.01947752 C11.0214571,-0.33982584 12.9785429,-0.33982584 13.7431511,1.01947752 L22.7431511,17.0194775 C23.4930806,18.3526856 22.529653,20 21,20 L3,20 C1.47034705,20 0.506919374,18.3526856 1.25684893,17.0194775 L10.2568489,1.01947752 Z M11,11 L11,16 C11,16.5522847 11.4477153,17 12,17 C12.5522847,17 13,16.5522847 13,16 L13,11 C13,10.4477153 12.5522847,10 12,10 C11.4477153,10 11,10.4477153 11,11 Z M12,9 C12.5522847,9 13,8.55228475 13,8 C13,7.44771525 12.5522847,7 12,7 C11.4477153,7 11,7.44771525 11,8 C11,8.55228475 11.4477153,9 12,9 Z"/>
+  </defs>
+  <g fill="none" fill-rule="evenodd" transform="translate(0 2)">
+    <g transform="translate(1 14)">
+      <mask id="alert-b" fill="#ffffff">
+        <use xlink:href="#alert-a"/>
+      </mask>
+      <use fill="#D8D8D8" xlink:href="#alert-a"/>
+      <g fill="#FFA0A0" mask="url(#alert-b)">
+        <rect width="24" height="24" transform="translate(-1 -16)"/>
+      </g>
+    </g>
+    <mask id="alert-d" fill="#ffffff">
+      <use xlink:href="#alert-c"/>
+    </mask>
+    <use fill="#000000" fill-rule="nonzero" xlink:href="#alert-c"/>
+    <g fill="#7600FF" mask="url(#alert-d)">
+      <rect width="24" height="24" transform="translate(0 -2)"/>
+    </g>
+  </g>
+</svg>

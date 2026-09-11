@@ -1,0 +1,10 @@
+{
+  "id": "snippets.unknown_type_is_unchanged",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "A type the contract defines no table for is passed through verbatim. Guessing at aliases for an unknown type would rename keys a future handler depends on.",
+  "input": { "type": "netconf", "input": { "device": "core-1", "filter": "<config/>" } },
+  "expected": { "normalized_input": { "device": "core-1", "filter": "<config/>" } },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

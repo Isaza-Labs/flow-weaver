@@ -1,0 +1,10 @@
+{
+  "id": "templates.condition.numeric_not_string_ordering",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 9: 10 > 9 is a numeric comparison, which a string comparison would get wrong.",
+  "input": { "context": { "outputs": { "r": { "n": 10 } } }, "condition": "{{ steps.r.output.n }} > 9" },
+  "expected": { "result": true },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

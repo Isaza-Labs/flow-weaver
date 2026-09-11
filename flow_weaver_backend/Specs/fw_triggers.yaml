@@ -1,0 +1,136 @@
+openapi: 3.0.0
+info:
+  title: fw_triggers
+  version: "1.0"
+  description: >
+    Scheduled and event-based workflow triggers. Note the asymmetry: GET,
+    GET-by-id, PUT and DELETE live at `/workflowTrigger`, but **creation
+    must go through `/workflow/{workflowId}/triggers`** (see
+    `fw_workflows:create_workflow_trigger`). `POST /workflowTrigger`
+    returns 400 with a hint redirecting to that route.
+servers:
+  - url: /api
+components:
+  securitySchemes:
+    session_jwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      x-credential-ref: "${secret:session:current:jwt}"
+security:
+  - session_jwt: []
+paths:
+  /workflowTrigger:
+    get:
+      operationId: fw_triggers:list_triggers
+      tags: [triggers]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses: { "200": { description: List } }
+
+  /workflowTrigger/{id}:
+    get:
+      operationId: fw_triggers:get_trigger
+      tags: [triggers]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { "200": { description: Trigger } }
+    put:
+      operationId: fw_triggers:update_trigger
+      tags: [triggers]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                type:
+                  type: string
+                  enum: [cron, schedule, webhook, event]
+                  description: "cron and schedule are synonyms for time-based triggers."
+                description: { type: string }
+                route: { type: string }
+                cron_expression: { type: string }
+                timezone: { type: string }
+                input_schema: { type: object }
+                input_defaults: { type: object }
+                enabled: { type: boolean }
+                allow_unsigned:
+                  type: boolean
+                  description: "Webhook triggers: accept unsigned deliveries when no secret is set."
+                notification_webhook_url: { type: string }
+                notify_on:
+                  type: array
+                  items: { type: string, enum: [success, failure, timeout] }
+      responses: { "200": { description: Updated } }
+    delete:
+      operationId: fw_triggers:delete_trigger
+      tags: [triggers]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { "204": { description: Deleted } }
+
+  /workflowTrigger/{id}/rotate-secret:
+    post:
+      operationId: fw_triggers:rotate_webhook_secret
+      summary: >
+        Rotate a webhook trigger's HMAC signing secret. Returns the new plaintext
+        ONCE in `webhook_secret`; the previous secret stops working immediately.
+      tags: [triggers]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: "Rotated (body includes one-time webhook_secret)" }
+        "400": { description: not a webhook trigger }
+        "404": { description: not found }
+
+  # ─────────────── Public inbound webhook ingest (unauthenticated) ───────────
+  /webhooks/workflow/{id}:
+    post:
+      operationId: fw_triggers:ingest_webhook
+      summary: >
+        Fire a `webhook`-type trigger's workflow from an inbound POST. PUBLIC —
+        no JWT; authenticated by the per-trigger HMAC secret. The request body
+        becomes the run input. Rate-limited per (IP, trigger); 1 MiB body cap.
+      tags: [triggers, webhooks]
+      security: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - name: X-FlowWeaver-Signature
+          in: header
+          required: false
+          schema: { type: string }
+          description: "sha256=<hex> HMAC-SHA256 of the raw body with the trigger secret."
+        - name: X-FlowWeaver-Token
+          in: header
+          required: false
+          schema: { type: string }
+          description: "Alternative to the HMAC: the shared secret sent verbatim."
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              description: >
+                The whole body becomes the run input under `input.webhook`.
+                Optionally include top-level `target_devices` / `target_pools`
+                (arrays of GUIDs) to TARGET the run against those devices/pools
+                (like a manual run); when omitted the trigger's own configured
+                targets are used.
+              properties:
+                target_devices: { type: array, items: { type: string, format: uuid } }
+                target_pools: { type: array, items: { type: string, format: uuid } }
+      responses:
+        "202": { description: run enqueued }
+        "401": { description: signature mismatch / unsigned rejected }
+        "403": { description: trigger disabled }
+        "404": { description: unknown or non-webhook trigger }
+        "413": { description: payload too large (>1 MiB) }
+        "429": { description: rate-limited }
+        "503": { description: queue full, retry later }

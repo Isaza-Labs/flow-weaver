@@ -1,0 +1,15 @@
+{
+  "id": "snippets.email_send.channel_id_is_translated_at_import",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "email_send: channel is the canonical name/slug and channel_id is the legacy id, resolved against the receiving instance rather than against the payload. Normalisation leaves it.",
+  "input": {
+    "type": "email_send",
+    "input": { "to": [ "ops@example.com" ], "subject": "Audit", "body": "done", "channel_id": "31313131-3131-3131-3131-313131313131" }
+  },
+  "expected": {
+    "normalized_input": { "to": [ "ops@example.com" ], "subject": "Audit", "body": "done", "channel_id": "31313131-3131-3131-3131-313131313131" }
+  },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

@@ -1,0 +1,34 @@
+{
+  "id": "bundle.imported.trigger_is_created_disabled_without_targets",
+  "family": "bundle",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 6: on import EVERY trigger is created disabled, with a fresh secret and no targets, whatever the bundle said — enabling one is an explicit local act. The webhook HMAC secret, target_devices and run statistics never travel. A note tells the operator what to set before enabling.",
+  "input": {
+    "bundle": {
+      "schema_version": "v3",
+      "kind": "flow_weaver.workflow_bundle",
+      "requires": { "snippet_types": [ "ping" ], "capabilities": [ "triggers" ], "secrets": [] },
+      "workflow": { "name": "probe-core" },
+      "nodes": [
+        { "id": "start", "snippet_id": "__start__" },
+        { "id": "probe", "snippet_id": "aaaaaaaa-0000-0000-0000-000000000001", "config_overrides": { "host": "10.0.0.1" } }
+      ],
+      "edges": [ { "source": "start", "target": "probe", "type": "success" } ],
+      "dependencies": {
+        "snippets": [ { "id": "aaaaaaaa-0000-0000-0000-000000000001", "slug": "ping-host", "name": "Ping host", "type": "ping", "target_mode": "once", "timeout_seconds": 30, "idempotency": "idempotent" } ]
+      },
+      "triggers": [
+        { "name": "nightly", "type": "cron", "cron_expression": "0 3 * * *", "timezone": "UTC", "enabled": true }
+      ]
+    },
+    "local": { "snippet_types": [ "ping" ] }
+  },
+  "expected": {
+    "outcome": "imported",
+    "notes_empty": false,
+    "created": { "snippets": 1, "workflows": 0, "triggers": 1 },
+    "triggers": { "nightly": { "type": "cron", "enabled": false, "targets": "[]" } }
+  },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

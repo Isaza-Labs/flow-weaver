@@ -1,0 +1,10 @@
+{
+  "id": "templates.condition.truthy_non_empty_array",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 9: only the listed values are falsy, so a non-empty array is truthy.",
+  "input": { "context": { "input": { "v": [1] } }, "condition": "{{ input.v }}" },
+  "expected": { "result": true },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

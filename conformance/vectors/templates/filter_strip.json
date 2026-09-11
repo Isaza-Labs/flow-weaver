@@ -1,0 +1,10 @@
+{
+  "id": "templates.filter.strip",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 4: strip removes ANSI escapes and control characters, then trims.",
+  "input": { "outputs": { "x": { "v": "\u001b[31m red\u0007 \u001b[0m" } }, "template": "{{ steps.x.output.v | strip }}" },
+  "expected": { "resolved": "red" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

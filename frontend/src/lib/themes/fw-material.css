@@ -1,0 +1,81 @@
+/* fw-material — Google Material You / Pixel UI school.
+   Tonal indigo surfaces (every step carries primary chroma),
+   very rounded geometry (--radius-base: 1rem, --radius-container:
+   1.5rem), depth via filled tonal containers — not shadows.
+   Primary indigo wraps the chrome; warning yellow stays as the
+   brand hero on key CTAs (Material's "tertiary" accent role). */
+
+[data-theme='fw-material'] {
+	--radius-base: 1rem;           /* 16px */
+	--radius-container: 1.5rem;    /* 24px */
+	--default-border-width: 0px;   /* Material favours filled containers over outlines */
+	--default-divide-width: 1px;
+	--heading-font-weight: 600;
+	--heading-letter-spacing: -0.018em;
+	--anchor-font-color: var(--color-primary-700);
+	--anchor-font-color-dark: var(--color-primary-300);
+
+	/* Tonal-indigo surface ramp — primary chroma baked into every
+	   step so the page reads as a coherent "indigo room" instead
+	   of neutral gray with indigo accents on top. */
+	--color-surface-50: oklch(96.5% 0.022 265);
+	--color-surface-100: oklch(93% 0.028 265);
+	--color-surface-200: oklch(87% 0.034 265);
+	--color-surface-300: oklch(78% 0.04 265);
+	--color-surface-400: oklch(62% 0.045 265);
+	--color-surface-500: oklch(48% 0.05 264);
+	--color-surface-600: oklch(38% 0.052 262);
+	--color-surface-700: oklch(28% 0.05 260);
+	--color-surface-800: oklch(19% 0.045 260);
+	--color-surface-900: oklch(13% 0.04 262);
+	--color-surface-950: oklch(8% 0.034 264);
+}
+
+/* Dark — tonal indigo turns to a midnight indigo, never pure
+   black so the chroma stays present. */
+[data-theme='fw-material'][data-mode='dark'] {
+	--color-surface-50: oklch(96% 0.026 265);
+	--color-surface-100: oklch(91% 0.032 265);
+	--color-surface-200: oklch(84% 0.038 265);
+	--color-surface-300: oklch(74% 0.044 265);
+	--color-surface-400: oklch(58% 0.05 264);
+	--color-surface-500: oklch(44% 0.055 262);
+	--color-surface-600: oklch(34% 0.06 260);
+	--color-surface-700: oklch(24% 0.058 260);
+	--color-surface-800: oklch(16% 0.05 261);
+	--color-surface-900: oklch(11% 0.042 263);
+	--color-surface-950: oklch(7% 0.034 265);
+}
+
+/* Solid body — Material You doesn't use atmospheric gradients;
+   the tonal surface itself is the personality. */
+[data-theme='fw-material'][data-mode='light'] body {
+	background: var(--color-surface-50) !important;
+	background-attachment: fixed !important;
+}
+[data-theme='fw-material'][data-mode='dark'] body {
+	background: var(--color-surface-950) !important;
+	background-attachment: fixed !important;
+}
+
+/* Pill-shape primary buttons — Material's hallmark. Scoped so
+   only buttons get pilled, not every component with rounded-md. */
+[data-theme='fw-material'] button[data-variant='primary'],
+[data-theme='fw-material'] .btn-primary {
+	border-radius: 999px;
+	padding-left: 1.5rem;
+	padding-right: 1.5rem;
+}
+
+/* Cards drop their borders in favour of tonal-container fill —
+   the surface-100 in light, surface-900 in dark, picks the
+   "elevation" up from the body without a stroke. */
+[data-theme='fw-material'] .card,
+[data-theme='fw-material'] [data-card] {
+	border: none !important;
+	background-color: var(--color-surface-100);
+}
+[data-theme='fw-material'][data-mode='dark'] .card,
+[data-theme='fw-material'][data-mode='dark'] [data-card] {
+	background-color: var(--color-surface-900);
+}

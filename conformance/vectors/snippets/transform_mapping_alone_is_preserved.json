@@ -1,0 +1,10 @@
+{
+  "id": "snippets.transform.mapping_alone_is_preserved",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "transform: handlers MUST accept mapping, so an alias-only payload is preserved rather than rewritten. Its equivalence to the multiselect hash { out: path } is a translation between two value languages, not a rename, and performing it during input normalisation would change how a key containing a dot or a hyphen is quoted.",
+  "input": { "type": "transform", "input": { "mapping": { "n": "devices[0].name" } } },
+  "expected": { "normalized_input": { "mapping": { "n": "devices[0].name" } } },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

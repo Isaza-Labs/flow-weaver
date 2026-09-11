@@ -1,0 +1,15 @@
+{
+  "id": "snippets.rest_call.catalogued_form_is_unchanged",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "rest_call catalogued form: source, operation_id, path_params, query_params and body are canonical keys of that form, not aliases of the raw one. A bundle using it declares the rest_catalog capability and an implementation without it refuses at import, rather than importing clean and failing on the first run.",
+  "input": {
+    "type": "rest_call",
+    "input": { "source": "netbox", "operation_id": "dcim_devices_list", "query_params": { "site": "bog" } }
+  },
+  "expected": {
+    "normalized_input": { "source": "netbox", "operation_id": "dcim_devices_list", "query_params": { "site": "bog" } }
+  },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

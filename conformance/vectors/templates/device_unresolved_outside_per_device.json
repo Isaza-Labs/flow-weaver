@@ -1,0 +1,10 @@
+{
+  "id": "templates.device.unresolved_without_a_device_context",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 1: {{ device }} is unresolved outside per_device, where there is no current device view.",
+  "input": { "consumer_target_mode": "once", "template": "{{ device.name }}" },
+  "expected": { "resolved": "unresolved" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

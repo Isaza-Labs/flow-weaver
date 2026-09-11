@@ -1,0 +1,10 @@
+{
+  "id": "templates.condition.unresolved_comparison_is_false",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 9: an unresolved reference on either side makes the comparison false, whichever operator.",
+  "input": { "context": { "outputs": {} }, "condition": "{{ steps.nope.output.x }} == true" },
+  "expected": { "result": false },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

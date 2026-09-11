@@ -1,0 +1,10 @@
+{
+  "id": "templates.condition.falsy_zero",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 9 falsy set: 0.",
+  "input": { "context": { "input": { "v": 0 } }, "condition": "{{ input.v }}" },
+  "expected": { "result": false },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

@@ -1,0 +1,10 @@
+{
+  "id": "templates.condition.malformed_is_false",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 9: any parse error evaluates to FALSE (fail closed). An unbalanced group must not be evaluated on whichever fragment survived the split.",
+  "input": { "context": {}, "condition": "(true || false" },
+  "expected": { "result": false },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

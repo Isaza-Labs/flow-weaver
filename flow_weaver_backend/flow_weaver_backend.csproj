@@ -1,0 +1,107 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- S16: expose `internal` members (e.g. ComputeSchemaHash,
+         InputsMatch, NavigatePath) to the unit-test project so we can
+         exercise them directly without going through every consumer. -->
+    <InternalsVisibleTo Include="flow_weaver_backend.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.105.0" />
+    <!-- DOCX generation (WordReportExporter). ClosedXML already pulls this
+         transitively; pinned explicitly because a transitive version is chosen by
+         someone else's upgrade, and an output format should not move with it. -->
+    <PackageReference Include="DocumentFormat.OpenXml" Version="3.1.1" />
+    <!-- PDF text extraction. QuestPDF above only writes PDFs; reading one back is
+         a different job and this is the pure-managed reader Nashira already uses,
+         so the two products parse a PDF the same way. -->
+    <PackageReference Include="PdfPig" Version="0.1.16" />
+    <PackageReference Include="coverlet.MTP" Version="10.0.1" />
+    <!-- Cron parsing for the scheduler. Supports 5-field (minute) and
+         6-field (seconds column) expressions, so "every 30 seconds"
+         (*/30 * * * * *) is expressible. See Services/Scheduler/CronSchedule. -->
+    <PackageReference Include="Cronos" Version="0.8.4" />
+    <PackageReference Include="Dapper" Version="2.1.66" />
+    <PackageReference Include="JmesPath.Net" Version="1.1.0" />
+    <PackageReference Include="LibGit2Sharp" Version="0.31.0" />
+    <!-- SMTP client for the email_send handler and the channel test-send.
+         MailKit is the only maintained option: System.Net.Mail.SmtpClient is
+         documented-obsolete and cannot do modern STARTTLS/OAuth negotiation.
+         Keep at >= 4.15.0: 4.14.x and below carry GHSA-9j88-vvj5-vhgr /
+         GHSA-g7hc-96xr-gvvx (moderate). -->
+    <PackageReference Include="MailKit" Version="4.17.0" />
+    <PackageReference Include="Microsoft.Azure.Relay" Version="3.1.1" />
+    <PackageReference Include="QuestPDF" Version="2025.1.5" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.6" />
+    <PackageReference Include="JsonSchema.Net" Version="9.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.6" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.6" />
+    <!-- Security: pin the transitive Microsoft.OpenApi to the patched 2.7.5.
+         AspNetCore.OpenApi 10.0.6 resolves 2.0.0, which is vulnerable per
+         GHSA-v5pm-xwqc-g5wc (High; range 2.0.0-preview.11 .. 2.7.4). A direct
+         top-level reference wins over the transitive one. -->
+    <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
+    <!-- Official MCP client SDK (flow-weaver is an MCP *client*). Preview — pin
+         the exact version; the Core package is the lean client (no server/hosting
+         deps). See Services/Mcp. -->
+    <PackageReference Include="ModelContextProtocol.Core" Version="2.0.0-preview.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.6" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.6">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.6">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.1.16" />
+    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
+    <PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
+    <PackageReference Include="Serilog.Formatting.Compact" Version="3.0.0" />
+    <PackageReference Include="YamlDotNet" Version="16.2.0" />
+    <!-- S13.4: AWS KMS for the DataProtection keyring wrap. Loaded
+         unconditionally; activation is a runtime config decision (see
+         DataProtection:KmsProvider in appsettings). When the provider is
+         "filesystem" (default), the AWS client is never instantiated. -->
+    <PackageReference Include="AWSSDK.KeyManagementService" Version="3.7.500" />
+  </ItemGroup>
+
+  <!-- Skills (.md prompts) and Specs (.yaml OpenAPI) are read at runtime from
+       ContentRootPath, so they must live next to the built assembly. -->
+  <ItemGroup>
+    <None Update="Skills\**\*.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Specs\**\*.yaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Specs\**\*.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <!-- S14.3: vendor command scaffolds (Arista, Fortinet, Palo Alto, F5).
+         VendorCommandYamlSeedService walks Skills/vendors/*.yaml at boot,
+         so these need to be copied next to the built assembly. -->
+    <None Update="Skills\vendors\*.yaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <!-- Assets embedded in the assembly so they load without a file path
+       and survive docker image trimming:
+       - common-passwords.txt: password policy blacklist
+       - workflow.v*.schema.json: JSON Schema for Workflow.Nodes/Edges -->
+  <ItemGroup>
+    <EmbeddedResource Include="Data\Secrets\common-passwords.txt" />
+    <EmbeddedResource Include="Data\Schemas\*.json" />
+  </ItemGroup>
+
+</Project>

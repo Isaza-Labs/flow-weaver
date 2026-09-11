@@ -1,0 +1,10 @@
+{
+  "id": "snippets.ssh.canonical_use_structured_wins",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "ssh: with both present the canonical use_structured wins even when it is false, because false is a value and not an absence.",
+  "input": { "type": "ssh", "input": { "commands": [ "show version" ], "use_structured": false, "structured": true } },
+  "expected": { "normalized_input": { "commands": [ "show version" ], "use_structured": false } },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

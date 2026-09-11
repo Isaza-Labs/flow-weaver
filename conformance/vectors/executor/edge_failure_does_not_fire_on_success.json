@@ -1,0 +1,19 @@
+{
+  "id": "executor.edge.failure_does_not_fire_on_success",
+  "family": "executor",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 1: a failure edge does not fire when the source succeeded.",
+  "input": {
+    "workflow": {
+      "nodes": [ { "id": "a", "snippet_id": "__start__" }, { "id": "notify", "snippet_id": "__end__" } ],
+      "edges": [ { "source": "a", "target": "notify", "type": "failure" } ]
+    },
+    "context": { "nodes": { "a": { "result": "changed", "tier": "idempotent" } } }
+  },
+  "expected": {
+    "status": "completed",
+    "steps": [ { "node_id": "a", "result": "changed" }, { "node_id": "notify", "result": "skipped" } ]
+  },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

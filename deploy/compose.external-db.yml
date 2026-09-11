@@ -1,0 +1,35 @@
+# Overlay for running against a database this compose project does NOT manage
+# (a Postgres on the host, or a managed instance elsewhere).
+#
+# Applied automatically by run.sh / run.ps1 when you pick the "external"
+# database mode. Manually it is:
+#
+#   docker compose -f docker-compose.yml -f compose.external-db.yml \
+#     up -d backend worker frontend
+#
+# Two things it changes:
+#
+#  1. Clears `depends_on: db`. Without this, Compose would start the bundled
+#     Postgres anyway — naming the services on the command line is not enough,
+#     dependencies are pulled in regardless. Requires Compose v2.24+ for the
+#     `!reset` tag.
+#
+#  2. Maps host.docker.internal to the host gateway. Docker Desktop
+#     (Windows/macOS) resolves that name out of the box; Linux does not, and a
+#     database "on localhost" is the most common external case. Set
+#     DB_HOST=host.docker.internal to reach it — pointing DB_HOST at
+#     "localhost" would resolve to the *container*, not the host.
+#
+# The connection itself comes from DB_HOST / DB_PORT / POSTGRES_DB /
+# POSTGRES_USER / POSTGRES_PASSWORD in .env — see docker-compose.yml.
+
+services:
+  backend:
+    depends_on: !reset null
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  worker:
+    depends_on: !reset null
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

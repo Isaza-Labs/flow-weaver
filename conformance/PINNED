@@ -1,0 +1,28 @@
+# Pinned conformance kit
+
+This directory is a COPY. See OWNERSHIP.md before editing anything in it.
+
+contract_version: 1.1.0-draft
+oracle:           flow-weaver
+oracle_commit:    fw@fe07550
+copied_from:      netora/workflow-v1-conformance
+copied_on:        2026-08-29     # re-synced after two vector corrections; see the notes on
+                                 # executor.conditional.blank_condition_is_refused and
+                                 # executor.subflow.output_shape
+
+# SHA-256 over every vector and the schema, each preceded by its path, sorted by path.
+# The path is hashed too: a vector RENAMED into another family would otherwise not move it.
+digest:           e1fe45b5c46865d6f312ee5bc779c0880f72472dbe44c677f8f117a9dc83544d
+
+# Per-family counts. The digest catches an edited file; these catch a deleted one, which a
+# digest over 'the files that are here' cannot.
+vectors.bundle: 18
+vectors.canonicalization: 2
+vectors.executor: 33
+vectors.gate: 4
+vectors.schema: 4
+vectors.snippets: 51
+vectors.templates: 79
+
+vectors.total: 191
+schema.files: 1

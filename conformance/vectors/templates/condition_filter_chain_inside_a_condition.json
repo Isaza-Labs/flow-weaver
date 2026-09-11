@@ -1,0 +1,13 @@
+{
+  "id": "templates.condition.filter_chain_inside_a_condition",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 9 with section 4: a reference in a condition carries the same path and filter grammar as one in a payload. Two grammars would let an author write a condition that reads correctly and evaluates against nothing.",
+  "input": {
+    "context": { "outputs": { "s": { "out": "\u001b[32m OK \u001b[0m" } } },
+    "condition": "{{ steps.s.output.out | strip | lower }} == \"ok\""
+  },
+  "expected": { "result": true },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

@@ -1,0 +1,52 @@
+{
+  "id": "executor.audit.v1_event_shape",
+  "family": "executor",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 8: every state-changing node emits an audit.v1 event with exactly these eleven members. op is the node's snippet_id, idempotency is the effective tier, and tenant_id is part of the schema even where a product has no tenants, emitted as the nil GUID.",
+  "input": {
+    "workflow": {
+      "nodes": [
+        {
+          "id": "send",
+          "snippet_id": "33333333-3333-3333-3333-333333333333"
+        }
+      ],
+      "edges": []
+    },
+    "context": {
+      "workflow_id": "22222222-2222-2222-2222-222222222222",
+      "schema_hash": "H1",
+      "actor": "conformance",
+      "nodes": {
+        "send": {
+          "result": "changed",
+          "tier": "non_reversible"
+        }
+      }
+    }
+  },
+  "expected": {
+    "audit_events": [
+      {
+        "schema": "audit.v1",
+        "event_id": "<redacted>",
+        "workflow_id": "22222222-2222-2222-2222-222222222222",
+        "schema_hash": "H1",
+        "node_id": "send",
+        "op": "33333333-3333-3333-3333-333333333333",
+        "idempotency": "non_reversible",
+        "actor": "conformance",
+        "tenant_id": "00000000-0000-0000-0000-000000000000",
+        "timestamp": "<redacted>",
+        "result": "changed"
+      }
+    ]
+  },
+  "equivalence": "subset",
+  "normalize": [
+    "redact:event_id",
+    "redact:timestamp"
+  ],
+  "oracle_commit": "fw@1a11ea3",
+  "notes": "The event object is compared whole (an array member is compared exactly even under subset), so an engine that dropped tenant_id or renamed op would fail here."
+}

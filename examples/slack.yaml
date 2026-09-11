@@ -1,0 +1,105 @@
+openapi: 3.0.0
+info:
+  title: slack
+  version: "1.0"
+  description: >
+    Minimal Slack Web API spec for posting messages from a workflow.
+    Upload this as the "Specs" file when creating a `generic_rest`
+    Slack integration. The integration holds the base URL
+    (https://slack.com/api) and the bot token; this spec only describes
+    the `chat.postMessage` action so it shows up in the workflow palette
+    with `channel` + `text` inputs.
+
+    Auth: the integration must use the `bearer` auth method with a Slack
+    bot token (xoxb-…) that has the `chat:write` scope. The token is sent
+    as `Authorization: Bearer <token>` — never put it in this spec.
+
+servers:
+  # Overridden by the Integration `base_url`. Set the integration's
+  # base URL to exactly this value; the action path is appended to it.
+  - url: https://slack.com/api
+
+components:
+  schemas:
+    PostMessageRequest:
+      type: object
+      required: [channel, text]
+      properties:
+        channel:
+          type: string
+          description: >
+            Target channel. A channel ID (e.g. "C0123456789") or a name
+            like "#alerts". The bot must be a member of the channel —
+            invite it first for private channels and most public ones.
+        text:
+          type: string
+          description: >
+            Message body. Supports Slack mrkdwn. Used as the fallback text
+            when `blocks` are also supplied.
+        thread_ts:
+          type: string
+          description: >
+            Optional. The `ts` of a parent message to reply in-thread.
+            Omit to post a new top-level message.
+        mrkdwn:
+          type: boolean
+          description: "Optional. Set false to disable Slack markdown parsing of `text`."
+        unfurl_links:
+          type: boolean
+          description: "Optional. Whether to expand link previews."
+        blocks:
+          type: array
+          description: "Optional. Slack Block Kit blocks for rich formatting. When set, `text` is the notification fallback."
+          items:
+            type: object
+      example:
+        channel: "#alerts"
+        text: "Deployment to core-router-1 finished successfully."
+
+    PostMessageResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          description: >
+            TRUE only when Slack accepted the message. NOTE: Slack returns
+            HTTP 200 even on logical failures — always branch on this field
+            (e.g. `{{ steps.notify.output.data.ok }}`), not just the HTTP
+            status.
+        channel:
+          type: string
+          description: "ID of the channel the message landed in."
+        ts:
+          type: string
+          description: "Timestamp ID of the posted message (use as `thread_ts` to reply)."
+        error:
+          type: string
+          description: "Present when ok=false, e.g. channel_not_found, not_in_channel, invalid_auth."
+
+paths:
+  /chat.postMessage:
+    post:
+      operationId: slack:chat_post_message
+      tags: [chat]
+      summary: Post a message to a Slack channel
+      description: >
+        Sends a message to a channel as the bot. Requires a bot token with
+        the `chat:write` scope (configured on the integration as `bearer`
+        auth) and the bot to be a member of the target channel.
+
+        Slack always answers HTTP 200; a rejected message comes back with
+        `ok: false` and an `error` code in the body. Downstream nodes
+        should check `output.data.ok`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PostMessageRequest" }
+      responses:
+        "200":
+          description: >
+            Slack processed the request. Check the `ok` field for the real
+            outcome.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PostMessageResponse" }

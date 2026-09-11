@@ -1,0 +1,10 @@
+{
+  "id": "templates.filter.strip_ansi",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 4: strip_ansi removes ANSI escape sequences.",
+  "input": { "outputs": { "x": { "v": "\u001b[31mred\u001b[0m" } }, "template": "{{ steps.x.output.v | strip_ansi }}" },
+  "expected": { "resolved": "red" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

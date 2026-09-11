@@ -1,0 +1,15 @@
+{
+  "id": "snippets.git.repository_id_stays_beside_repository",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "git: repository is the portable identity (a name) and repository_id is the legacy id. The importer resolves the name to a local row and WRITES repository_id back onto the stored node because the handler reads it, so normalisation must not drop it — even though an exporter must never put it on the wire.",
+  "input": {
+    "type": "git",
+    "input": { "operation": "read_file", "repository": "netops-config", "repository_id": "12121212-3434-5656-7878-909090909090", "path": "a.txt" }
+  },
+  "expected": {
+    "normalized_input": { "operation": "read_file", "repository": "netops-config", "repository_id": "12121212-3434-5656-7878-909090909090", "path": "a.txt" }
+  },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

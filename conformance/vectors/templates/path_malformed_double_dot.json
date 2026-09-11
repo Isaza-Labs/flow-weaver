@@ -1,0 +1,13 @@
+{
+  "id": "templates.path.malformed_double_dot",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 2: a double dot is malformed and is a resolution failure, not a skipped separator.",
+  "input": {
+    "outputs": { "ssh": { "stdout": "ok" } },
+    "template": "{{ steps.ssh.output..stdout }}"
+  },
+  "expected": { "resolved": "unresolved" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

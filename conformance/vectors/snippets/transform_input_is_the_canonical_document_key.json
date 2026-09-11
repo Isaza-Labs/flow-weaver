@@ -1,0 +1,15 @@
+{
+  "id": "snippets.transform.input_is_the_canonical_document_key",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "transform: input is the canonical key for the value to transform, and language must be jmespath when present.",
+  "input": {
+    "type": "transform",
+    "input": { "expression": "a", "language": "jmespath", "input": { "a": 1 } }
+  },
+  "expected": {
+    "normalized_input": { "expression": "a", "language": "jmespath", "input": { "a": 1 } }
+  },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

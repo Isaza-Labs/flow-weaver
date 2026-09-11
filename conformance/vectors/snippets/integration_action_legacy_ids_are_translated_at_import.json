@@ -1,0 +1,15 @@
+{
+  "id": "snippets.integration_action.legacy_ids_are_translated_at_import",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "integration_action: integration_id and action_id are legacy id keys translated at import against dependencies.integrations (bundle/SPEC.md section 4), not handler-level aliases. Normalisation cannot resolve a foreign GUID and leaves them for the importer.",
+  "input": {
+    "type": "integration_action",
+    "input": { "integration_id": "11111111-2222-3333-4444-555555555555", "action_id": "66666666-7777-8888-9999-000000000000" }
+  },
+  "expected": {
+    "normalized_input": { "integration_id": "11111111-2222-3333-4444-555555555555", "action_id": "66666666-7777-8888-9999-000000000000" }
+  },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

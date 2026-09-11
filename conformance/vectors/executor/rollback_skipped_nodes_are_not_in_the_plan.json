@@ -1,0 +1,75 @@
+{
+  "id": "executor.rollback.skipped_nodes_are_not_in_the_plan",
+  "family": "executor",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 2: only nodes that ran AND changed something enter the plan; a skipped node changed nothing.",
+  "input": {
+    "workflow": {
+      "nodes": [
+        {
+          "id": "a",
+          "snippet_id": "__start__"
+        },
+        {
+          "id": "b",
+          "snippet_id": "__end__"
+        },
+        {
+          "id": "c",
+          "snippet_id": "__end__"
+        }
+      ],
+      "edges": [
+        {
+          "source": "a",
+          "target": "b",
+          "type": "conditional",
+          "condition": "false"
+        },
+        {
+          "source": "a",
+          "target": "c",
+          "type": "success"
+        }
+      ]
+    },
+    "context": {
+      "nodes": {
+        "a": {
+          "result": "changed",
+          "tier": "idempotent"
+        },
+        "b": {
+          "result": "changed",
+          "tier": "idempotent"
+        },
+        "c": {
+          "result": "failed"
+        }
+      }
+    }
+  },
+  "expected": {
+    "status": "failed",
+    "final_state": "rolled_back",
+    "rollback_plan": [
+      "a"
+    ],
+    "steps": [
+      {
+        "node_id": "a",
+        "result": "changed"
+      },
+      {
+        "node_id": "b",
+        "result": "skipped"
+      },
+      {
+        "node_id": "c",
+        "result": "failed"
+      }
+    ]
+  },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

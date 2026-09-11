@@ -1,0 +1,45 @@
+{
+  "id": "executor.rollback.non_reversible_change_makes_final_state_failed",
+  "family": "executor",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 2: a workflow is reversible only if it contains no non_reversible node. Once a non_reversible node has CHANGED something, the run's final state is failed, NOT rolled_back — reporting rolled_back for an email that has been sent or a commit that has been pushed promises a reversal that does not exist.",
+  "input": {
+    "workflow": {
+      "nodes": [
+        {
+          "id": "notify",
+          "snippet_id": "__start__"
+        },
+        {
+          "id": "c",
+          "snippet_id": "__end__"
+        }
+      ],
+      "edges": [
+        {
+          "source": "notify",
+          "target": "c",
+          "type": "success"
+        }
+      ]
+    },
+    "context": {
+      "nodes": {
+        "notify": {
+          "result": "changed",
+          "tier": "non_reversible"
+        },
+        "c": {
+          "result": "failed"
+        }
+      }
+    }
+  },
+  "expected": {
+    "status": "failed",
+    "final_state": "failed",
+    "rollback_plan": []
+  },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

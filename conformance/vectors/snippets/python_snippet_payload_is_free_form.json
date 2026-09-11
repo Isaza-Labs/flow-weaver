@@ -1,0 +1,10 @@
+{
+  "id": "snippets.python_snippet.payload_is_free_form",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "python_snippet: the resolved payload is delivered on stdin as JSON, so there is no key table and nothing to normalise. Nothing can be unknown for this type either.",
+  "input": { "type": "python_snippet", "input": { "anything": 1, "device": "core-1", "tool_name": "not-an-alias-here" } },
+  "expected": { "normalized_input": { "anything": 1, "device": "core-1", "tool_name": "not-an-alias-here" } },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

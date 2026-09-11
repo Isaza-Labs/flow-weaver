@@ -1,0 +1,10 @@
+{
+  "id": "templates.condition.parenthesised_group_overrides_binding",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 9: a parenthesised group is evaluated as a group. (true || false) && false is false, whereas the same tokens without parentheses are true.",
+  "input": { "context": {}, "condition": "(true || false) && false" },
+  "expected": { "result": false },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

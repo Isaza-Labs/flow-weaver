@@ -1,0 +1,28 @@
+{
+  "id": "executor.subflow.cycle_fails_before_anything_runs",
+  "family": "executor",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 5: a cycle — a workflow reaching itself — fails the step with subflow_cycle BEFORE anything runs. A run that re-enters a workflow already running above it can never finish, so it costs one check rather than eight nested runs' worth of side effects.",
+  "input": {
+    "workflow": {
+      "nodes": [
+        {
+          "id": "child",
+          "type": "subflow",
+          "snippet_id": "subflow",
+          "config_overrides": { "subflow_workflow_id": "22222222-2222-2222-2222-222222222222" }
+        }
+      ],
+      "edges": []
+    },
+    "context": { "workflow_id": "22222222-2222-2222-2222-222222222222" }
+  },
+  "expected": {
+    "status": "failed",
+    "steps": [ { "node_id": "child", "result": "failed" } ],
+    "errors": { "child": "subflow_cycle" }
+  },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3",
+  "notes": "The node names the workflow it is part of, so the child is already on the ancestry when the guard runs."
+}

@@ -1,0 +1,20 @@
+{
+  "id": "snippets.python_snippet.portable_output_is_stdout_json",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "python_snippet portable output: the value the script produced, with no enclosing envelope. A downstream template addressing steps.calc.output.total reads the script's own field.",
+  "input": {
+    "type": "python_snippet",
+    "probe": {
+      "total": 3
+    }
+  },
+  "expected": {
+    "output": {
+      "total": 3
+    }
+  },
+  "equivalence": "fields-present",
+  "oracle_commit": "fw@fe07550",
+  "notes": "Asserts the output SHAPE only. Whether a script written the oracle's way runs at all is snippets.python_snippet.printed_json_is_taken_as_the_value — this vector passes on an implementation that removed an envelope and still ignores a printing script, which is why the two landed together."
+}

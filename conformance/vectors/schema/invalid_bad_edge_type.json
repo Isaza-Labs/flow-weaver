@@ -1,0 +1,13 @@
+{
+  "id": "schema.invalid.bad_edge_type",
+  "family": "schema",
+  "contract_version": "1.0.0",
+  "description": "An edge with an out-of-enum type is rejected.",
+  "input": {
+    "nodes": [ { "id": "a", "snippet_id": "__start__" }, { "id": "b", "snippet_id": "__end__" } ],
+    "edges": [ { "source": "a", "target": "b", "type": "bogus" } ]
+  },
+  "expected": { "valid": false },
+  "equivalence": "subset",
+  "oracle_commit": "fw@95fc69e"
+}

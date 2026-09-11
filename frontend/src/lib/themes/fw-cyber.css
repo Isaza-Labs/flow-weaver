@@ -1,0 +1,93 @@
+/* fw-cyber — Cyberpunk / synthwave / arcade school.
+   Deep dark base, indigo+sky chroma in surfaces, neon glow via
+   box-shadow on key elements, yellow as the hero CTA accent.
+   Mesh gradient body backdrop with high-saturation brand
+   colours. Sky tertiary doubles as a secondary neon. */
+
+[data-theme='fw-cyber'] {
+	--radius-base: 0.25rem;        /* 4px — angular, almost square */
+	--radius-container: 0.5rem;    /* 8px */
+	--default-border-width: 1px;
+	--heading-font-weight: 700;
+	--heading-letter-spacing: -0.028em;
+	/* Yellow as the hero accent — used for anchors, focus rings,
+	   primary actions. */
+	--anchor-font-color: var(--color-warning-700);
+	--anchor-font-color-dark: var(--color-warning-400);
+
+	/* Light surfaces — light blue-purple tint so chrome reads as
+	   futuristic instead of generic gray. */
+	--color-surface-50: oklch(98% 0.014 270);
+	--color-surface-100: oklch(94% 0.022 270);
+	--color-surface-200: oklch(87% 0.03 268);
+	--color-surface-300: oklch(76% 0.038 266);
+	--color-surface-400: oklch(60% 0.045 265);
+	--color-surface-500: oklch(46% 0.05 264);
+	--color-surface-600: oklch(36% 0.055 263);
+	--color-surface-700: oklch(26% 0.055 263);
+	--color-surface-800: oklch(18% 0.05 265);
+	--color-surface-900: oklch(11% 0.04 268);
+	--color-surface-950: oklch(5% 0.025 270);
+}
+
+/* Dark — deep purple-black, more chroma than the other dark
+   themes so the neon glow has something to bloom against. */
+[data-theme='fw-cyber'][data-mode='dark'] {
+	--color-surface-50: oklch(97% 0.018 270);
+	--color-surface-100: oklch(92% 0.026 270);
+	--color-surface-200: oklch(84% 0.034 268);
+	--color-surface-300: oklch(72% 0.042 266);
+	--color-surface-400: oklch(56% 0.05 264);
+	--color-surface-500: oklch(42% 0.055 262);
+	--color-surface-600: oklch(32% 0.06 262);
+	--color-surface-700: oklch(22% 0.06 264);
+	--color-surface-800: oklch(14% 0.052 266);
+	--color-surface-900: oklch(8% 0.04 268);
+	--color-surface-950: oklch(3.5% 0.022 270);
+}
+
+/* Body mesh — same idea as Aurora but with synthwave colour
+   placement (primary indigo upper-left, brand yellow lower-
+   right, sky tertiary mid-right, coral ember bottom-left). */
+[data-theme='fw-cyber'][data-mode='light'] body {
+	background:
+		radial-gradient(ellipse 55% 40% at 5% 8%, color-mix(in oklab, var(--color-primary-500) 38%, transparent), transparent 60%),
+		radial-gradient(ellipse 50% 40% at 95% 90%, color-mix(in oklab, var(--color-warning-500) 26%, transparent), transparent 60%),
+		radial-gradient(ellipse 50% 40% at 100% 30%, color-mix(in oklab, var(--color-tertiary-500) 28%, transparent), transparent 60%),
+		radial-gradient(ellipse 55% 50% at 0% 100%, color-mix(in oklab, var(--color-secondary-500) 18%, transparent), transparent 60%),
+		var(--color-surface-50) !important;
+	background-attachment: fixed !important;
+}
+[data-theme='fw-cyber'][data-mode='dark'] body {
+	background:
+		radial-gradient(ellipse 60% 45% at 8% 12%, color-mix(in oklab, var(--color-primary-500) 60%, transparent), transparent 60%),
+		radial-gradient(ellipse 50% 40% at 95% 90%, color-mix(in oklab, var(--color-warning-500) 18%, transparent), transparent 60%),
+		radial-gradient(ellipse 50% 40% at 100% 25%, color-mix(in oklab, var(--color-tertiary-500) 24%, transparent), transparent 60%),
+		radial-gradient(ellipse 55% 50% at 0% 100%, color-mix(in oklab, var(--color-secondary-500) 22%, transparent), transparent 60%),
+		var(--color-surface-950) !important;
+	background-attachment: fixed !important;
+}
+
+/* Neon glow on interactive surfaces. We scope tightly so it
+   doesn't bleed into every div with a border. */
+[data-theme='fw-cyber'] .card,
+[data-theme='fw-cyber'] [data-card] {
+	box-shadow:
+		inset 0 0 0 1px color-mix(in oklab, var(--color-tertiary-500) 18%, transparent),
+		0 0 16px -4px color-mix(in oklab, var(--color-tertiary-500) 14%, transparent);
+}
+[data-theme='fw-cyber'][data-mode='dark'] .card,
+[data-theme='fw-cyber'][data-mode='dark'] [data-card] {
+	box-shadow:
+		inset 0 0 0 1px color-mix(in oklab, var(--color-tertiary-500) 24%, transparent),
+		0 0 20px -4px color-mix(in oklab, var(--color-tertiary-500) 18%, transparent);
+}
+
+/* Primary action — extra glow because yellow is the hero. */
+[data-theme='fw-cyber'] button[data-variant='primary'],
+[data-theme='fw-cyber'] .btn-primary {
+	box-shadow:
+		0 0 0 1px color-mix(in oklab, var(--color-warning-500) 60%, transparent),
+		0 0 16px color-mix(in oklab, var(--color-warning-500) 35%, transparent),
+		0 0 36px color-mix(in oklab, var(--color-warning-500) 18%, transparent);
+}

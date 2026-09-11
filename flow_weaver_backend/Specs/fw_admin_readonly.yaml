@@ -1,0 +1,106 @@
+openapi: 3.0.0
+info:
+  title: fw_admin_readonly
+  version: "1.0"
+  description: >
+    Read-only admin surface — audit events, application traces, metrics,
+    job queue stats. Backend enforces Admin role; agent surfaces a 403 to
+    non-admin callers with a clear message.
+servers:
+  - url: /api
+components:
+  securitySchemes:
+    session_jwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      x-credential-ref: "${secret:session:current:jwt}"
+security:
+  - session_jwt: []
+paths:
+  # ─── Audit events ─────────────────────────────
+  /audit/events:
+    get:
+      operationId: fw_admin_readonly:list_audit_events
+      summary: Entity mutation trail (who changed what, before/after).
+      tags: [audit]
+      parameters:
+        - { name: entity_type, in: query, schema: { type: string } }
+        - { name: user_id, in: query, schema: { type: string, format: uuid } }
+        - { name: action, in: query, schema: { type: string } }
+        - { name: from, in: query, schema: { type: string, format: date-time } }
+        - { name: to, in: query, schema: { type: string, format: date-time } }
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses: { "200": { description: List } }
+
+  # ─── Application traces ───────────────────────
+  /admin/traces:
+    get:
+      operationId: fw_admin_readonly:list_traces
+      summary: Per-action trace trail (chat, tool, workflow, auth, admin).
+      tags: [traces]
+      parameters:
+        - { name: category, in: query, schema: { type: string } }
+        - { name: action, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: user_id, in: query, schema: { type: string, format: uuid } }
+        - { name: request_id, in: query, schema: { type: string } }
+        - { name: from, in: query, schema: { type: string, format: date-time } }
+        - { name: to, in: query, schema: { type: string, format: date-time } }
+        - { name: limit, in: query, schema: { type: integer, default: 100 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses: { "200": { description: List } }
+  /admin/traces/{id}:
+    get:
+      operationId: fw_admin_readonly:get_trace
+      tags: [traces]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { "200": { description: Trace } }
+  /admin/traces/summary:
+    get:
+      operationId: fw_admin_readonly:trace_summary
+      summary: Aggregates by category + status for a time window.
+      tags: [traces]
+      parameters:
+        - { name: hours, in: query, schema: { type: integer, default: 24 } }
+      responses: { "200": { description: Summary } }
+
+  # ─── Metrics ──────────────────────────────────
+  /admin/metrics/runs:
+    get:
+      operationId: fw_admin_readonly:runs_metrics
+      summary: Daily run buckets by status + top failing workflows.
+      tags: [metrics]
+      parameters:
+        - { name: days, in: query, schema: { type: integer, default: 7 } }
+      responses: { "200": { description: Metrics } }
+  /admin/metrics/auth:
+    get:
+      operationId: fw_admin_readonly:auth_metrics
+      summary: Daily auth event buckets (login success/failure/lockout).
+      tags: [metrics]
+      parameters:
+        - { name: days, in: query, schema: { type: integer, default: 7 } }
+      responses: { "200": { description: Metrics } }
+  /admin/metrics/devices:
+    get:
+      operationId: fw_admin_readonly:device_usage
+      summary: >
+        Device-inventory usage report (per-device licensing, TC-FW-066). Returns
+        total + a breakdown per dimension (active/inactive, qa-lab/non, from-
+        inventory/manual, synced/never-synced, by-status) and the count under each
+        candidate "managed device" definition, each with its exact WHERE clause —
+        so the report is reproducible against a direct DB query. Neutral: the
+        billable definition is a pending product sign-off.
+      tags: [metrics]
+      responses: { "200": { description: Device usage report } }
+
+  # ─── Jobs queue ───────────────────────────────
+  /job/queue/stats:
+    get:
+      operationId: fw_admin_readonly:queue_stats
+      summary: Queue depth per status (pending/claimed/completed/failed).
+      tags: [jobs]
+      responses: { "200": { description: Stats } }

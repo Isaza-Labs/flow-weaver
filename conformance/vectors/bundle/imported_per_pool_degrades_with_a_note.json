@@ -1,0 +1,26 @@
+{
+  "id": "bundle.imported.per_pool_degrades_with_a_note",
+  "family": "bundle",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 2.2: per_pool is DEGRADABLE — an importer without it must import with a note rather than refuse, and must not stay silent. Silence would leave a fan-out running over a different set of devices than the author wrote, which is the difference between a degradation and a lie.",
+  "input": {
+    "bundle": {
+      "schema_version": "v3",
+      "kind": "flow_weaver.workflow_bundle",
+      "requires": { "snippet_types": [ "ssh" ], "capabilities": [ "per_pool" ], "secrets": [] },
+      "workflow": { "name": "audit" },
+      "nodes": [
+        { "id": "start", "snippet_id": "__start__" },
+        { "id": "show", "snippet_id": "aaaaaaaa-0000-0000-0000-000000000004", "config_overrides": { "commands": [ "show version" ] } }
+      ],
+      "edges": [ { "source": "start", "target": "show", "type": "success" } ],
+      "dependencies": {
+        "snippets": [ { "id": "aaaaaaaa-0000-0000-0000-000000000004", "slug": "show-version", "name": "Show version", "type": "ssh", "target_mode": "per_pool", "timeout_seconds": 30 } ]
+      }
+    },
+    "local": { "snippet_types": [ "ssh" ] }
+  },
+  "expected": { "outcome": "imported", "notes_empty": false, "created": { "snippets": 1, "workflows": 0, "triggers": 0 } },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

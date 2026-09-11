@@ -1,0 +1,10 @@
+{
+  "id": "snippets.report.content_alone_is_preserved",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "report: handlers MUST accept content, so an alias-only payload is preserved. Wrapping it into document.sections[].markdown here would be a rendering decision made in the wrong layer.",
+  "input": { "type": "report", "input": { "format": "markdown", "title": "Audit", "content": "# Audit\n\nall good" } },
+  "expected": { "normalized_input": { "format": "markdown", "title": "Audit", "content": "# Audit\n\nall good" } },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

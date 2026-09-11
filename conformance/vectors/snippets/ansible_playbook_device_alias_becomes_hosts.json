@@ -1,0 +1,10 @@
+{
+  "id": "snippets.ansible_playbook.device_alias_becomes_hosts",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "ansible_playbook: the single-device alias becomes a one-element hosts list.",
+  "input": { "type": "ansible_playbook", "input": { "device": "core-1", "extra_vars": { "v": 1 } } },
+  "expected": { "normalized_input": { "hosts": [ "core-1" ], "extra_vars": { "v": 1 } } },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

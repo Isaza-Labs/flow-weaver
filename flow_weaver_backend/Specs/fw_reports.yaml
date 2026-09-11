@@ -1,0 +1,166 @@
+openapi: 3.0.0
+info:
+  title: fw_reports
+  version: "1.0"
+  description: >
+    Generate and audit downloadable reports (HTML, CSV, XLSX, PDF).
+    Every call persists a row in `report_artifacts` with full origin
+    metadata (user, conversation, workflow run, prompt) for audit.
+servers:
+  - url: /api
+components:
+  securitySchemes:
+    session_jwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      x-credential-ref: "${secret:session:current:jwt}"
+  schemas:
+    ReportStat:
+      type: object
+      required: [label, value]
+      properties:
+        label: { type: string }
+        value: { type: string }
+        hint:  { type: string }
+        tone:  { type: string, enum: [critical, high, medium, low, ok, accent, neutral] }
+
+    ReportCallout:
+      type: object
+      required: [title, body]
+      properties:
+        title: { type: string }
+        body:  { type: string }
+        tone:  { type: string, enum: [info, warn, danger, success] }
+
+    ReportTable:
+      type: object
+      properties:
+        caption:
+          type: string
+        headers:
+          type: array
+          items: { type: string }
+        rows:
+          type: array
+          items: { type: array, items: { type: string } }
+        severity_columns:
+          type: object
+          additionalProperties:
+            type: string
+            enum: [critical, high, medium, low, ok]
+
+    ReportSection:
+      type: object
+      required: [title]
+      properties:
+        title:       { type: string }
+        description: { type: string }
+        category:    { type: string, enum: [critical, api, ai, engine, store, worker, scheduler, frontend] }
+        tables:      { type: array, items: { $ref: "#/components/schemas/ReportTable" } }
+        callouts:    { type: array, items: { $ref: "#/components/schemas/ReportCallout" } }
+
+    ReportDocument:
+      type: object
+      required: [title]
+      properties:
+        title:        { type: string, minLength: 1, maxLength: 200 }
+        subtitle:     { type: string }
+        badge:        { type: string }
+        generated_by: { type: string }
+        stats:
+          type: array
+          items: { $ref: "#/components/schemas/ReportStat" }
+        sections:
+          type: array
+          items: { $ref: "#/components/schemas/ReportSection" }
+security:
+  - session_jwt: []
+
+paths:
+  /reports:
+    post:
+      operationId: fw_reports:generate_report
+      tags: [reports]
+      description: >
+        Render a ReportDocument to the requested format, persist the
+        artifact, and return the file inline. The response is the raw
+        file bytes with Content-Type matching the requested format.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [format, document]
+              properties:
+                format:
+                  type: string
+                  enum: [html, csv, xlsx, pdf]
+                document:
+                  $ref: "#/components/schemas/ReportDocument"
+      responses:
+        "200":
+          description: File bytes
+          content:
+            application/octet-stream: { schema: { type: string, format: binary } }
+        "400": { description: Invalid document or format }
+        "429": { description: Rate limited }
+
+  /admin/reports:
+    get:
+      operationId: fw_reports:list_reports
+      tags: [reports]
+      description: >
+        List persisted report artifacts with
+        admin-only filters. Does NOT return the blob or the prompt —
+        use `get_report` for the detailed view.
+      parameters:
+        - { name: user_id,          in: query, schema: { type: string, format: uuid } }
+        - { name: format,           in: query, schema: { type: string, enum: [html, csv, xlsx, pdf] } }
+        - { name: source,           in: query, schema: { type: string, enum: [agent, api, workflow] } }
+        - { name: conversation_id,  in: query, schema: { type: string, format: uuid } }
+        - { name: workflow_run_id,  in: query, schema: { type: string, format: uuid } }
+        - { name: search,           in: query, schema: { type: string } }
+        - { name: from,             in: query, schema: { type: string, format: date-time } }
+        - { name: to,               in: query, schema: { type: string, format: date-time } }
+        - { name: limit,            in: query, schema: { type: integer, default: 50 } }
+        - { name: offset,           in: query, schema: { type: integer, default: 0 } }
+      responses:
+        "200": { description: Paginated list of summaries }
+
+  /admin/reports/{id}:
+    get:
+      operationId: fw_reports:get_report
+      tags: [reports]
+      description: >
+        Full detail including base64 of the original bytes and the
+        decrypted prompt. Admins only. Each call leaves a
+        `report.read_prompt` audit row when a prompt exists.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: Full artifact including base64 and prompt }
+        "404": { description: Not found or soft-deleted }
+    delete:
+      operationId: fw_reports:delete_report
+      tags: [reports]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Soft-deleted }
+        "404": { description: Not found }
+
+  /admin/reports/{id}/download:
+    get:
+      operationId: fw_reports:download_report
+      tags: [reports]
+      description: Streams the original bytes back with the correct Content-Type.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: File bytes
+          content:
+            application/octet-stream: { schema: { type: string, format: binary } }
+        "404": { description: Not found }

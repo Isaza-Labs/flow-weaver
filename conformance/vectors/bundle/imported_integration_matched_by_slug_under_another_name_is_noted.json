@@ -1,0 +1,30 @@
+{
+  "id": "bundle.imported.integration_matched_by_slug_under_another_name_is_noted",
+  "family": "bundle",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 5.3: an integration found by SLUG under a different local name is usable — the node references the slug — but the importer notes the name mismatch, because a near miss binds a workflow to the wrong system with that system's credentials and nobody would otherwise see it.",
+  "input": {
+    "bundle": {
+      "schema_version": "v3",
+      "kind": "flow_weaver.workflow_bundle",
+      "requires": { "snippet_types": [ "integration_action" ], "capabilities": [], "secrets": [] },
+      "workflow": { "name": "audit" },
+      "nodes": [
+        { "id": "start", "snippet_id": "__start__" },
+        { "id": "call", "snippet_id": "aaaaaaaa-0000-0000-0000-000000000001", "config_overrides": { "integration": "netbox", "action": "list-devices" } }
+      ],
+      "edges": [ { "source": "start", "target": "call", "type": "success" } ],
+      "dependencies": {
+        "snippets": [ { "id": "aaaaaaaa-0000-0000-0000-000000000001", "slug": "call-action", "name": "Call action", "type": "integration_action", "target_mode": "once", "timeout_seconds": 30 } ],
+        "integrations": [ { "id": "dddddddd-0000-0000-0000-00000000000d", "slug": "netbox", "name": "netbox", "type": "rest", "actions": [ { "id": "eeeeeeee-0000-0000-0000-00000000000e", "name": "list-devices" } ] } ]
+      }
+    },
+    "local": {
+      "snippet_types": [ "integration_action" ],
+      "integrations": [ { "slug": "netbox", "name": "NetBox Bogota", "type": "rest", "actions": [ { "name": "list-devices" } ] } ]
+    }
+  },
+  "expected": { "outcome": "imported", "notes_empty": false },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

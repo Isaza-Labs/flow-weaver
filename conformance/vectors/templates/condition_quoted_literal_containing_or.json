@@ -1,0 +1,13 @@
+{
+  "id": "templates.condition.quoted_literal_containing_or",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 9: a || inside a quoted literal is data, not a separator. A device that can be made to emit || in its output must not be able to restructure the expression that is about to judge it.",
+  "input": {
+    "context": { "outputs": { "s": { "out": "a||b" } } },
+    "condition": "{{ steps.s.output.out }} == 'a||b'"
+  },
+  "expected": { "result": true },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

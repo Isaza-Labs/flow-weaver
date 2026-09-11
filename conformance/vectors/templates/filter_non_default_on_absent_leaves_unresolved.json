@@ -1,0 +1,10 @@
+{
+  "id": "templates.filter.non_default_on_absent_leaves_unresolved",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 4: only default may recover an absent reference, and the empty string is absent, so trim over an empty string leaves the template literal rather than producing an empty string. An empty value stays visible in the payload instead of vanishing into it.",
+  "input": { "outputs": { "x": { "v": "" } }, "template": "{{ steps.x.output.v | trim }}" },
+  "expected": { "resolved": "unresolved" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

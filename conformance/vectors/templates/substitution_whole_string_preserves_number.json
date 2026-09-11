@@ -1,0 +1,13 @@
+{
+  "id": "templates.substitution.whole_string_preserves_number",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "§3 whole-string: a value that is exactly one reference is replaced by the referenced JSON value WITH its type — a number stays a number.",
+  "input": {
+    "outputs": { "ping": { "rtt": 12.5, "ok": true, "obj": {"a":1}, "arr": [1,2] } },
+    "template": "{{ steps.ping.output.rtt }}"
+  },
+  "expected": { "resolved": 12.5 },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

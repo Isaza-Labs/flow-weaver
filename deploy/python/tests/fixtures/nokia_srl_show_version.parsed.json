@@ -1,0 +1,15 @@
+[
+  {
+    "hostname": "node-l3",
+    "chassis_type": "7220 IXR-D2",
+    "part_number": "Sim Part No.",
+    "serial_number": "Sim Serial No.",
+    "system_hw_mac_address": "1A:9C:04:FF:00:00",
+    "software_version": "v23.10.2",
+    "build_number": "149-gf8fb150e41",
+    "architecture": "x86_64",
+    "last_booted": "2026-04-27T16:19:01.915Z",
+    "total_memory_kb": "128820070",
+    "free_memory_kb": "113485093"
+  }
+]

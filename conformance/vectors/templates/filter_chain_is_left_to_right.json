@@ -1,0 +1,10 @@
+{
+  "id": "templates.filter.chain_is_left_to_right",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 4: a chain applies left to right, so default earlier in the chain feeds the filters after it.",
+  "input": { "outputs": {}, "template": "{{ steps.x.output.v | default('n/a') | upper }}" },
+  "expected": { "resolved": "N/A" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

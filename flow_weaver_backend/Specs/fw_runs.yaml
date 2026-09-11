@@ -1,0 +1,52 @@
+openapi: 3.0.0
+info:
+  title: fw_runs
+  version: "1.0"
+  description: Read-only access to workflow runs + step runs.
+servers:
+  - url: /api
+components:
+  securitySchemes:
+    session_jwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      x-credential-ref: "${secret:session:current:jwt}"
+security:
+  - session_jwt: []
+paths:
+  /run:
+    get:
+      operationId: fw_runs:list_runs
+      summary: List workflow runs.
+      tags: [runs]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses: { "200": { description: List response } }
+  /run/{id}:
+    get:
+      operationId: fw_runs:get_run
+      summary: Get run header (status, timestamps, payloads).
+      tags: [runs]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { "200": { description: Run detail } }
+  /run/{runId}/steps:
+    get:
+      operationId: fw_runs:list_run_steps
+      summary: List step_runs for one run, ordered by creation.
+      tags: [runs]
+      parameters:
+        - { name: runId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses: { "200": { description: List of step_runs } }
+  /steprun/{id}:
+    get:
+      operationId: fw_runs:get_step
+      summary: Get one step_run detail (logs, error, input, output).
+      tags: [runs]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { "200": { description: StepRun detail } }

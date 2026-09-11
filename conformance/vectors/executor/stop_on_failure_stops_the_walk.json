@@ -1,0 +1,19 @@
+{
+  "id": "executor.stop_on_failure.stops_the_walk",
+  "family": "executor",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 1: with stop_on_failure the walk stops at the first failed node whose failure is not consumed by a failure edge. An unrelated in-degree-0 node later in the order does not run.",
+  "input": {
+    "workflow": {
+      "nodes": [ { "id": "a", "snippet_id": "__start__" }, { "id": "z", "snippet_id": "__start__" } ],
+      "edges": []
+    },
+    "context": { "stop_on_failure": true, "nodes": { "a": { "result": "failed" }, "z": { "result": "changed" } } }
+  },
+  "expected": {
+    "status": "failed",
+    "steps": [ { "node_id": "a", "result": "failed" }, { "node_id": "z", "result": "skipped" } ]
+  },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

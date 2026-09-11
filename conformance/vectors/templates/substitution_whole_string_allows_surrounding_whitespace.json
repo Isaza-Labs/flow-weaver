@@ -1,0 +1,13 @@
+{
+  "id": "templates.substitution.whole_string_allows_surrounding_whitespace",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "§3 whole-string: surrounding whitespace is allowed and does not demote the value to inline substitution — a boolean stays a boolean.",
+  "input": {
+    "outputs": { "ping": { "ok": true } },
+    "template": "   {{ steps.ping.output.ok }}   "
+  },
+  "expected": { "resolved": true },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

@@ -1,0 +1,11 @@
+{
+  "id": "snippets.python_snippet.printed_json_is_taken_as_the_value",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "python_snippet: a script that states its output by writing JSON to standard output has that value taken as the step's output.",
+  "input": { "type": "python_snippet", "emit": "print", "probe": { "total": 3 } },
+  "expected": { "output": { "total": 3 } },
+  "equivalence": "fields-present",
+  "oracle_commit": "fw@fe07550",
+  "notes": "The companion to python_snippet.portable_output_is_stdout_json, and the half that vector cannot see. That one asserts the output SHAPE, which an implementation satisfies merely by removing an envelope; this one asserts that a script written the oracle's way runs at all. Nashira's harness binds a result name and treats standard output as logs, so before this its answer to a printing script was empty while the shape vector passed."
+}

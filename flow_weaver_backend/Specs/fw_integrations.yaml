@@ -1,0 +1,221 @@
+openapi: 3.0.0
+info:
+  title: fw_integrations
+  version: "1.0"
+  description: >
+    Integrations are external REST systems the agent can call. Each
+    integration carries a base URL + auth config, and owns a list of
+    integration actions (specific endpoints) plus — optionally — prompt
+    skills and API specs that tell the agent how to talk to it.
+servers:
+  - url: /api
+components:
+  securitySchemes:
+    session_jwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      x-credential-ref: "${secret:session:current:jwt}"
+security:
+  - session_jwt: []
+paths:
+  /integration:
+    get:
+      operationId: fw_integrations:list_integrations
+      tags: [integrations]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+      responses: { "200": { description: List } }
+    post:
+      operationId: fw_integrations:create_integration
+      tags: [integrations]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, type, base_url]
+              properties:
+                name: { type: string }
+                type: { type: string }
+                description: { type: string }
+                base_url: { type: string }
+                auth_config: { type: object, description: "Use ${secret:...} refs for values." }
+                headers: { type: object }
+                tls_skip_verify: { type: boolean, default: false }
+                health_check: { type: object }
+      responses: { "201": { description: Created } }
+
+  /integration/bundle:
+    post:
+      operationId: fw_integrations:create_integration_bundle
+      summary: >
+        Transactional creation — provisions the integration plus any
+        skills and specs scoped to it. Rolls back on any failure.
+      tags: [integrations]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [integration]
+              properties:
+                integration:
+                  type: object
+                  required: [name, type, base_url]
+                  properties:
+                    name: { type: string }
+                    type: { type: string }
+                    description: { type: string }
+                    base_url: { type: string }
+                    auth_config: { type: object }
+                    headers: { type: object }
+                    tls_skip_verify: { type: boolean, default: false }
+                    health_check: { type: object }
+                skills:
+                  type: array
+                  items:
+                    type: object
+                    required: [name, content]
+                    properties:
+                      name: { type: string, description: "Must end in .md and be unique." }
+                      content: { type: string }
+                      sort_order: { type: integer, default: 100 }
+                specs:
+                  type: array
+                  items:
+                    type: object
+                    required: [api, content]
+                    properties:
+                      api: { type: string, description: "Filename stem without extension, unique." }
+                      content: { type: string }
+      responses: { "201": { description: Integration + skills + specs created } }
+
+  /integration/{id}:
+    get:
+      operationId: fw_integrations:get_integration
+      tags: [integrations]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { "200": { description: Integration } }
+    put:
+      operationId: fw_integrations:update_integration
+      tags: [integrations]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                type: { type: string }
+                description: { type: string }
+                base_url: { type: string }
+                auth_config: { type: object }
+                headers: { type: object }
+                tls_skip_verify: { type: boolean }
+                health_check: { type: object }
+                enabled: { type: boolean }
+      responses: { "200": { description: Updated } }
+    delete:
+      operationId: fw_integrations:delete_integration
+      tags: [integrations]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { "204": { description: Deleted } }
+
+  /integration/{id}/health:
+    post:
+      operationId: fw_integrations:health_integration
+      summary: Probe the integration's health endpoint.
+      tags: [integrations]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { "200": { description: Status + last_checked_at } }
+
+  /integration/{id}/actions:
+    post:
+      operationId: fw_integrations:create_integration_action
+      tags: [integrations]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, method, path]
+              properties:
+                name: { type: string }
+                description: { type: string }
+                method: { type: string, enum: [GET, POST, PUT, PATCH, DELETE] }
+                path: { type: string }
+                path_params: { type: object }
+                query_params: { type: object }
+                request_body: { type: object }
+                response_schema: { type: object }
+                category: { type: string }
+      responses: { "201": { description: Action created } }
+
+  /integrationaction:
+    get:
+      operationId: fw_integrations:list_actions
+      summary: >
+        Lists every integration action. No filter by
+        integration_id on this endpoint — fetch and filter client-side,
+        or use GET /integrationaction/actions/all for the flat palette
+        projection that joins the parent integration name.
+      tags: [integrations]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses: { "200": { description: List } }
+
+  /integrationaction/actions/all:
+    get:
+      operationId: fw_integrations:list_palette_actions
+      summary: Cross-integration flat list for the workflow editor palette.
+      tags: [integrations]
+      responses: { "200": { description: Palette-ready list } }
+
+  /integrationaction/{id}:
+    get:
+      operationId: fw_integrations:get_action
+      tags: [integrations]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { "200": { description: Action } }
+    put:
+      operationId: fw_integrations:update_action
+      tags: [integrations]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                method: { type: string }
+                path: { type: string }
+                path_params: { type: object }
+                query_params: { type: object }
+                request_body: { type: object }
+                response_schema: { type: object }
+                category: { type: string }
+                enabled: { type: boolean }
+      responses: { "200": { description: Updated } }
+    delete:
+      operationId: fw_integrations:delete_action
+      tags: [integrations]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { "204": { description: Deleted } }

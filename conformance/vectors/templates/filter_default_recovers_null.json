@@ -1,0 +1,10 @@
+{
+  "id": "templates.filter.default_recovers_null",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 4: default(x) stands in when the reference resolved to null.",
+  "input": { "outputs": { "x": { "error": null } }, "template": "{{ steps.x.output.error | default('none') }}" },
+  "expected": { "resolved": "none" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

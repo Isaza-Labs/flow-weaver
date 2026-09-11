@@ -1,0 +1,15 @@
+{
+  "id": "snippets.integration_action.canonical_params_wins",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "integration_action: with both present the canonical params wins.",
+  "input": {
+    "type": "integration_action",
+    "input": { "integration": "netbox", "action": "get-device", "params": { "device_id": "7" }, "path_params": { "device_id": "9" } }
+  },
+  "expected": {
+    "normalized_input": { "integration": "netbox", "action": "get-device", "params": { "device_id": "7" } }
+  },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

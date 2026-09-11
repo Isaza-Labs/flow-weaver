@@ -1,0 +1,226 @@
+device_type: cisco_xr
+vendor_family: cisco
+description: Command semantics for Cisco IOS-XR. Backfills Description/Intent onto the in-code cisco_xr catalog for find_command.
+commands:
+  - command: show version
+    intent: read
+    description: Software version and hardware summary.
+  - command: show running-config
+    intent: read
+    description: Active running configuration.
+  - command: show inventory
+    intent: read
+    description: Hardware inventory of chassis modules and components.
+  - command: show platform
+    intent: read
+    description: Platform node and card status across the system.
+  - command: show install active
+    intent: read
+    description: Active installed software packages.
+  - command: show install committed
+    intent: read
+    description: Committed installed software packages.
+  - command: show install summary
+    intent: read
+    description: Summary of installed software packages and SMUs.
+  - command: show environment
+    intent: read
+    description: Environmental sensor status for the platform.
+  - command: show environment power
+    intent: read
+    description: Power supply environmental status.
+  - command: show environment temperature
+    intent: read
+    description: Temperature sensor readings across the platform.
+  - command: show controllers
+    intent: read
+    description: Low-level interface controller status.
+  - command: show hw-module fpd
+    intent: read
+    description: Field programmable device firmware versions on hardware modules.
+  - command: show hw-module fpd location all
+    intent: read
+    description: FPD firmware versions for all hardware module locations.
+  - command: show clock
+    intent: read
+    description: Current system clock and time.
+  - command: show users
+    intent: read
+    description: Active logged in users and sessions.
+  - command: show logging
+    intent: read
+    description: System log messages and event buffer.
+  - command: show processes cpu
+    intent: read
+    description: Per process CPU utilization on the platform.
+  - command: show processes memory
+    intent: read
+    description: Per process memory utilization on the platform.
+  - command: show tech-support
+    intent: read
+    description: Aggregated diagnostic tech-support output for troubleshooting.
+  - command: show interfaces
+    intent: read
+    description: Detailed interface status and counters.
+  - command: show interfaces brief
+    intent: read
+    description: Brief interface status summary.
+  - command: show interfaces description
+    intent: read
+    description: Interface descriptions and link status.
+  - command: show interfaces summary
+    intent: read
+    description: Summary counts of interface states.
+  - command: show ipv4 interface
+    intent: read
+    description: IPv4 addressing details per interface.
+  - command: show ipv4 interface brief
+    intent: read
+    description: Brief IPv4 interface address and status list.
+  - command: show ipv6 interface
+    intent: read
+    description: IPv6 addressing details per interface.
+  - command: show ipv6 interface brief
+    intent: read
+    description: Brief IPv6 interface address and status list.
+  - command: show route
+    intent: read
+    description: Routing table entries and next hops.
+  - command: show route summary
+    intent: read
+    description: Summary counts of routes by protocol in the route table.
+  - command: show route ipv4
+    intent: read
+    description: IPv4 routing table entries and next hops.
+  - command: show route ipv6
+    intent: read
+    description: IPv6 routing table entries and next hops.
+  - command: show cef
+    intent: read
+    description: CEF forwarding table prefixes and adjacencies.
+  - command: show arp
+    intent: read
+    description: ARP table mapping IPv4 addresses to MAC addresses.
+  - command: show vrf
+    intent: read
+    description: Configured VRF route instances.
+  - command: show vrf all
+    intent: read
+    description: All VRF instances and their interfaces.
+  - command: show ospf neighbor
+    intent: read
+    description: OSPF neighbor adjacency states.
+  - command: show ospf interface
+    intent: read
+    description: OSPF interface parameters and timers.
+  - command: show ospf database
+    intent: read
+    description: OSPF link state database entries.
+  - command: show ospf summary
+    intent: read
+    description: OSPF process and area summary.
+  - command: show isis adjacency
+    intent: read
+    description: IS-IS neighbor adjacency states.
+  - command: show isis interface
+    intent: read
+    description: IS-IS interface parameters and metrics.
+  - command: show isis database
+    intent: read
+    description: IS-IS link state database entries.
+  - command: show isis topology
+    intent: read
+    description: IS-IS computed topology and reachable nodes.
+  - command: show bgp summary
+    intent: read
+    description: BGP neighbor summary and session states.
+  - command: show bgp ipv4 unicast summary
+    intent: read
+    description: BGP IPv4 unicast neighbor summary and session states.
+  - command: show bgp ipv6 unicast summary
+    intent: read
+    description: BGP IPv6 unicast neighbor summary and session states.
+  - command: show bgp neighbors
+    intent: read
+    description: BGP neighbor details and session parameters.
+  - command: show bgp ipv4 unicast neighbors
+    intent: read
+    description: BGP IPv4 unicast neighbor details and session parameters.
+  - command: show bgp all unicast summary
+    intent: read
+    description: BGP summary across all unicast address families.
+  - command: show mpls interfaces
+    intent: read
+    description: MPLS enabled interfaces and label switching status.
+  - command: show mpls forwarding
+    intent: read
+    description: MPLS label forwarding table entries.
+  - command: show mpls ldp neighbor
+    intent: read
+    description: MPLS LDP neighbor sessions and discovery.
+  - command: show mpls ldp bindings
+    intent: read
+    description: MPLS LDP label bindings for prefixes.
+  - command: show rsvp neighbors
+    intent: read
+    description: RSVP-TE neighbor signaling sessions.
+  - command: show rsvp session
+    intent: read
+    description: RSVP-TE LSP signaling sessions.
+  - command: show lldp neighbors
+    intent: read
+    description: LLDP discovered neighbors per interface.
+  - command: show lldp neighbors detail
+    intent: read
+    description: Detailed LLDP neighbor information per interface.
+  - command: show cdp neighbors
+    intent: read
+    description: CDP discovered Cisco neighbors per interface.
+  - command: terminal length 0
+    intent: read
+    description: Disable terminal paging for the session.
+  - command: configure
+    intent: write
+    description: Enter global configuration mode.
+  - command: configure terminal
+    intent: write
+    description: Enter global configuration mode from the terminal.
+  - command: commit
+    intent: write
+    description: Commit the candidate configuration changes.
+  - command: commit confirmed
+    intent: write
+    description: Commit configuration with automatic rollback unless confirmed.
+  - command: commit replace
+    intent: write
+    description: Replace the running configuration with the candidate on commit.
+  - command: abort
+    intent: read
+    description: Discard the candidate configuration and exit config mode.
+  - command: end
+    intent: read
+    description: Exit configuration mode to exec prompt.
+  - command: exit
+    intent: read
+    description: Leave the current mode or session.
+  - command: admin
+    intent: read
+    description: Enter admin exec mode for system administration.
+  - command: admin show platform
+    intent: read
+    description: Platform node and card status from admin mode.
+  - command: admin show running-config
+    intent: read
+    description: Admin plane running configuration.
+  - command: ping
+    intent: read
+    description: Send ICMP echo to test reachability to a host.
+  - command: traceroute
+    intent: read
+    description: Trace the network path of hops to a destination.
+  - command: telnet
+    intent: read
+    description: Open an outbound telnet session to a host.
+  - command: ssh
+    intent: read
+    description: Open an outbound ssh session to a host.

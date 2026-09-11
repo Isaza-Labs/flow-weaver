@@ -1,0 +1,10 @@
+{
+  "id": "snippets.ansible_playbook.canonical_hosts_wins_over_every_alias",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "ansible_playbook: with hosts present the target aliases are dropped, not accumulated. A node that kept both keys otherwise runs against the UNION of them — a wider blast radius than either key alone, on a type that is non_reversible.",
+  "input": { "type": "ansible_playbook", "input": { "hosts": [ "core-1" ], "targets": [ "edge-9" ], "device": "spine-4" } },
+  "expected": { "normalized_input": { "hosts": [ "core-1" ] } },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

@@ -1,0 +1,13 @@
+{
+  "id": "templates.condition.numeric_comparison",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 9: numeric comparison when both sides parse as numbers.",
+  "input": {
+    "context": { "outputs": { "r": { "status_code": 204 } } },
+    "condition": "{{ steps.r.output.status_code }} >= 200 && {{ steps.r.output.status_code }} < 300"
+  },
+  "expected": { "result": true },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

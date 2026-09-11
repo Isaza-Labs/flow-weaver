@@ -1,0 +1,10 @@
+{
+  "id": "snippets.ssh.structured_alias_becomes_use_structured",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "ssh: use_structured is canonical, structured is the alias.",
+  "input": { "type": "ssh", "input": { "commands": [ "show version" ], "structured": true } },
+  "expected": { "normalized_input": { "commands": [ "show version" ], "use_structured": true } },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

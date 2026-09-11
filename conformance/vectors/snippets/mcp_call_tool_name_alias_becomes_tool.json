@@ -1,0 +1,10 @@
+{
+  "id": "snippets.mcp_call.tool_name_alias_becomes_tool",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "mcp_call: the tool_name alias resolves to the canonical tool key.",
+  "input": { "type": "mcp_call", "input": { "server": "ops", "tool_name": "read_config" } },
+  "expected": { "normalized_input": { "server": "ops", "tool": "read_config" } },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

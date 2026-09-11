@@ -1,0 +1,15 @@
+{
+  "id": "snippets.integration_action.canonical_query_wins",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "integration_action: with both present the canonical query wins.",
+  "input": {
+    "type": "integration_action",
+    "input": { "integration": "netbox", "action": "list-devices", "query": { "site": "bog" }, "query_params": { "site": "mde" } }
+  },
+  "expected": {
+    "normalized_input": { "integration": "netbox", "action": "list-devices", "query": { "site": "bog" } }
+  },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

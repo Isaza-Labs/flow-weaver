@@ -1,0 +1,10 @@
+{
+  "id": "templates.namespace.input_path",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "§1: {{ input.<path> }} addresses inside the run input payload.",
+  "input": { "input": { "apply": true }, "template": "{{ input.apply }}" },
+  "expected": { "resolved": true },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

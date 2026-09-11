@@ -1,0 +1,27 @@
+{
+  "id": "bundle.refused.untranslatable_legacy_key",
+  "family": "bundle",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 4: legacy id keys are accepted ONLY when dependencies carries the mapping that makes them translatable; otherwise the import is refused naming the node and the key. A foreign GUID means nothing here, and resolving it to whatever happens to share the id would bind the workflow to the wrong system with that system's credentials.",
+  "input": {
+    "bundle": {
+      "schema_version": "v3",
+      "kind": "flow_weaver.workflow_bundle",
+      "requires": { "snippet_types": [ "ssh" ], "capabilities": [], "secrets": [] },
+      "workflow": { "name": "audit" },
+      "nodes": [
+        { "id": "start", "snippet_id": "__start__" },
+        { "id": "show", "snippet_id": "aaaaaaaa-0000-0000-0000-000000000004", "config_overrides": { "commands": [ "show version" ], "credential_id": "cccccccc-0000-0000-0000-00000000000c" } }
+      ],
+      "edges": [ { "source": "start", "target": "show", "type": "success" } ],
+      "dependencies": {
+        "snippets": [ { "id": "aaaaaaaa-0000-0000-0000-000000000004", "slug": "show-version", "name": "Show version", "type": "ssh", "target_mode": "per_device", "timeout_seconds": 30 } ],
+        "credentials": []
+      }
+    },
+    "local": { "snippet_types": [ "ssh" ] }
+  },
+  "expected": { "outcome": "refused", "codes": [ "bundle_reference_untranslatable" ] },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

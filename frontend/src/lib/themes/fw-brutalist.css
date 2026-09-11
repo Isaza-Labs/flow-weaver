@@ -1,0 +1,65 @@
+/* fw-brutalist — Vercel Ship / Stripe Press / Linear bold-accent.
+   Aesthetic: yellow as hero accent, hard 3px radii, 2px borders, no
+   shadows, no gradients, 800-weight headings. Confident and brand-first. */
+
+[data-theme='fw-brutalist'] {
+	--radius-base: 0.1875rem;    /* 3px — almost-square */
+	--radius-container: 0.25rem; /* 4px */
+	--default-border-width: 2px;
+	--default-divide-width: 2px;
+	--default-ring-width: 2px;
+
+	/* Bigger heading weights and a touch more letter spacing. */
+	--heading-font-weight: 800;
+	--heading-letter-spacing: -0.032em;
+	/* Brutalist treats brand yellow as the primary action — but the
+	   palette's "primary" stays indigo so semantic components (links,
+	   primary buttons) still get the corporate color. */
+	--anchor-font-color: var(--color-warning-600);
+	--anchor-font-color-dark: var(--color-warning-400);
+
+	/* Surfaces — pure-ish black/white. No tint, no warmth. The hard
+	   contrast IS the design. */
+	--color-surface-50: oklch(99.5% 0 0);
+	--color-surface-100: oklch(97% 0 0);
+	--color-surface-200: oklch(92% 0 0);
+	--color-surface-300: oklch(84% 0 0);
+	--color-surface-400: oklch(67% 0 0);
+	--color-surface-500: oklch(50% 0 0);
+	--color-surface-600: oklch(37% 0 0);
+	--color-surface-700: oklch(25% 0 0);
+	--color-surface-800: oklch(15% 0 0);
+	--color-surface-900: oklch(8% 0 0);
+	--color-surface-950: oklch(4% 0 0);
+}
+
+[data-theme='fw-brutalist'][data-mode='dark'] {
+	--color-surface-50: oklch(99.5% 0 0);
+	--color-surface-100: oklch(94% 0 0);
+	--color-surface-200: oklch(85% 0 0);
+	--color-surface-300: oklch(72% 0 0);
+	--color-surface-400: oklch(55% 0 0);
+	--color-surface-500: oklch(42% 0 0);
+	--color-surface-600: oklch(30% 0 0);
+	--color-surface-700: oklch(20% 0 0);
+	--color-surface-800: oklch(13% 0 0);
+	--color-surface-900: oklch(7% 0 0);
+	--color-surface-950: oklch(3% 0 0);
+}
+
+/* Solid body — no gradient. Brutalist commits to flat colour. */
+[data-theme='fw-brutalist'][data-mode='light'] body {
+	background: var(--color-surface-50) !important;
+	background-attachment: fixed !important;
+}
+[data-theme='fw-brutalist'][data-mode='dark'] body {
+	background: var(--color-surface-950) !important;
+	background-attachment: fixed !important;
+}
+
+/* Headings get a touch more presence to match the bolder font weight. */
+[data-theme='fw-brutalist'] h1,
+[data-theme='fw-brutalist'] .h1 {
+	font-size: 2rem;
+	line-height: 1.05;
+}

@@ -1,0 +1,232 @@
+device_type: cisco_nxos
+vendor_family: cisco
+description: Command semantics for Cisco NX-OS (Nexus). Backfills Description/Intent onto the in-code cisco_nxos catalog for find_command.
+commands:
+  - command: show version
+    intent: read
+    description: Software version, model and uptime.
+  - command: show running-config
+    intent: read
+    description: Active device running-config.
+  - command: show startup-config
+    intent: read
+    description: Saved startup-config in NVRAM.
+  - command: show inventory
+    intent: read
+    description: Hardware inventory of chassis and module serial numbers.
+  - command: show hardware
+    intent: read
+    description: Hardware details for chassis, supervisor and line modules.
+  - command: show platform
+    intent: read
+    description: Platform hardware and forwarding details.
+  - command: show feature
+    intent: read
+    description: Status of NX-OS features enabled or disabled.
+  - command: show feature-set
+    intent: read
+    description: Status of installable feature-set bundles like fex.
+  - command: show install all status
+    intent: read
+    description: Status of software install or upgrade operation.
+  - command: show environment
+    intent: read
+    description: Environmental status for power, fan and temperature sensors.
+  - command: show environment power
+    intent: read
+    description: Power supply status and consumption.
+  - command: show environment temperature
+    intent: read
+    description: Temperature sensor readings across modules.
+  - command: show environment fan
+    intent: read
+    description: Fan tray status and speed.
+  - command: show temperature
+    intent: read
+    description: Temperature sensor values for the device.
+  - command: show system resources
+    intent: read
+    description: System CPU and memory resource utilization.
+  - command: show system uptime
+    intent: read
+    description: System uptime since last boot.
+  - command: show clock
+    intent: read
+    description: Current device date and time clock.
+  - command: show users
+    intent: read
+    description: Active user login sessions on the device.
+  - command: show logging
+    intent: read
+    description: System logging messages and syslog buffer.
+  - command: show logging last 100
+    intent: read
+    description: Last 100 entries of the syslog buffer.
+  - command: show processes cpu
+    intent: read
+    description: Per-process CPU utilization.
+  - command: show processes memory
+    intent: read
+    description: Per-process memory utilization.
+  - command: show http-server
+    intent: read
+    description: HTTP server and nxapi service status.
+  - command: show tech-support
+    intent: read
+    description: Aggregated tech-support diagnostic output for troubleshooting.
+  - command: show interface
+    intent: read
+    description: Detailed status and counters for all interfaces.
+  - command: show interface brief
+    intent: read
+    description: Brief interface status summary.
+  - command: show interface description
+    intent: read
+    description: Configured description label for each interface.
+  - command: show interface status
+    intent: read
+    description: Link status, speed and duplex per interface.
+  - command: show interface counters
+    intent: read
+    description: Traffic counters per interface.
+  - command: show interface counters errors
+    intent: read
+    description: Error counters per interface.
+  - command: show interface transceiver
+    intent: read
+    description: Optical transceiver SFP details per interface.
+  - command: show ip interface brief
+    intent: read
+    description: IPv4 address and status summary per interface.
+  - command: show ipv6 interface brief
+    intent: read
+    description: IPv6 address and status summary per interface.
+  - command: show vlan
+    intent: read
+    description: VLAN database with port membership.
+  - command: show vlan brief
+    intent: read
+    description: Brief VLAN list with assigned ports.
+  - command: show mac address-table
+    intent: read
+    description: Learned mac address table mapping addresses to ports and vlans.
+  - command: show spanning-tree
+    intent: read
+    description: Spanning-tree topology and port states.
+  - command: show spanning-tree summary
+    intent: read
+    description: Spanning-tree summary of mode and port roles.
+  - command: show port-channel summary
+    intent: read
+    description: Port-channel member ports and aggregation status.
+  - command: show port-channel database
+    intent: read
+    description: Port-channel database with member and protocol details.
+  - command: show vdc
+    intent: read
+    description: Virtual device context vdc list and status.
+  - command: show vdc membership
+    intent: read
+    description: Interface membership per virtual device context vdc.
+  - command: show vdc current
+    intent: read
+    description: Current virtual device context vdc in use.
+  - command: show vpc
+    intent: read
+    description: Virtual port channel vpc status and peer link.
+  - command: show vpc brief
+    intent: read
+    description: Brief virtual port channel vpc peer and member status.
+  - command: show vpc role
+    intent: read
+    description: Virtual port channel vpc primary and secondary role.
+  - command: show vpc consistency-parameters global
+    intent: read
+    description: Global virtual port channel vpc consistency parameter check.
+  - command: show fex
+    intent: read
+    description: Fabric extender fex list and status.
+  - command: show fex detail
+    intent: read
+    description: Detailed fabric extender fex module information.
+  - command: show ip route
+    intent: read
+    description: IPv4 routing table with routes and next hops.
+  - command: show ip route summary
+    intent: read
+    description: Summary counts of IPv4 routes by protocol.
+  - command: show ipv6 route
+    intent: read
+    description: IPv6 routing table with routes and next hops.
+  - command: show ip arp
+    intent: read
+    description: IPv4 arp table mapping addresses to mac and interface.
+  - command: show ipv6 neighbor
+    intent: read
+    description: IPv6 neighbor discovery cache.
+  - command: show vrf
+    intent: read
+    description: VRF list and associated interfaces.
+  - command: show vrf all
+    intent: read
+    description: All VRF instances and their interfaces.
+  - command: show ip ospf neighbor
+    intent: read
+    description: OSPF neighbor adjacencies and states.
+  - command: show ip ospf interface
+    intent: read
+    description: OSPF interface settings and timers.
+  - command: show ip bgp summary
+    intent: read
+    description: BGP neighbor summary and session states.
+  - command: show bgp ipv4 unicast summary
+    intent: read
+    description: BGP IPv4 unicast address-family neighbor summary.
+  - command: show ip bgp neighbors
+    intent: read
+    description: Detailed BGP neighbor session information.
+  - command: show forwarding ipv4 route
+    intent: read
+    description: IPv4 forwarding FIB route table in hardware.
+  - command: show cdp neighbors
+    intent: read
+    description: CDP discovered directly connected Cisco neighbors.
+  - command: show cdp neighbors detail
+    intent: read
+    description: Detailed CDP neighbor information including addresses and platform.
+  - command: show lldp neighbors
+    intent: read
+    description: LLDP discovered neighboring devices.
+  - command: show lldp neighbors detail
+    intent: read
+    description: Detailed LLDP neighbor information per interface.
+  - command: show hsrp
+    intent: read
+    description: HSRP gateway redundancy group status.
+  - command: show hsrp brief
+    intent: read
+    description: Brief HSRP group state and virtual address.
+  - command: show vrrp
+    intent: read
+    description: VRRP gateway redundancy group status.
+  - command: terminal length 0
+    intent: write
+    description: Disable terminal paging for the session.
+  - command: configure terminal
+    intent: write
+    description: Enter global configuration mode.
+  - command: exit
+    intent: write
+    description: Exit the current command mode.
+  - command: end
+    intent: write
+    description: Return to privileged exec mode from configuration.
+  - command: ping
+    intent: read
+    description: Send icmp echo to test reachability.
+  - command: traceroute
+    intent: read
+    description: Trace the network path hop by hop to a destination.
+  - command: copy running-config startup-config
+    intent: write
+    description: Save running-config to startup-config in NVRAM.

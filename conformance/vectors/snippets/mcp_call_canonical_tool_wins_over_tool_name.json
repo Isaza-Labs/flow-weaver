@@ -1,0 +1,13 @@
+{
+  "id": "snippets.mcp_call.canonical_tool_wins_over_tool_name",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "mcp_call: tool is canonical, tool_name is the alias. bundle/SPEC.md section 4 fixes the tie — when both are present the CANONICAL one wins. A node carrying both is exactly what an importer that translated one side while preserving the original produces, and getting this backwards calls a different tool on an external server than the author named.",
+  "input": {
+    "type": "mcp_call",
+    "input": { "server": "ops", "tool": "read_config", "tool_name": "write_config", "arguments": { "path": "/etc" } }
+  },
+  "expected": { "normalized_input": { "server": "ops", "tool": "read_config", "arguments": { "path": "/etc" } } },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

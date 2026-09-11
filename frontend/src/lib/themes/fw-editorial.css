@@ -1,0 +1,52 @@
+/* fw-editorial — Linear / Vercel / GitHub Primer school.
+   Aesthetic: monochrome neutrals, hairline borders, sharp 6px radii,
+   no body gradient. Content is the design.
+   The brand palette (primary indigo, warning yellow, etc.) comes from
+   _palette.css; this file only defines what makes Editorial *Editorial*. */
+
+[data-theme='fw-editorial'] {
+	--radius-base: 0.375rem;     /* 6px — small, deliberate */
+	--radius-container: 0.5rem;  /* 8px */
+	--default-border-width: 1px;
+
+	/* Surfaces — Linear-style neutral whites/blacks. Tiny chroma so the
+	   page feels intentional, not sterile, but no warm tint that would
+	   compete with the yellow brand accent. */
+	--color-surface-50: oklch(99% 0.002 270);
+	--color-surface-100: oklch(97% 0.003 270);
+	--color-surface-200: oklch(93% 0.005 270);
+	--color-surface-300: oklch(86% 0.007 270);
+	--color-surface-400: oklch(70% 0.01 270);
+	--color-surface-500: oklch(55% 0.012 270);
+	--color-surface-600: oklch(42% 0.012 265);
+	--color-surface-700: oklch(28% 0.012 260);
+	--color-surface-800: oklch(18% 0.012 258);
+	--color-surface-900: oklch(13% 0.013 258);
+	--color-surface-950: oklch(9% 0.014 258);
+}
+
+/* Dark mode is the same chroma family — no per-mode hue shift. */
+[data-theme='fw-editorial'][data-mode='dark'] {
+	--color-surface-50: oklch(98% 0.003 270);
+	--color-surface-100: oklch(94% 0.005 270);
+	--color-surface-200: oklch(86% 0.008 270);
+	--color-surface-300: oklch(74% 0.01 268);
+	--color-surface-400: oklch(58% 0.012 265);
+	--color-surface-500: oklch(45% 0.012 263);
+	--color-surface-600: oklch(34% 0.012 260);
+	--color-surface-700: oklch(24% 0.013 258);
+	--color-surface-800: oklch(16% 0.012 258);
+	--color-surface-900: oklch(11% 0.012 258);
+	--color-surface-950: oklch(7% 0.012 258);
+}
+
+/* Solid body — NO gradient. The chrome around the content carries the
+   personality, the page itself stays out of the way. */
+[data-theme='fw-editorial'][data-mode='light'] body {
+	background: var(--color-surface-50) !important;
+	background-attachment: fixed !important;
+}
+[data-theme='fw-editorial'][data-mode='dark'] body {
+	background: var(--color-surface-950) !important;
+	background-attachment: fixed !important;
+}

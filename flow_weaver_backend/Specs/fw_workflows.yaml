@@ -1,0 +1,350 @@
+openapi: 3.0.0
+info:
+  title: fw_workflows
+  version: "1.0"
+  description: >
+    Flow Weaver's own workflow + run + trigger API. Operates on the
+    of the calling user via the session JWT. Use this whenever the agent
+    needs to create, read, update, delete, run, promote, or rollback a
+    workflow.
+
+# Relative URL — the RestOperationExecutor resolves this against the
+# current request's scheme+host so chat calls run against the same
+# backend they were served from.
+servers:
+  - url: /api
+
+components:
+  securitySchemes:
+    session_jwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT of the caller — agent inherits their permissions.
+      x-credential-ref: "${secret:session:current:jwt}"
+
+security:
+  - session_jwt: []
+
+paths:
+
+  # ──────────────────────── Workflows CRUD ────────────────────────
+
+  /workflow:
+    get:
+      operationId: fw_workflows:list_workflows
+      summary: List workflows.
+      tags: [workflows]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+        - { name: environment, in: query, schema: { type: string, enum: [draft, qa, production] } }
+        - { name: search, in: query, schema: { type: string } }
+      responses:
+        "200": { description: List response with data + total + limit + offset }
+
+    post:
+      operationId: fw_workflows:create_workflow
+      summary: Create a workflow. Operator+. Always starts as `draft`.
+      description: >
+        The backend ignores any `environment` passed here and always sets
+        the new row to `environment: "draft"`. To ship the workflow to
+        `qa` or `production` use `fw_workflows:promote_workflow` after
+        the draft is validated.
+      tags: [workflows]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                description: { type: string }
+                input_schema: { type: object }
+                nodes:
+                  type: array
+                  description: >
+                    DAG nodes. Schema is strict (additionalProperties:false).
+                    Only `id`, `snippet_id`, `x`, `y`, `type`,
+                    `config_overrides` are accepted. `name`, `label`,
+                    `service_type` on a node make the backend reject the
+                    call with schema_invalid.
+                  items:
+                    type: object
+                    required: [id, snippet_id]
+                    additionalProperties: false
+                    properties:
+                      id: { type: string, minLength: 1, maxLength: 128 }
+                      snippet_id:
+                        type: string
+                        description: >
+                          UUID of an existing Snippet (from
+                          fw_snippets:list_snippets) OR one of the
+                          sentinels `__start__`, `__end__`, `subflow`.
+                          IMPORTANT for sentinels: the node id must equal
+                          the sentinel string, e.g. `{"id":"__start__",
+                          "snippet_id":"__start__"}`. Using any other
+                          id breaks the editor (it duplicates sentinels).
+                      x: { type: number }
+                      y: { type: number }
+                      type: { type: string, enum: [task, decision, subflow] }
+                      config_overrides: { type: object }
+                edges:
+                  type: array
+                  items:
+                    type: object
+                    required: [source, target, type]
+                    additionalProperties: false
+                    properties:
+                      source: { type: string, minLength: 1 }
+                      target: { type: string, minLength: 1 }
+                      type: { type: string, enum: [success, failure, always, conditional] }
+                      condition:
+                        type: string
+                        description: Required only when type=conditional.
+                metadata:
+                  type: object
+                  description: Free-form JSON bag persisted verbatim. Optional.
+                conversation_id:
+                  type: string
+                  format: uuid
+                  description: >
+                    Link the workflow to the chat conversation that produced
+                    it. Optional — the agent wires this automatically when
+                    calling from `/ai`.
+      responses:
+        "201": { description: Created }
+
+  /workflow/{id}:
+    get:
+      operationId: fw_workflows:get_workflow
+      summary: Get a workflow by id.
+      tags: [workflows]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: Full workflow object }
+
+    put:
+      operationId: fw_workflows:update_workflow
+      summary: Update a workflow. Production is immutable (409).
+      tags: [workflows]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                nodes:
+                  type: array
+                  description: Same strict shape as create_workflow — see that operation's node schema.
+                  items:
+                    type: object
+                    required: [id, snippet_id]
+                    additionalProperties: false
+                    properties:
+                      id: { type: string, minLength: 1, maxLength: 128 }
+                      snippet_id: { type: string }
+                      x: { type: number }
+                      y: { type: number }
+                      type: { type: string, enum: [task, decision, subflow] }
+                      config_overrides: { type: object }
+                edges:
+                  type: array
+                  items:
+                    type: object
+                    required: [source, target, type]
+                    additionalProperties: false
+                    properties:
+                      source: { type: string, minLength: 1 }
+                      target: { type: string, minLength: 1 }
+                      type: { type: string, enum: [success, failure, always, conditional] }
+                      condition: { type: string }
+                input_schema: { type: object }
+                metadata:
+                  type: object
+                  description: Free-form JSON bag. Replaces the previous value when set.
+                change_summary:
+                  type: string
+                  description: >
+                    Short note stored on the workflow row (also copied onto
+                    promote/rollback history). Optional.
+                conversation_id:
+                  type: string
+                  format: uuid
+                  description: Optional link to a chat conversation.
+      responses:
+        "200": { description: Updated }
+        "409": { description: production_immutable }
+
+    delete:
+      operationId: fw_workflows:delete_workflow
+      summary: Soft-delete a workflow. Operator+. Production is immutable.
+      tags: [workflows]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Deleted }
+        "409": { description: production_immutable }
+
+  # ──────────────────────── Run + lifecycle ────────────────────────
+
+  /workflow/{id}/run:
+    post:
+      operationId: fw_workflows:run_workflow
+      summary: Enqueue a run. Returns 202 with {id} of the new WorkflowRun.
+      tags: [workflows, runs]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                input: { type: object, description: Matches the workflow.input_schema }
+                target_devices: { type: array, items: { type: string, format: uuid } }
+                target_pools: { type: array, items: { type: string, format: uuid } }
+      responses:
+        "202": { description: Run enqueued }
+
+  /workflow/{id}/promote:
+    post:
+      operationId: fw_workflows:promote_workflow
+      summary: Promote draft→qa→production. One level at a time.
+      tags: [workflows]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [target_environment]
+              properties:
+                target_environment: { type: string, enum: [qa, production] }
+                change_summary: { type: string }
+                promoted_by: { type: string, description: "Username of the operator triggering the promotion (optional — taken from the JWT when omitted)." }
+                approved_by: { type: string, description: "Approver identifier for production promotions; optional for qa." }
+      responses:
+        "200": { description: Promoted }
+
+  /workflow/{id}/rollback/{version}:
+    post:
+      operationId: fw_workflows:rollback_workflow
+      summary: Restore a workflow to a prior version.
+      tags: [workflows]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: version, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Rolled back }
+
+  /workflow/{id}/diff:
+    get:
+      operationId: fw_workflows:diff_workflow
+      summary: Diff the current workflow against its last promoted version.
+      description: >
+        The backend picks the comparison target automatically (current row
+        vs. the most recent entry in WorkflowHistory). There is no
+        `compare_to` parameter — callers cannot pick an arbitrary version.
+      tags: [workflows]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: Diff report }
+
+  /workflow/{id}/clone:
+    post:
+      operationId: fw_workflows:clone_workflow
+      summary: Clone a workflow. The clone always lands in `draft` with a " (clone)" name suffix.
+      description: >
+        No request body — the source id is the only input. If you need a
+        different name or environment afterwards, use update_workflow and
+        promote_workflow on the clone.
+      tags: [workflows]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "201": { description: Clone created }
+
+  /workflow/{id}/versions:
+    get:
+      operationId: fw_workflows:list_versions
+      summary: List version history of a workflow.
+      tags: [workflows]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses:
+        "200": { description: List of versions }
+
+  /workflow/{id}/export:
+    get:
+      operationId: fw_workflows:export_workflow
+      summary: Export as YAML or JSON.
+      tags: [workflows]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: format, in: query, schema: { type: string, enum: [yaml, json], default: yaml } }
+      responses:
+        "200": { description: Exported text }
+
+  # ──────────────────────── Triggers ────────────────────────
+
+  /workflow/{id}/triggers:
+    get:
+      operationId: fw_workflows:list_workflow_triggers
+      summary: List triggers bound to one workflow.
+      tags: [triggers]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: List of triggers }
+
+    post:
+      operationId: fw_workflows:create_workflow_trigger
+      summary: >
+        Attach a new trigger to a workflow. This is the ONLY working
+        endpoint to create a trigger — POST /workflowTrigger returns 400
+        directing you here.
+      tags: [triggers]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, type]
+              properties:
+                name: { type: string }
+                type:
+                  type: string
+                  enum: [cron, schedule, webhook, event]
+                  description: >
+                    Scheduled triggers accept either `cron` or `schedule`
+                    (treated as synonyms). Both require `cron_expression`.
+                description: { type: string }
+                route: { type: string, description: For webhook triggers — the path suffix clients POST to. }
+                cron_expression: { type: string, description: "Standard 5-field cron. Required when type=cron or schedule." }
+                timezone: { type: string, description: "IANA TZ name. Defaults to UTC." }
+                input_schema: { type: object }
+                input_defaults: { type: object }
+                enabled: { type: boolean, default: true }
+                notification_webhook_url: { type: string }
+                notify_on: { type: array, items: { type: string, enum: [success, failure, timeout] } }
+      responses:
+        "201": { description: Trigger created }
+        "400": { description: name/type missing, or cron_expression missing on scheduled triggers }

@@ -1,0 +1,19 @@
+{
+  "id": "executor.edge.success_does_not_fire_on_failed",
+  "family": "executor",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 1: a success edge does not fire when the source failed, so the target is skipped.",
+  "input": {
+    "workflow": {
+      "nodes": [ { "id": "a", "snippet_id": "__start__" }, { "id": "b", "snippet_id": "__end__" } ],
+      "edges": [ { "source": "a", "target": "b", "type": "success" } ]
+    },
+    "context": { "nodes": { "a": { "result": "failed" } } }
+  },
+  "expected": {
+    "status": "failed",
+    "steps": [ { "node_id": "a", "result": "failed" }, { "node_id": "b", "result": "skipped" } ]
+  },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

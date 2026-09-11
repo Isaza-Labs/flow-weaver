@@ -1,0 +1,26 @@
+{
+  "id": "executor.stop_on_failure.a_consumed_failure_does_not_stop_the_walk",
+  "family": "executor",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 1, the rule that makes a failure edge mean anything: a failure CONSUMED by a failure edge does not stop the walk. Without it no notify-on-failure or compensation node ever runs and {{ run.failed_step_* }} is unreachable by design, because stop_on_failure is always on for a run started through the API.",
+  "input": {
+    "workflow": {
+      "nodes": [
+        { "id": "a", "snippet_id": "__start__" },
+        { "id": "notify", "snippet_id": "__end__" },
+        { "id": "z", "snippet_id": "__start__" }
+      ],
+      "edges": [ { "source": "a", "target": "notify", "type": "failure" } ]
+    },
+    "context": {
+      "stop_on_failure": true,
+      "nodes": { "a": { "result": "failed" }, "notify": { "result": "no_change" }, "z": { "result": "no_change" } }
+    }
+  },
+  "expected": {
+    "status": "failed",
+    "results": { "a": "failed", "notify": "no_change", "z": "no_change" }
+  },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

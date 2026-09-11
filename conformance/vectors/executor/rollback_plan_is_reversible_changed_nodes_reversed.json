@@ -1,0 +1,61 @@
+{
+  "id": "executor.rollback.plan_is_reversible_changed_nodes_reversed",
+  "family": "executor",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 2: at run time the rollback plan is the reversible CHANGED nodes in reverse execution order, and the final state of a run that can be undone is rolled_back.",
+  "input": {
+    "workflow": {
+      "nodes": [
+        {
+          "id": "a",
+          "snippet_id": "__start__"
+        },
+        {
+          "id": "b",
+          "snippet_id": "__end__"
+        },
+        {
+          "id": "c",
+          "snippet_id": "__end__"
+        }
+      ],
+      "edges": [
+        {
+          "source": "a",
+          "target": "b",
+          "type": "success"
+        },
+        {
+          "source": "b",
+          "target": "c",
+          "type": "success"
+        }
+      ]
+    },
+    "context": {
+      "nodes": {
+        "a": {
+          "result": "changed",
+          "tier": "idempotent"
+        },
+        "b": {
+          "result": "changed",
+          "tier": "requires_compensation"
+        },
+        "c": {
+          "result": "failed"
+        }
+      }
+    }
+  },
+  "expected": {
+    "status": "failed",
+    "final_state": "rolled_back",
+    "rollback_plan": [
+      "b",
+      "a"
+    ]
+  },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

@@ -1,0 +1,10 @@
+{
+  "id": "snippets.ansible_playbook.targets_alias_becomes_hosts",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "ansible_playbook: hosts is canonical (inventory device names, or all for the run's targets); targets is the alias and carries the same kind of value.",
+  "input": { "type": "ansible_playbook", "input": { "targets": [ "core-1", "core-2" ] } },
+  "expected": { "normalized_input": { "hosts": [ "core-1", "core-2" ] } },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

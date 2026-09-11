@@ -1,0 +1,18 @@
+{
+  "id": "bundle.refused.version_unsupported",
+  "family": "bundle",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 1: a conforming importer MUST accept v2 and v3. Any other schema_version is refused with bundle_version_unsupported naming the version — never read on a best-effort basis.",
+  "input": {
+    "bundle": {
+      "schema_version": "v9",
+      "kind": "flow_weaver.workflow_bundle",
+      "workflow": { "name": "probe" },
+      "nodes": [ { "id": "start", "snippet_id": "__start__" } ],
+      "edges": []
+    }
+  },
+  "expected": { "outcome": "refused", "codes": [ "bundle_version_unsupported" ] },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

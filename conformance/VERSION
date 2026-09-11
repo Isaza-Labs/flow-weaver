@@ -1,0 +1,8 @@
+contract_version: 1.1.0-draft
+oracle: flow-weaver
+oracle_commit: fw@fe07550     # FW commit the 1.1 layers (bundle, snippets, templates, execution) were reified from; the 1.0 layers were reified at fw@95fc69e (2026-07-02).
+                              # Was fw@1a11ea3 until 2026-08-28, which was WRONG: the v3 bundle work the 1.1 layers describe was
+                              # still uncommitted when the pin was written, so 1a11ea3 contains no PayloadAliases.cs, no
+                              # BundleRequirements.cs and no v3 bundle at all. Anyone checking it out to verify the contract would
+                              # have concluded the spec was invented. A pin must name a commit that CONTAINS what was reified.
+status: draft                 # draft -> 1.1.0 once the bundle/snippets/templates/executor vectors are reviewed (see README §bootstrap)

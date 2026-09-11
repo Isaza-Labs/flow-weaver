@@ -1,0 +1,23 @@
+{
+  "id": "bundle.refused.incomplete_missing_subflow_definition",
+  "family": "bundle",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 5.4: every workflow reachable through a subflow node appears in dependencies.workflows. A subflow node naming a workflow the bundle does not carry is incomplete.",
+  "input": {
+    "bundle": {
+      "schema_version": "v3",
+      "kind": "flow_weaver.workflow_bundle",
+      "requires": { "snippet_types": [], "capabilities": [ "subflow" ], "secrets": [] },
+      "workflow": { "name": "parent" },
+      "nodes": [
+        { "id": "start", "snippet_id": "__start__" },
+        { "id": "child", "type": "subflow", "snippet_id": "subflow", "config_overrides": { "subflow_workflow_id": "bbbbbbbb-0000-0000-0000-000000000002" } }
+      ],
+      "edges": [ { "source": "start", "target": "child", "type": "success" } ],
+      "dependencies": { "snippets": [], "workflows": [] }
+    }
+  },
+  "expected": { "outcome": "refused", "codes": [ "bundle_incomplete" ] },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

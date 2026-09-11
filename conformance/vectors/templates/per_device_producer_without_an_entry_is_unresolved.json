@@ -1,0 +1,22 @@
+{
+  "id": "templates.per_device.producer_without_an_entry_is_unresolved",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 6: a per_device consumer reading a producer that has NO entry for its device resolves to unresolved. Handing it a sibling device's output would be worse than a residual.",
+  "input": {
+    "consumer_target_mode": "per_device",
+    "device": { "id": "aaaaaaaa-0000-0000-0000-00000000000c", "name": "c", "ip": "10.0.0.3" },
+    "outputs": {
+      "show": {
+        "devices": [
+          { "device_id": "aaaaaaaa-0000-0000-0000-00000000000a", "output": { "stdout": "from-a" } },
+          { "device_id": "aaaaaaaa-0000-0000-0000-00000000000b", "output": { "stdout": "from-b" } }
+        ]
+      }
+    },
+    "template": "{{ steps.show.output.stdout }}"
+  },
+  "expected": { "resolved": "unresolved" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

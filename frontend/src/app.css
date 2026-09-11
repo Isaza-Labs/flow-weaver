@@ -1,0 +1,294 @@
+/* Google Fonts must come before any other @import per CSS spec. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@import 'tailwindcss';
+
+@import '@skeletonlabs/skeleton';
+
+/* FlowWeaver brand themes — shared palette + 4 selectable themes.
+   Each theme is mode-aware (light/dark via data-mode) so the toggle is
+   independent from the theme picker. The palette file MUST be imported
+   first so per-theme overrides have something to override. */
+@import './lib/themes/_palette.css';
+@import './lib/themes/fw-editorial.css';
+@import './lib/themes/fw-aurora.css';
+@import './lib/themes/fw-brutalist.css';
+@import './lib/themes/fw-wordmark.css';
+@import './lib/themes/fw-pastel.css';
+@import './lib/themes/fw-cyber.css';
+@import './lib/themes/fw-material.css';
+
+@plugin '@tailwindcss/typography';
+
+@source '../node_modules/@skeletonlabs/skeleton-svelte/dist';
+
+/* Tailwind v4's dark variant — triggers on data-mode='dark' so Tailwind's
+   `dark:` utilities line up with the theme store's mode attribute. */
+@custom-variant dark (&:where([data-mode='dark'], [data-mode='dark'] *));
+
+:root {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+html {
+  font-family: var(--font-sans);
+  /* cv02/cv03/cv04/cv11: stylistic alternate glyphs that improve Inter's
+     legibility at UI sizes. ss01: stylistic set with the geometric `i`/`l`. */
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+code, kbd, pre, .font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Heading rhythm — Skeleton injects raw resets that defeat the theme
+   tokens on some builds, so reassert here THROUGH the tokens: the built-in
+   themes' per-theme weights (Brutalist 800, Material 600, …) and a custom
+   theme's heading settings all land, and the fallbacks keep the old values
+   when no theme defines them. */
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+  letter-spacing: var(--heading-letter-spacing, -0.022em);
+  font-weight: var(--heading-font-weight, 650);
+  font-family: var(--heading-font-family, var(--font-sans));
+}
+
+/* Focus ring — brand-tinted via the theme's --fw-accent-ring token so it
+   pops on both light and dark surfaces (yellow on dark, indigo on light
+   via the underlying primary/warning relationship). */
+:where(button, a, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--fw-accent-ring);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Default transitions on interactive surfaces — uses the theme motion
+   tokens so every button feels coherent. */
+button, a, [role='button'], [role='menuitem'], [role='tab'] {
+  transition-property: background-color, border-color, color, opacity, box-shadow, transform;
+  transition-duration: 140ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Slim, theme-aware scrollbars (WebKit). */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--color-surface-500) 30%, transparent);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, var(--color-surface-500) 50%, transparent);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Animation primitives ──────────────────────────────────────────── */
+@keyframes fw-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes fw-slide-up {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-in {
+  animation: fw-fade-in 160ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.fade-in { animation-name: fw-fade-in; }
+.slide-up { animation-name: fw-slide-up; }
+
+/* Respect prefers-reduced-motion across the app. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .btn-fw:active {
+    transform: none !important;
+  }
+}
+
+/* ─── Theme-reactive surface aliases for inline styles ──────────────────
+   xyflow Node specs and inline SVG attrs can't use Tailwind's dual-token
+   utilities, so they read these vars instead. The theme token system
+   already supplies surface-50…950 mode-aware, so these resolve correctly
+   without per-mode duplication. */
+[data-mode='light'] {
+  --fw-canvas-bg: var(--color-surface-50);
+  --fw-node-bg: var(--color-surface-100);
+  --fw-node-border: var(--color-surface-300);
+  --fw-node-text: var(--color-surface-900);
+}
+[data-mode='dark'] {
+  --fw-canvas-bg: var(--color-surface-950);
+  --fw-node-bg: var(--color-surface-900);
+  --fw-node-border: var(--color-surface-700);
+  --fw-node-text: var(--color-surface-50);
+}
+
+/* ─── SvelteFlow theming ──────────────────────────────────────────────
+   xyflow's Wrapper.svelte paints `.svelte-flow` using
+   `var(--background-color, var(--background-color-default))`. Override
+   the unprefixed names (root pane) AND the --xy-* prefixed names
+   (Background / Controls / Minimap / edges). `!important` on the pane
+   background beats Svelte's scoped-style specificity tie. */
+[data-mode='light'] {
+  --background-color-default: var(--color-surface-50);
+  --background-pattern-color-default: color-mix(in oklab, var(--color-surface-500) 40%, transparent);
+  --controls-button-background-color-default: var(--color-surface-100);
+  --controls-button-background-color-hover-default: var(--color-surface-200);
+  --controls-button-color-default: var(--color-surface-700);
+  --controls-button-color-hover-default: var(--color-surface-900);
+  --controls-button-border-color-default: var(--color-surface-300);
+  --minimap-mask-color-default: color-mix(in oklab, var(--color-surface-300) 60%, transparent);
+}
+[data-mode='dark'] {
+  --background-color-default: var(--color-surface-950);
+  --background-pattern-color-default: color-mix(in oklab, var(--color-surface-400) 50%, transparent);
+  --controls-button-background-color-default: var(--color-surface-900);
+  --controls-button-background-color-hover-default: var(--color-surface-800);
+  --controls-button-color-default: var(--color-surface-200);
+  --controls-button-color-hover-default: var(--color-surface-50);
+  --controls-button-border-color-default: var(--color-surface-700);
+  --minimap-mask-color-default: color-mix(in oklab, var(--color-surface-800) 60%, transparent);
+}
+
+[data-mode='light'] .svelte-flow {
+  --xy-background-color-default: var(--color-surface-50);
+  --xy-background-pattern-dots-color-default: color-mix(in oklab, var(--color-surface-500) 40%, transparent);
+  --xy-background-pattern-lines-color-default: color-mix(in oklab, var(--color-surface-400) 40%, transparent);
+  --xy-background-pattern-cross-color-default: color-mix(in oklab, var(--color-surface-400) 40%, transparent);
+  --xy-controls-button-background-color-default: var(--color-surface-100);
+  --xy-controls-button-background-color-hover-default: var(--color-surface-200);
+  --xy-controls-button-color-default: var(--color-surface-700);
+  --xy-controls-button-color-hover-default: var(--color-surface-900);
+  --xy-controls-button-border-color-default: var(--color-surface-300);
+  --xy-edge-stroke-default: var(--color-surface-400);
+  --xy-edge-stroke-selected-default: var(--color-primary-500);
+  --xy-edge-label-background-color-default: var(--color-surface-100);
+  --xy-edge-label-color-default: var(--color-surface-800);
+  --xy-minimap-background-color-default: var(--color-surface-100);
+  --xy-attribution-background-color-default: transparent;
+}
+[data-mode='dark'] .svelte-flow {
+  --xy-background-color-default: var(--color-surface-950);
+  --xy-background-pattern-dots-color-default: color-mix(in oklab, var(--color-surface-400) 50%, transparent);
+  --xy-background-pattern-lines-color-default: color-mix(in oklab, var(--color-surface-500) 40%, transparent);
+  --xy-background-pattern-cross-color-default: color-mix(in oklab, var(--color-surface-500) 40%, transparent);
+  --xy-controls-button-background-color-default: var(--color-surface-900);
+  --xy-controls-button-background-color-hover-default: var(--color-surface-800);
+  --xy-controls-button-color-default: var(--color-surface-200);
+  --xy-controls-button-color-hover-default: var(--color-surface-50);
+  --xy-controls-button-border-color-default: var(--color-surface-700);
+  --xy-edge-stroke-default: var(--color-surface-600);
+  --xy-edge-stroke-selected-default: var(--color-warning-500);
+  --xy-edge-label-background-color-default: var(--color-surface-900);
+  --xy-edge-label-color-default: var(--color-surface-100);
+  --xy-minimap-background-color-default: var(--color-surface-900);
+  --xy-attribution-background-color-default: transparent;
+}
+
+/* The xyflow pane background needs !important to win the scoped-style
+   tie introduced by Svelte's hashed class. */
+[data-mode='light'] .svelte-flow {
+  background-color: var(--color-surface-50) !important;
+}
+[data-mode='dark'] .svelte-flow {
+  background-color: var(--color-surface-950) !important;
+}
+
+/* Editor-variant nodes manage their own content box, so the default
+   xyflow wrapper must stay transparent. */
+:global(.svelte-flow__node.svelte-flow__node-default) {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  width: max-content !important;
+  min-width: 0 !important;
+}
+
+/* Connection handles — hidden until hover/connecting, brand-coloured. */
+:global(.svelte-flow__handle) {
+  opacity: 0;
+  transition: opacity 120ms ease;
+  width: 10px !important;
+  height: 10px !important;
+  background: var(--color-primary-500) !important;
+  border: 2px solid var(--fw-node-bg) !important;
+}
+:global(.svelte-flow__node:hover .svelte-flow__handle),
+:global(.svelte-flow__node.selected .svelte-flow__handle),
+:global(.svelte-flow__handle.connectionindicator),
+:global(.svelte-flow__handle-connecting) {
+  opacity: 1;
+}
+:global(.svelte-flow.connecting .svelte-flow__handle) {
+  opacity: 1;
+}
+
+/* ─── Code highlighting (highlight.js) ────────────────────────────────
+   All colours derived from the FlowWeaver palette so light/dark and any
+   future tints share a single source of truth. */
+.hljs { background: transparent; color: inherit; }
+.hljs-comment, .hljs-quote { color: var(--color-surface-500); font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-section, .hljs-link,
+.hljs-meta, .hljs-meta-keyword {
+  color: var(--color-primary-600);
+}
+.hljs-string, .hljs-doctag, .hljs-regexp { color: var(--color-success-600); }
+.hljs-title, .hljs-name, .hljs-selector-id, .hljs-selector-class {
+  color: var(--color-tertiary-700);
+}
+.hljs-number, .hljs-symbol, .hljs-bullet { color: var(--color-warning-700); }
+.hljs-variable, .hljs-template-variable, .hljs-attr, .hljs-attribute {
+  color: var(--color-secondary-600);
+}
+.hljs-built_in, .hljs-builtin-name, .hljs-type, .hljs-class .hljs-title {
+  color: var(--color-primary-700);
+}
+.hljs-tag { color: var(--color-surface-600); }
+.hljs-deletion { color: var(--color-error-600); }
+.hljs-addition { color: var(--color-success-600); }
+.hljs-emphasis { font-style: italic; }
+.hljs-strong { font-weight: 600; }
+[data-mode='dark'] .hljs-comment, [data-mode='dark'] .hljs-quote { color: var(--color-surface-400); }
+[data-mode='dark'] .hljs-keyword, [data-mode='dark'] .hljs-selector-tag,
+[data-mode='dark'] .hljs-literal, [data-mode='dark'] .hljs-section,
+[data-mode='dark'] .hljs-link, [data-mode='dark'] .hljs-meta {
+  color: var(--color-warning-300);
+}
+[data-mode='dark'] .hljs-string, [data-mode='dark'] .hljs-doctag,
+[data-mode='dark'] .hljs-regexp { color: var(--color-success-300); }
+[data-mode='dark'] .hljs-title, [data-mode='dark'] .hljs-name,
+[data-mode='dark'] .hljs-selector-id, [data-mode='dark'] .hljs-selector-class {
+  color: var(--color-tertiary-300);
+}
+[data-mode='dark'] .hljs-number, [data-mode='dark'] .hljs-symbol,
+[data-mode='dark'] .hljs-bullet { color: var(--color-warning-400); }
+[data-mode='dark'] .hljs-variable, [data-mode='dark'] .hljs-template-variable,
+[data-mode='dark'] .hljs-attr, [data-mode='dark'] .hljs-attribute {
+  color: var(--color-secondary-300);
+}
+[data-mode='dark'] .hljs-built_in, [data-mode='dark'] .hljs-builtin-name,
+[data-mode='dark'] .hljs-type, [data-mode='dark'] .hljs-class .hljs-title {
+  color: var(--color-primary-300);
+}
+[data-mode='dark'] .hljs-tag { color: var(--color-surface-400); }

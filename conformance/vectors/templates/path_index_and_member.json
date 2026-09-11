@@ -1,0 +1,13 @@
+{
+  "id": "templates.path.index_and_member",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 2: dotted member access and [n] index.",
+  "input": {
+    "outputs": { "ssh": { "results": [ { "output": "x" }, { "output": "y" } ] } },
+    "template": "{{ steps.ssh.output.results[1].output }}"
+  },
+  "expected": { "resolved": "y" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

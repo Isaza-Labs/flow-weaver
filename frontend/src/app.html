@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en" data-theme="fw-editorial" data-mode="dark">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<!-- Favicon: FlowWeaver tab icon — uses the tightly cropped square
+		     logo at frontend/static/FlowWeaver_Logo_2-2.png. ?v= query
+		     busts browser cache when the brand mark changes; bump on swap. -->
+		<link rel="icon" type="image/png" href="/FlowWeaver_Logo_2-2.png?v=fw4" />
+		<link rel="apple-touch-icon" href="/FlowWeaver_Logo_2-2.png?v=fw4" />
+		<link rel="mask-icon" href="/logo.svg?v=fw4" color="#ffce03" />
+		<!-- Mobile browser chrome — adapts to the active mode. Light uses
+		     the page surface (subtle warm white), dark uses the near-black
+		     surface-950 from the FlowWeaver theme. -->
+		<meta name="theme-color" media="(prefers-color-scheme: light)" content="#fdfcf8" />
+		<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0b14" />
+		<script>
+			// Pre-paint theme + mode bootstrap. FlowWeaver ships seven
+			// selectable brand themes (fw-editorial, fw-aurora, fw-brutalist,
+			// fw-wordmark, fw-pastel, fw-cyber, fw-material); each is
+			// mode-aware. Both attributes are restored from localStorage
+			// BEFORE SvelteKit hydration so the page never flashes the wrong
+			// style.
+			(function () {
+				try {
+					var themes = ['fw-editorial', 'fw-aurora', 'fw-brutalist', 'fw-wordmark', 'fw-pastel', 'fw-cyber', 'fw-material'];
+					var savedTheme = localStorage.getItem('flowweaver:theme');
+					var savedMode = localStorage.getItem('flowweaver:mode');
+					var root = document.documentElement;
+					// A user-authored theme has no stylesheet in the bundle —
+					// its variables are generated from the saved colours after
+					// the API answers. Replay the cached CSS from the last
+					// visit so it paints with the rest of the page instead of
+					// flashing the default palette until the fetch lands.
+					var isCustom = savedTheme && savedTheme.indexOf('fw-custom-') === 0;
+					if (isCustom) {
+						var cachedCss = localStorage.getItem('flowweaver:custom-theme-css');
+						if (cachedCss) {
+							var style = document.createElement('style');
+							style.id = 'fw-custom-themes';
+							style.textContent = cachedCss;
+							document.head.appendChild(style);
+							root.setAttribute('data-theme', savedTheme);
+						}
+					} else if (savedTheme && themes.indexOf(savedTheme) !== -1) {
+						root.setAttribute('data-theme', savedTheme);
+					}
+					if (savedMode === 'light' || savedMode === 'dark') {
+						root.setAttribute('data-mode', savedMode);
+					} else {
+						var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+						root.setAttribute('data-mode', prefersDark ? 'dark' : 'light');
+					}
+				} catch (e) { /* localStorage unavailable — leave defaults */ }
+			})();
+		</script>
+		%sveltekit.head%
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">%sveltekit.body%</div>
+	</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "id": "schema.valid.minimal",
+  "family": "schema",
+  "contract_version": "1.0.0",
+  "description": "A minimal valid workflow: one start node, no edges.",
+  "input": { "nodes": [ { "id": "n1", "snippet_id": "__start__" } ], "edges": [] },
+  "expected": { "valid": true },
+  "equivalence": "subset",
+  "oracle_commit": "fw@95fc69e"
+}

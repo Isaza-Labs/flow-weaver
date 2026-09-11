@@ -1,0 +1,88 @@
+# Recommended FlowWeaver repository structure
+
+## Design principles
+
+- Preserve the current .NET and frontend paths to avoid a disruptive move into a new `src/` hierarchy.
+- Keep product code, ecosystem artifacts, public documentation and release compliance distinguishable.
+- Keep internal legal evidence and historical repository bundles outside the public repository.
+- Give each durable directory a README that states purpose, accepted contents and validation.
+
+## Target tree
+
+```text
+flowweaver/
+├── .github/
+│   ├── ISSUE_TEMPLATE/
+│   ├── PULL_REQUEST_TEMPLATE/
+│   ├── workflows/
+│   └── CODEOWNERS
+├── assets/
+│   ├── brand/
+│   └── ASSET_MANIFEST.csv
+├── compliance/
+│   ├── templates/
+│   └── README.md
+├── contracts/
+│   └── workflow.v1/
+├── deploy/
+├── docs/
+│   ├── architecture/
+│   ├── operations/
+│   ├── security/
+│   └── repository/
+├── examples/
+├── flow_weaver_backend/
+├── flow_weaver_backend.Tests/
+├── frontend/
+├── legal/
+├── LICENSES/
+│   └── Apache-2.0.txt
+├── skills/
+├── specs/
+├── tools/
+├── workflows/
+├── CONTRIBUTING.md
+├── DISTRIBUTION_POLICY.md
+├── GOVERNANCE.md
+├── LEGAL.md
+├── LICENSE
+├── NOTICE
+├── QUICKSTART.md
+├── README.md
+├── REUSE.toml
+├── SECURITY.md
+└── THIRD-PARTY-NOTICES.md
+```
+
+## Directory responsibilities
+
+| Path | Responsibility | Must not contain |
+|---|---|---|
+| `flow_weaver_backend/` | Backend, domain and execution engine | Secrets, customer exports |
+| `flow_weaver_backend.Tests/` | Automated tests and synthetic fixtures | Production credentials or real personal data |
+| `frontend/` | Visual builder and web client | Server secrets |
+| `deploy/` | Images, Compose, installation and operations assets | Unpinned downloads or embedded tokens |
+| `skills/` | Reusable agent skills | Undocumented permissions or credentials |
+| `specs/` | Integration/vendor contracts | Copied proprietary vendor content without permission |
+| `workflows/` | Reusable workflow artifacts | Real infrastructure identifiers |
+| `contracts/` | Versioned schemas and conformance material | Unversioned breaking changes |
+| `docs/` | Public product and operator documentation | Private legal evidence or internal-only URLs |
+| `assets/` | Approved visual/media files | Unverified downloads |
+| `examples/` | Safe tutorials and synthetic examples | Customer data |
+| `tools/` | Developer and release automation | Unreviewed destructive scripts |
+| `legal/` | Public licensing and contribution policies | Signed assignments, IDs, cap tables |
+| `compliance/` | Public templates and release metadata | Raw confidential audit evidence |
+
+## Internal-only companion storage
+
+The following remain outside the public Git tree: original repository bundle and hash, executed PI assignments, LLC documents, founder records, private dependency decisions, vulnerability details, raw QA traces, release approvals and secret-scan evidence.
+
+## Migration order
+
+1. Preserve the internal repository and hashes.
+2. Build a clean allowlisted candidate.
+3. Apply this structure without moving stable application paths unnecessarily.
+4. Add license metadata and third-party notices.
+5. Configure CI, CODEOWNERS and protected-branch rules.
+6. Validate on a clean machine and approve the release artifact.
+

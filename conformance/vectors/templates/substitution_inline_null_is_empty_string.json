@@ -1,0 +1,13 @@
+{
+  "id": "templates.substitution.inline_null_is_empty_string",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "§3 inline: a reference that resolves to null splices as the empty string, not as the word null.",
+  "input": {
+    "outputs": { "s": { "e": null } },
+    "template": "[{{ steps.s.output.e }}]"
+  },
+  "expected": { "resolved": "[]" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

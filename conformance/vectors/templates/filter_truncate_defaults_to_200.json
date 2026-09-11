@@ -1,0 +1,10 @@
+{
+  "id": "templates.filter.truncate_defaults_to_200",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 4: truncate with no argument defaults to 200 chars, so a short string is unchanged.",
+  "input": { "outputs": { "x": { "v": "abcdef" } }, "template": "{{ steps.x.output.v | truncate }}" },
+  "expected": { "resolved": "abcdef" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

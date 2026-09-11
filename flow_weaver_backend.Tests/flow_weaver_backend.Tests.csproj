@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="10.0.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <!-- JUnitXml.TestLogger feeds GitLab's merge-request test-summary widget
+         (artifacts:reports:junit). Trx is also produced for archival. -->
+    <PackageReference Include="JUnitXml.TestLogger" Version="6.1.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.7" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\flow_weaver_backend\flow_weaver_backend.csproj" />
+  </ItemGroup>
+
+  <!-- workflow.v1 conformance kit: vectors + schema copied next to the test assembly, so the
+       runner resolves them at runtime without a path relative to the source tree. `PINNED`
+       travels with them because the integrity test asserts against it. -->
+  <ItemGroup>
+    <Content Include="..\conformance\vectors\**\*.json"
+             Link="conformance\vectors\%(RecursiveDir)%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\conformance\schema\workflow.v1.schema.json"
+             Link="conformance\schema\workflow.v1.schema.json"
+             CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\conformance\PINNED"
+             Link="conformance\PINNED"
+             CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

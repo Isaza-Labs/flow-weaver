@@ -1,0 +1,46 @@
+{
+  "id": "executor.rollback.completed_run_has_no_plan",
+  "family": "executor",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 1/2: a run that did not fail is completed and has no rollback plan.",
+  "input": {
+    "workflow": {
+      "nodes": [
+        {
+          "id": "a",
+          "snippet_id": "__start__"
+        },
+        {
+          "id": "b",
+          "snippet_id": "__end__"
+        }
+      ],
+      "edges": [
+        {
+          "source": "a",
+          "target": "b",
+          "type": "success"
+        }
+      ]
+    },
+    "context": {
+      "nodes": {
+        "a": {
+          "result": "changed",
+          "tier": "requires_compensation"
+        },
+        "b": {
+          "result": "changed",
+          "tier": "idempotent"
+        }
+      }
+    }
+  },
+  "expected": {
+    "status": "completed",
+    "final_state": "completed",
+    "rollback_plan": []
+  },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

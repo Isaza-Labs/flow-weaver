@@ -1,0 +1,39 @@
+{
+  "id": "bundle.refused.subflow_cycle",
+  "family": "bundle",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 5.4: cycles among the carried sub-workflows are refused. A workflow that reaches itself can never finish, so it is refused at import rather than imported and discovered at 3am.",
+  "input": {
+    "bundle": {
+      "schema_version": "v3",
+      "kind": "flow_weaver.workflow_bundle",
+      "requires": { "snippet_types": [], "capabilities": [ "subflow" ], "secrets": [] },
+      "workflow": { "name": "parent" },
+      "nodes": [
+        { "id": "start", "snippet_id": "__start__" },
+        { "id": "a", "type": "subflow", "snippet_id": "subflow", "config_overrides": { "subflow_workflow_id": "bbbbbbbb-0000-0000-0000-00000000000a" } }
+      ],
+      "edges": [ { "source": "start", "target": "a", "type": "success" } ],
+      "dependencies": {
+        "snippets": [],
+        "workflows": [
+          {
+            "id": "bbbbbbbb-0000-0000-0000-00000000000a",
+            "name": "child-a",
+            "nodes": [ { "id": "toB", "type": "subflow", "snippet_id": "subflow", "config_overrides": { "subflow_workflow_id": "bbbbbbbb-0000-0000-0000-00000000000b" } } ],
+            "edges": []
+          },
+          {
+            "id": "bbbbbbbb-0000-0000-0000-00000000000b",
+            "name": "child-b",
+            "nodes": [ { "id": "toA", "type": "subflow", "snippet_id": "subflow", "config_overrides": { "subflow_workflow_id": "bbbbbbbb-0000-0000-0000-00000000000a" } } ],
+            "edges": []
+          }
+        ]
+      }
+    }
+  },
+  "expected": { "outcome": "refused", "codes": [ "bundle_subflow_cycle" ] },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

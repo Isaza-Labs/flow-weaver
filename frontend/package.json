@@ -1,0 +1,44 @@
+{
+	"name": "fw-frontend",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"prepare": "svelte-kit sync || echo ''",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"check:hints": "node scripts/check-hints.mjs && node scripts/audit-hint-gaps.mjs",
+		"check:labels": "node scripts/check-labels.mjs"
+	},
+	"devDependencies": {
+		"@playwright/test": "^1.58.2",
+		"@sveltejs/adapter-auto": "^7.0.0",
+		"@sveltejs/kit": "^2.50.2",
+		"@sveltejs/vite-plugin-svelte": "^6.2.4",
+		"@types/node": "^25.6.0",
+		"svelte": "^5.51.0",
+		"svelte-check": "^4.4.2",
+		"typescript": "^5.9.3",
+		"vite": "^7.3.1"
+	},
+	"dependencies": {
+		"@dagrejs/dagre": "^3.0.0",
+		"@skeletonlabs/skeleton": "^4.15.1",
+		"@skeletonlabs/skeleton-svelte": "^4.15.1",
+		"@sveltejs/adapter-node": "^5.5.4",
+		"@tailwindcss/typography": "^0.5.19",
+		"@tailwindcss/vite": "^4.2.2",
+		"@xyflow/svelte": "^1.5.1",
+		"animejs": "^4.4.1",
+		"croner": "^10.0.1",
+		"highlight.js": "^11.11.1",
+		"lucide-svelte": "^1.0.1",
+		"marked": "^17.0.5",
+		"mermaid": "^11.14.0",
+		"tailwindcss": "^4.2.2",
+		"zod": "^3.25.76"
+	}
+}

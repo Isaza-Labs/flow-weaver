@@ -1,0 +1,10 @@
+{
+  "id": "schema.invalid.missing_snippet_id",
+  "family": "schema",
+  "contract_version": "1.0.0",
+  "description": "A node without the required snippet_id is rejected.",
+  "input": { "nodes": [ { "id": "n1" } ], "edges": [] },
+  "expected": { "valid": false },
+  "equivalence": "subset",
+  "oracle_commit": "fw@95fc69e"
+}

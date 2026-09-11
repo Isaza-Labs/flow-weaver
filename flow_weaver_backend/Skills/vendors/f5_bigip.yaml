@@ -1,0 +1,34 @@
+device_type: f5_tmsh
+vendor_family: f5
+description: Allowlisted commands for F5 BIG-IP via tmsh.
+commands:
+  - command: show /sys version
+    intent: read
+    description: Software version.
+  - command: show /sys hardware
+    intent: read
+    description: Hardware inventory.
+  - command: show /sys performance
+    intent: read
+    description: CPU / memory / connections.
+  - command: list /ltm virtual all-properties
+    intent: read
+    description: Full LTM virtual server config dump.
+  - command: list /ltm pool
+    intent: read
+    description: Pool list.
+  - command: show /ltm pool members detail
+    intent: read
+    description: Pool member health and stats.
+  - command: list /net interface
+    intent: read
+    description: Network interface list.
+  - command: show /net route
+    intent: read
+    description: Active routes.
+  - command: save /sys config
+    intent: write
+    description: Persist running config.
+  - command: reboot
+    intent: disruptive
+    description: Reboot the device. tmsh prompts for confirmation.

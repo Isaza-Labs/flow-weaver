@@ -1,0 +1,13 @@
+{
+  "id": "templates.condition.parenthesised_group_with_references",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 9: a group holding comparisons over references evaluates as a group, not as opaque text.",
+  "input": {
+    "context": { "input": { "a": 1, "b": 9, "c": 3 } },
+    "condition": "({{ input.a }} == 1 || {{ input.b }} == 2) && {{ input.c }} == 3"
+  },
+  "expected": { "result": true },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

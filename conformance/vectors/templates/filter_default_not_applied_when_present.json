@@ -1,0 +1,10 @@
+{
+  "id": "templates.filter.default_not_applied_when_present",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 4: default(x) is inert when the reference resolved to a value.",
+  "input": { "outputs": { "x": { "error": "boom" } }, "template": "{{ steps.x.output.error | default('none') }}" },
+  "expected": { "resolved": "boom" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

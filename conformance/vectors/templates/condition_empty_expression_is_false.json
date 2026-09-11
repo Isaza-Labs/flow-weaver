@@ -1,0 +1,10 @@
+{
+  "id": "templates.condition.empty_expression_is_false",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 9: an empty condition is not a condition; a conditional edge exists to gate, so it fails closed.",
+  "input": { "context": {}, "condition": "   " },
+  "expected": { "result": false },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

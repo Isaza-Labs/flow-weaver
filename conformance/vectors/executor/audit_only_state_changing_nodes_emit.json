@@ -1,0 +1,86 @@
+{
+  "id": "executor.audit.only_state_changing_nodes_emit",
+  "family": "executor",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 8: the audit trail is the EXECUTED artifact, not the plan. Only a node that changed something emits an event, so a no_change node, a failed node and a skipped node do not.",
+  "input": {
+    "workflow": {
+      "nodes": [
+        {
+          "id": "a",
+          "snippet_id": "33333333-3333-3333-3333-333333333333"
+        },
+        {
+          "id": "quiet",
+          "snippet_id": "44444444-4444-4444-4444-444444444444"
+        },
+        {
+          "id": "c",
+          "snippet_id": "55555555-5555-5555-5555-555555555555"
+        },
+        {
+          "id": "never",
+          "snippet_id": "66666666-6666-6666-6666-666666666666"
+        }
+      ],
+      "edges": [
+        {
+          "source": "a",
+          "target": "quiet",
+          "type": "success"
+        },
+        {
+          "source": "quiet",
+          "target": "c",
+          "type": "success"
+        },
+        {
+          "source": "c",
+          "target": "never",
+          "type": "success"
+        }
+      ]
+    },
+    "context": {
+      "workflow_id": "22222222-2222-2222-2222-222222222222",
+      "schema_hash": "H1",
+      "actor": "conformance",
+      "nodes": {
+        "a": {
+          "result": "changed",
+          "tier": "idempotent"
+        },
+        "quiet": {
+          "result": "no_change",
+          "tier": "requires_compensation"
+        },
+        "c": {
+          "result": "failed"
+        }
+      }
+    }
+  },
+  "expected": {
+    "audit_events": [
+      {
+        "schema": "audit.v1",
+        "event_id": "<redacted>",
+        "workflow_id": "22222222-2222-2222-2222-222222222222",
+        "schema_hash": "H1",
+        "node_id": "a",
+        "op": "33333333-3333-3333-3333-333333333333",
+        "idempotency": "idempotent",
+        "actor": "conformance",
+        "tenant_id": "00000000-0000-0000-0000-000000000000",
+        "timestamp": "<redacted>",
+        "result": "changed"
+      }
+    ]
+  },
+  "equivalence": "subset",
+  "normalize": [
+    "redact:event_id",
+    "redact:timestamp"
+  ],
+  "oracle_commit": "fw@1a11ea3"
+}

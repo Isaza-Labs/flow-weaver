@@ -1,0 +1,16 @@
+{
+  "id": "executor.edge.in_degree_zero_nodes_always_run",
+  "family": "executor",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 1: a node runs when at least one incoming edge fired; in-degree 0 nodes always run.",
+  "input": {
+    "workflow": {
+      "nodes": [ { "id": "a", "snippet_id": "__start__" }, { "id": "b", "snippet_id": "__start__" } ],
+      "edges": []
+    },
+    "context": { "nodes": { "a": { "result": "no_change" }, "b": { "result": "no_change" } } }
+  },
+  "expected": { "status": "completed", "steps": [ { "node_id": "a", "result": "no_change" }, { "node_id": "b", "result": "no_change" } ] },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

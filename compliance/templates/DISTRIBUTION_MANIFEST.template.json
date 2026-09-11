@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "product": "FlowWeaver",
+  "owner": "Isaza Labs LLC",
+  "release": "[version]",
+  "sourceCommit": "[full SHA]",
+  "firstPartyLicense": "Apache-2.0",
+  "files": [],
+  "excludedInternalClasses": [
+    "secrets",
+    "personal-data",
+    "private-legal-evidence",
+    "repository-bundles",
+    "raw-security-findings"
+  ]
+}
+

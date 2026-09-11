@@ -1,0 +1,15 @@
+{
+  "id": "snippets.rest_call.raw_form_is_unchanged",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "rest_call raw form: url, method, headers, body and query are all canonical. A handler MUST implement this form, and the discriminator is which key is present.",
+  "input": {
+    "type": "rest_call",
+    "input": { "url": "https://api.example.com/v1/devices", "method": "GET", "headers": { "X-Api-Key": "${secret:store:api:key}" }, "query": { "site": "bog" } }
+  },
+  "expected": {
+    "normalized_input": { "url": "https://api.example.com/v1/devices", "method": "GET", "headers": { "X-Api-Key": "${secret:store:api:key}" }, "query": { "site": "bog" } }
+  },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

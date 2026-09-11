@@ -1,0 +1,27 @@
+{
+  "id": "snippets.email_send.unhonoured_field_fails_not_supported",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "email_send: from_address and from_name are part of the compatible key set, and the rule is explicit - a relay that cannot honour a field fails with not_supported, NEVER drops it silently. A message that went out from the wrong sender is not recoverable by re-running it.",
+  "input": {
+    "type": "email_send",
+    "probe": {
+      "to": [
+        "ops@example.com"
+      ],
+      "subject": "Audit",
+      "body": "done",
+      "from_address": "noreply@example.com",
+      "from_name": "Nashira"
+    }
+  },
+  "expected": {
+    "output": {
+      "ok": false,
+      "error_code": "not_supported"
+    }
+  },
+  "equivalence": "subset",
+  "oracle_commit": "fw@fe07550",
+  "notes": "The refusal branch of the sender rule. A relay that cannot set the sender fails the step naming the field; it never sends from a different one, because a message that went out from the wrong sender is not recoverable by re-running the step. The honoured branch is snippets.email_send.a_declared_sender_is_honoured, and neither is complete without the other."
+}

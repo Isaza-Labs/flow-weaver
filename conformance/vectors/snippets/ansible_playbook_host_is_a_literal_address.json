@@ -1,0 +1,10 @@
+{
+  "id": "snippets.ansible_playbook.host_is_a_literal_address",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "ansible_playbook: host carries a literal address rather than an inventory name, so it is not folded into hosts. Turning an address into a name lookup would fail on a device that is right there.",
+  "input": { "type": "ansible_playbook", "input": { "host": "10.0.0.9" } },
+  "expected": { "normalized_input": { "host": "10.0.0.9" } },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

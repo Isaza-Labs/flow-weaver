@@ -1,0 +1,34 @@
+device_type: fortinet
+vendor_family: fortinet
+description: Allowlisted commands for Fortinet FortiOS (FortiGate) devices.
+commands:
+  - command: get system status
+    intent: read
+    description: Firmware version, serial, HA state.
+  - command: get system performance status
+    intent: read
+    description: CPU / memory / sessions counters.
+  - command: get system interface
+    intent: read
+    description: Interface list with addressing.
+  - command: get router info routing-table all
+    intent: read
+    description: Active routing table.
+  - command: get firewall policy
+    intent: read
+    description: Policy list (no full ruleset detail).
+  - command: diagnose hardware deviceinfo nic
+    intent: read
+    description: NIC hardware diagnostics.
+  - command: diagnose sys session list
+    intent: read
+    description: Session table snapshot. Verbose; use with care.
+  - command: execute backup config
+    intent: write
+    description: Save config to local storage. Non-disruptive but writes a file.
+  - command: config system global
+    intent: write
+    description: Enter global config mode.
+  - command: execute reboot
+    intent: disruptive
+    description: Reboot the device.

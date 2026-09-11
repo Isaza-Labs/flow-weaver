@@ -1,0 +1,40 @@
+device_type: arista_eos
+vendor_family: arista
+description: Allowlisted commands for Arista EOS devices.
+commands:
+  - command: show version
+    intent: read
+    description: Software / hardware summary. Idempotent.
+  - command: show running-config
+    intent: read
+    description: Running config dump.
+  - command: show interfaces
+    intent: read
+    description: Per-interface counters.
+  - command: show ip route
+    intent: read
+    description: Routing table.
+  - command: show lldp neighbors
+    intent: read
+    description: LLDP neighbor table.
+  - command: show vlan
+    intent: read
+    description: VLAN database.
+  - command: show mac address-table
+    intent: read
+    description: MAC forwarding table.
+  - command: show ip arp
+    intent: read
+    description: ARP table.
+  - command: show platform
+    intent: read
+    description: Platform diagnostics (read-only).
+  - command: configure terminal
+    intent: write
+    description: Enter config mode.
+  - command: write memory
+    intent: write
+    description: Persist running-config to startup-config.
+  - command: reload
+    intent: disruptive
+    description: Reboot the device.

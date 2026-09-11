@@ -1,0 +1,16 @@
+{
+  "id": "executor.conditional.false_condition_does_not_fire",
+  "family": "executor",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 1: the source succeeded but the condition does not hold, so the edge does not fire. Before conditions were evaluated at all, a workflow with a branch ran both arms.",
+  "input": {
+    "workflow": {
+      "nodes": [ { "id": "a", "snippet_id": "__start__" }, { "id": "b", "snippet_id": "__end__" } ],
+      "edges": [ { "source": "a", "target": "b", "type": "conditional", "condition": "{{ steps.a.output.code }} == 200" } ]
+    },
+    "context": { "nodes": { "a": { "result": "changed", "tier": "idempotent", "output": { "code": 500 } } } }
+  },
+  "expected": { "status": "completed", "steps": [ { "node_id": "a", "result": "changed" }, { "node_id": "b", "result": "skipped" } ] },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

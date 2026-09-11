@@ -1,0 +1,10 @@
+{
+  "id": "templates.filter.upper",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 4: upper.",
+  "input": { "outputs": { "x": { "v": "ok" } }, "template": "{{ steps.x.output.v | upper }}" },
+  "expected": { "resolved": "OK" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

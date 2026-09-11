@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+  <!-- FlowWeaver brand mark — geometry mirrors the W glyph from
+       FlowWeaver_Logo+ColorV5.pdf (yellow stitched W + small grey weaver
+       accent in the upper-right). Tight viewBox + chunky stroke so the
+       silhouette stays legible even at 16×16 favicon size. -->
+
+  <!-- Stitched W body (signature yellow). -->
+  <path
+    d="M 6 10 L 18 54 L 30 24 L 42 54 L 54 10"
+    stroke="#ffce03"
+    stroke-width="13"
+    stroke-linejoin="round"
+    stroke-linecap="round"
+    fill="none"
+  />
+
+  <!-- Grey weaver accent — slanted parallelogram top-right. -->
+  <path
+    d="M 46 4 L 60 2 L 62 18 L 48 20 Z"
+    fill="#888888"
+  />
+</svg>

@@ -1,0 +1,27 @@
+{
+  "id": "bundle.refused.dependencies_missing_integration",
+  "family": "bundle",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 5.3: integrations travel as identity only, because secrets never travel. One this instance does not have is bundle_dependencies_missing — the receiving instance must already hold its own credentials for that system, and an import that invented it would bind the workflow to nothing.",
+  "input": {
+    "bundle": {
+      "schema_version": "v3",
+      "kind": "flow_weaver.workflow_bundle",
+      "requires": { "snippet_types": [ "integration_action" ], "capabilities": [], "secrets": [] },
+      "workflow": { "name": "audit" },
+      "nodes": [
+        { "id": "start", "snippet_id": "__start__" },
+        { "id": "call", "snippet_id": "aaaaaaaa-0000-0000-0000-000000000001", "config_overrides": { "integration": "netbox", "action": "list-devices" } }
+      ],
+      "edges": [ { "source": "start", "target": "call", "type": "success" } ],
+      "dependencies": {
+        "snippets": [ { "id": "aaaaaaaa-0000-0000-0000-000000000001", "slug": "call-action", "name": "Call action", "type": "integration_action", "target_mode": "once", "timeout_seconds": 30 } ],
+        "integrations": []
+      }
+    },
+    "local": { "snippet_types": [ "integration_action" ], "integrations": [] }
+  },
+  "expected": { "outcome": "refused", "codes": [ "bundle_dependencies_missing" ] },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

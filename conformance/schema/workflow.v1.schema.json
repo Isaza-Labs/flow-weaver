@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://networkingdev.com/schemas/workflow.v1.json",
+  "title": "workflow.v1",
+  "description": "Structural schema for a workflow.v1 DAG document. Reified from flow-weaver (frozen oracle). The idempotency of a node is a property of the referenced snippet, not of the node inline.",
+  "type": "object",
+  "required": ["nodes", "edges"],
+  "additionalProperties": false,
+  "properties": {
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "snippet_id"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "snippet_id": {
+            "anyOf": [
+              { "type": "string", "format": "uuid" },
+              { "type": "string", "enum": ["__start__", "__end__", "subflow"] }
+            ]
+          },
+          "type": { "type": "string", "enum": ["task", "decision", "subflow"], "default": "task" },
+          "x": { "type": "number" },
+          "y": { "type": "number" },
+          "config_overrides": { "type": "object" }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source", "target", "type"],
+        "additionalProperties": false,
+        "properties": {
+          "source": { "type": "string", "minLength": 1 },
+          "target": { "type": "string", "minLength": 1 },
+          "type": { "type": "string", "enum": ["success", "failure", "always", "conditional"] },
+          "condition": { "type": "string", "description": "Required when type = 'conditional'." },
+          "source_handle": { "type": "string" },
+          "target_handle": { "type": "string" }
+        }
+      }
+    }
+  }
+}

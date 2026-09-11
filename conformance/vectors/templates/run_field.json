@@ -1,0 +1,20 @@
+{
+  "id": "templates.run.field",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 7: a provided run field resolves to its value.",
+  "input": {
+    "run": {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "workflow_id": "22222222-2222-2222-2222-222222222222",
+      "workflow_name": "audit-and-notify",
+      "environment": "production",
+      "trigger": "cron",
+      "started_at": "2026-08-27T12:00:00Z"
+    },
+    "template": "{{ run.workflow_name }}"
+  },
+  "expected": { "resolved": "audit-and-notify" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

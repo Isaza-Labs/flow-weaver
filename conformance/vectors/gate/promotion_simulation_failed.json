@@ -1,0 +1,15 @@
+{
+  "id": "gate.promote.simulation_failed",
+  "family": "gate",
+  "contract_version": "1.0.0",
+  "description": "Promoting draft->qa when the last simulation found structural issues is refused 412 simulation_failed.",
+  "input": {
+    "workflow_state": "draft",
+    "simulation": { "schema_hash": "H1", "ok": false },
+    "current_schema_hash": "H1",
+    "action": "promote:draft->qa"
+  },
+  "expected": { "http_status": 412, "code": "simulation_failed" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@95fc69e"
+}

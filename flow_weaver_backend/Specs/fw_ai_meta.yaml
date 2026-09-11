@@ -1,0 +1,86 @@
+openapi: 3.0.0
+info:
+  title: fw_ai_meta
+  version: "1.0"
+  description: >
+    AI metadata — conversations, agents, prompt-skills and api-specs
+    catalogs. Read-only for agents; mutations on providers / skills /
+    specs are reserved for human admins via the admin UI.
+servers:
+  - url: /api
+components:
+  securitySchemes:
+    session_jwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      x-credential-ref: "${secret:session:current:jwt}"
+security:
+  - session_jwt: []
+paths:
+  # ─── Conversations ─────────────────────────────
+  /ai/conversations:
+    get:
+      operationId: fw_ai_meta:list_conversations
+      summary: List the caller's chat conversations.
+      tags: [conversations]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses: { "200": { description: List } }
+  /ai/conversations/{id}:
+    get:
+      operationId: fw_ai_meta:get_conversation
+      summary: Full history for one conversation.
+      tags: [conversations]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { "200": { description: Conversation } }
+    delete:
+      operationId: fw_ai_meta:delete_conversation
+      summary: Soft-delete a conversation (caller-scoped).
+      tags: [conversations]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { "204": { description: Deleted } }
+
+  # ─── Agents (read-only) ───────────────────────
+  /aiagent:
+    get:
+      operationId: fw_ai_meta:list_agents
+      tags: [agents]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+      responses: { "200": { description: List } }
+  /aiagent/{id}:
+    get:
+      operationId: fw_ai_meta:get_agent
+      tags: [agents]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { "200": { description: Agent } }
+
+  # ─── Catalog discovery (read-only) ────────────
+  /ai/catalog/prompt:
+    get:
+      operationId: fw_ai_meta:get_system_prompt
+      summary: Return the composed system prompt (base + skills).
+      tags: [catalog]
+      responses: { "200": { description: "{prompt: string}" } }
+  /ai/catalog/operations:
+    get:
+      operationId: fw_ai_meta:list_spec_operations
+      summary: Flat list of every API operation indexed.
+      tags: [catalog]
+      parameters:
+        - { name: keyword, in: query, schema: { type: string } }
+        - { name: api, in: query, schema: { type: string } }
+        - { name: method, in: query, schema: { type: string } }
+      responses: { "200": { description: List } }
+  /ai/catalog/operations/{operationId}:
+    get:
+      operationId: fw_ai_meta:get_spec_operation
+      tags: [catalog]
+      parameters:
+        - { name: operationId, in: path, required: true, schema: { type: string } }
+      responses: { "200": { description: Operation detail } }

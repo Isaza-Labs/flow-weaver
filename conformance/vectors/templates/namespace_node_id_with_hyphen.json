@@ -1,0 +1,13 @@
+{
+  "id": "templates.namespace.node_id_with_hyphen",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "§1: <node_id> matches the character class word-or-hyphen, so a hyphenated node id resolves.",
+  "input": {
+    "outputs": { "drain-edge": { "ok": true } },
+    "template": "{{ steps.drain-edge.output.ok }}"
+  },
+  "expected": { "resolved": true },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

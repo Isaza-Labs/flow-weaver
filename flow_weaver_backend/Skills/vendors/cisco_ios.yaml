@@ -1,0 +1,289 @@
+device_type: cisco_ios
+vendor_family: cisco
+description: Command semantics for Cisco IOS. Backfills Description/Intent onto the in-code cisco_ios catalog for find_command.
+commands:
+  - command: show version
+    intent: read
+    description: Software version, model, uptime and hardware summary.
+  - command: show running-config
+    intent: read
+    description: Active running configuration currently in effect on the device.
+  - command: show startup-config
+    intent: read
+    description: Saved startup configuration in NVRAM loaded at boot.
+  - command: show inventory
+    intent: read
+    description: Hardware inventory of chassis, modules and transceivers with serial and PID.
+  - command: show platform
+    intent: read
+    description: Platform hardware details, slots, modules and platform-specific state.
+  - command: show hardware
+    intent: read
+    description: Hardware information including model, processor and memory.
+  - command: show flash
+    intent: read
+    description: Flash filesystem contents, files and free space.
+  - command: show file systems
+    intent: read
+    description: Available file systems with size, free space and type.
+  - command: show boot
+    intent: read
+    description: Boot variables, boot system image path and boot configuration register.
+  - command: show tech-support
+    intent: read
+    description: Aggregated diagnostic output of many show commands for support cases.
+  - command: show clock
+    intent: read
+    description: Current system date and time of the device clock.
+  - command: show ntp status
+    intent: read
+    description: NTP synchronization status, stratum and reference clock.
+  - command: show ntp associations
+    intent: read
+    description: NTP peer and server associations with offset and reachability.
+  - command: show users
+    intent: read
+    description: Active user sessions on console, vty and tty lines.
+  - command: show sessions
+    intent: read
+    description: Open outgoing Telnet and connection sessions from the device.
+  - command: show line
+    intent: read
+    description: Console, aux, vty and tty line status and configuration.
+  - command: show logging
+    intent: read
+    description: System log buffer messages, syslog configuration and counters.
+  - command: show processes cpu
+    intent: read
+    description: Per-process CPU utilization and overall CPU load.
+  - command: show processes cpu sorted
+    intent: read
+    description: Per-process CPU utilization sorted by usage to find top consumers.
+  - command: show processes memory
+    intent: read
+    description: Per-process memory allocation, holding and free memory.
+  - command: show memory
+    intent: read
+    description: System memory pools, used and free memory statistics.
+  - command: show environment
+    intent: read
+    description: Environmental sensors for temperature, fans, power supplies and voltage.
+  - command: show power
+    intent: read
+    description: Power supply status, capacity and consumption including PoE budget.
+  - command: show diag
+    intent: read
+    description: Diagnostic hardware details of slots, cards and module identifiers.
+  - command: show interfaces
+    intent: read
+    description: Detailed interface state, counters, errors, duplex and speed.
+  - command: show interfaces description
+    intent: read
+    description: Interface descriptions with admin and protocol status.
+  - command: show interfaces status
+    intent: read
+    description: Interface link status, vlan, duplex, speed and type per port.
+  - command: show interfaces summary
+    intent: read
+    description: Summary of interface load, traffic rates and error totals.
+  - command: show interfaces counters
+    intent: read
+    description: Per-interface input and output packet and byte counters.
+  - command: show interfaces counters errors
+    intent: read
+    description: Per-interface error counters including CRC, runts and giants.
+  - command: show interfaces transceiver
+    intent: read
+    description: Transceiver SFP optical power, temperature and diagnostic readings.
+  - command: show interfaces transceiver detail
+    intent: read
+    description: Detailed transceiver SFP optics with thresholds and alarm states.
+  - command: show ip interface brief
+    intent: read
+    description: Brief table of interfaces with IPv4 address, status and protocol.
+  - command: show ip interface
+    intent: read
+    description: Detailed IPv4 interface configuration, helper addresses and ACLs.
+  - command: show ipv6 interface brief
+    intent: read
+    description: Brief table of interfaces with IPv6 address and status.
+  - command: show vlan
+    intent: read
+    description: VLAN database with names, status and assigned ports.
+  - command: show vlan brief
+    intent: read
+    description: Brief VLAN list with VLAN id, name and member ports.
+  - command: show mac address-table
+    intent: read
+    description: MAC address forwarding table with vlan, port and entry type.
+  - command: show mac address-table dynamic
+    intent: read
+    description: Dynamically learned MAC address entries with vlan and port.
+  - command: show spanning-tree
+    intent: read
+    description: Spanning-tree STP per-vlan topology, root bridge and port roles.
+  - command: show spanning-tree summary
+    intent: read
+    description: Spanning-tree STP summary of mode, root and port state counts.
+  - command: show etherchannel summary
+    intent: read
+    description: EtherChannel port-channel bundles, member ports and aggregation status.
+  - command: show etherchannel detail
+    intent: read
+    description: Detailed EtherChannel port-channel LACP member and protocol state.
+  - command: show port-security
+    intent: read
+    description: Port-security status, secure MAC counts and violation actions per port.
+  - command: show errdisable
+    intent: read
+    description: Err-disabled interfaces and the cause that disabled them.
+  - command: show errdisable recovery
+    intent: read
+    description: Err-disable recovery causes, timers and auto-recovery configuration.
+  - command: show cdp neighbors
+    intent: read
+    description: CDP neighbor devices with local interface, platform and capability.
+  - command: show cdp neighbors detail
+    intent: read
+    description: Detailed CDP neighbors with management IP, version and port id.
+  - command: show lldp neighbors
+    intent: read
+    description: LLDP neighbor devices with local port, system name and capability.
+  - command: show lldp neighbors detail
+    intent: read
+    description: Detailed LLDP neighbors with management address, port and system description.
+  - command: show lldp interface
+    intent: read
+    description: LLDP per-interface transmit and receive enable state.
+  - command: show ip route
+    intent: read
+    description: IPv4 routing table (RIB).
+  - command: show ip route summary
+    intent: read
+    description: Summary counts of IPv4 routes by source protocol and memory used.
+  - command: show ipv6 route
+    intent: read
+    description: IPv6 routing table (RIB) with prefixes and next hops.
+  - command: show ip protocols
+    intent: read
+    description: Active IPv4 routing protocols, timers, networks and redistribution.
+  - command: show ip arp
+    intent: read
+    description: IPv4 ARP table mapping addresses to MAC and interface.
+  - command: show arp
+    intent: read
+    description: ARP table entries mapping IP to MAC with interface and age.
+  - command: show ipv6 neighbors
+    intent: read
+    description: IPv6 neighbor discovery cache with link-layer address and state.
+  - command: show ip cef
+    intent: read
+    description: CEF forwarding table of IPv4 prefixes and next-hop adjacencies.
+  - command: show vrf
+    intent: read
+    description: VRF instances with route-distinguisher and assigned interfaces.
+  - command: show vrf brief
+    intent: read
+    description: Brief list of VRF instances with route-distinguisher and interfaces.
+  - command: show ip vrf
+    intent: read
+    description: IPv4 VRF instances with route-distinguisher and interface bindings.
+  - command: show ip vrf interfaces
+    intent: read
+    description: Interfaces bound to each IPv4 VRF with address and protocol.
+  - command: show ip ospf
+    intent: read
+    description: OSPF process state, router id, areas and SPF statistics.
+  - command: show ip ospf neighbor
+    intent: read
+    description: OSPF neighbor adjacencies with state, priority and interface.
+  - command: show ip ospf interface
+    intent: read
+    description: OSPF per-interface area, cost, timers and adjacency state.
+  - command: show ip ospf database
+    intent: read
+    description: OSPF link-state database LSAs by type and area.
+  - command: show ip eigrp neighbors
+    intent: read
+    description: EIGRP neighbor adjacencies with hold time, queue and interface.
+  - command: show ip eigrp topology
+    intent: read
+    description: EIGRP topology table with successors, feasible distance and metrics.
+  - command: show ip eigrp interfaces
+    intent: read
+    description: EIGRP enabled interfaces with peers, timers and pending routes.
+  - command: show ip bgp summary
+    intent: read
+    description: BGP neighbor summary with peer state, prefixes and uptime.
+  - command: show bgp summary
+    intent: read
+    description: BGP neighbor summary across address families with peer state and prefixes.
+  - command: show ip bgp neighbors
+    intent: read
+    description: BGP neighbor details with capabilities, timers and prefix counters.
+  - command: show ip bgp
+    intent: read
+    description: BGP table of IPv4 prefixes with paths, next hop and attributes.
+  - command: show standby
+    intent: read
+    description: HSRP standby groups with active and standby routers and virtual IP.
+  - command: show standby brief
+    intent: read
+    description: Brief HSRP standby groups with state, priority and virtual IP.
+  - command: show vrrp
+    intent: read
+    description: VRRP groups with master and backup routers and virtual IP.
+  - command: show vrrp brief
+    intent: read
+    description: Brief VRRP groups with state, priority and virtual IP address.
+  - command: show hsrp
+    intent: read
+    description: HSRP groups with active standby state, priority and virtual IP.
+  - command: show access-lists
+    intent: read
+    description: Configured access-lists ACL with rules and hit counters.
+  - command: show ip access-lists
+    intent: read
+    description: IPv4 access-lists ACL with permit and deny rules and match counts.
+  - command: terminal length 0
+    intent: read
+    description: Disable terminal output paging so command output scrolls without pausing.
+  - command: terminal monitor
+    intent: read
+    description: Enable display of log and debug messages on the current terminal session.
+  - command: terminal no monitor
+    intent: read
+    description: Disable display of log and debug messages on the current terminal session.
+  - command: enable
+    intent: read
+    description: Enter privileged exec mode to gain elevated command access.
+  - command: disable
+    intent: read
+    description: Return from privileged exec mode to user exec mode.
+  - command: configure terminal
+    intent: write
+    description: Enter global configuration mode to change device configuration.
+  - command: exit
+    intent: read
+    description: Leave the current command mode and return to the previous level.
+  - command: end
+    intent: read
+    description: Exit configuration mode and return directly to privileged exec mode.
+  - command: ping
+    intent: read
+    description: ICMP ping connectivity test to a destination IP or host.
+  - command: traceroute
+    intent: read
+    description: Traceroute hop-by-hop path discovery to a destination IP or host.
+  - command: telnet
+    intent: read
+    description: Open an outgoing Telnet connection to a remote host.
+  - command: ssh
+    intent: read
+    description: Open an outgoing SSH connection to a remote host.
+  - command: write memory
+    intent: write
+    description: Save the running configuration to startup configuration in NVRAM.
+  - command: copy running-config startup-config
+    intent: write
+    description: Copy the running configuration to startup configuration to persist changes.

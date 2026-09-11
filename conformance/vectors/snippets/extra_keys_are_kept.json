@@ -1,0 +1,10 @@
+{
+  "id": "snippets.extra_keys_are_kept",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "Rule 3: extra keys are allowed and a handler ignores what it does not know. Normalisation does not drop them — the importer's job is to NOTE a key no alias covers, per node, so a typo or a product-specific extension is visible at import rather than at run time.",
+  "input": { "type": "ping", "input": { "host": "10.0.0.1", "comands": [ "typo" ], "vendor_extension": true } },
+  "expected": { "normalized_input": { "host": "10.0.0.1", "comands": [ "typo" ], "vendor_extension": true } },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

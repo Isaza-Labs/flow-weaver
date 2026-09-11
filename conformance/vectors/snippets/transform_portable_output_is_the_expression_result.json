@@ -1,0 +1,16 @@
+{
+  "id": "snippets.transform.portable_output_is_the_expression_result",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "transform portable output: the expression's result, VERBATIM — not wrapped in an envelope. A downstream template addresses the result itself.",
+  "input": {
+    "type": "transform",
+    "probe": {
+      "expression": "devices[?status=='active'].name",
+      "input": { "devices": [ { "name": "core-1", "status": "active" }, { "name": "core-2", "status": "offline" } ] }
+    }
+  },
+  "expected": { "output": [ "core-1" ] },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

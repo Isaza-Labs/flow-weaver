@@ -1,0 +1,16 @@
+{
+  "id": "executor.conditional.device_reference_does_not_fire",
+  "family": "executor",
+  "contract_version": "1.1.0-draft",
+  "description": "templates/SPEC.md section 9 end to end: {{ device.* }} does not resolve in a condition, so the comparison is false and the edge does not fire. An edge fires once at DAG level after its source completes, so there is no single current device even when the source fanned out.",
+  "input": {
+    "workflow": {
+      "nodes": [ { "id": "a", "snippet_id": "__start__" }, { "id": "b", "snippet_id": "__end__" } ],
+      "edges": [ { "source": "a", "target": "b", "type": "conditional", "condition": "{{ device.status }} == 'active'" } ]
+    },
+    "context": { "nodes": { "a": { "result": "changed", "tier": "idempotent" } } }
+  },
+  "expected": { "steps": [ { "node_id": "a", "result": "changed" }, { "node_id": "b", "result": "skipped" } ] },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

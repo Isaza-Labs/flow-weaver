@@ -1,0 +1,17 @@
+# Local TextFSM template index for the SSH runner.
+#
+# Format matches ntc-templates upstream:
+#   Template, Hostname, Platform, Command
+#
+# Templates here override upstream when both ship a template for the
+# same (Platform, Command) pair — flow_weaver_ssh_parsers walks this
+# file before the upstream index. Add new entries below in alphabetical
+# order by Platform, then by Command, to keep merges sane.
+#
+# `sh[[ow]]` is index shorthand for `sh(ow)?` — the `[[ ... ]]` group
+# is an optional suffix.
+
+Template, Hostname, Platform, Command
+
+nokia_srl_show_version.textfsm, .*, nokia_srl, sh[[ow]] ver[[sion]]
+nokia_srl_show_version.textfsm, .*, nokia_srl, info from state system information

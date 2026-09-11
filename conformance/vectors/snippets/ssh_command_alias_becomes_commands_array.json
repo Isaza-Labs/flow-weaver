@@ -1,0 +1,10 @@
+{
+  "id": "snippets.ssh.command_alias_becomes_commands_array",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "ssh: commands is canonical and is an array of strings; the command alias is a single string that becomes a one-element array. This is the drift that kills a bundle on its first node while the graph, the schema and the hash all agree.",
+  "input": { "type": "ssh", "input": { "device": "core-1", "command": "show version" } },
+  "expected": { "normalized_input": { "device": "core-1", "commands": [ "show version" ] } },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

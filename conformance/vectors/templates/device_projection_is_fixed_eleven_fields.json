@@ -1,0 +1,43 @@
+{
+  "id": "templates.device.projection_is_fixed_eleven_fields",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 5: {{ device }} is a FIXED projection of exactly eleven fields, never the entity. The device supplied here also carries credential_id, a host-key fingerprint and a sync timestamp; none of them may appear.",
+  "input": {
+    "device": {
+      "id": "aaaaaaaa-1111-2222-3333-444444444444",
+      "name": "core-1",
+      "ip": "10.0.0.1",
+      "platform": "cisco_ios",
+      "vendor": "cisco",
+      "os_version": "15.2",
+      "site": "bog",
+      "role": "core",
+      "status": "active",
+      "external_id": "netbox-7",
+      "properties": { "rack": "r1" },
+      "credential_id": "bbbbbbbb-1111-2222-3333-444444444444",
+      "expected_ssh_host_key_fingerprint": "SHA256:deadbeef",
+      "last_sync_at": "2026-08-01T00:00:00Z"
+    },
+    "template": "{{ device }}"
+  },
+  "expected": {
+    "resolved": {
+      "id": "aaaaaaaa-1111-2222-3333-444444444444",
+      "name": "core-1",
+      "ip": "10.0.0.1",
+      "platform": "cisco_ios",
+      "vendor": "cisco",
+      "os_version": "15.2",
+      "site": "bog",
+      "role": "core",
+      "status": "active",
+      "external_id": "netbox-7",
+      "properties": { "rack": "r1" }
+    }
+  },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3",
+  "notes": "Exact equivalence on purpose: subset would pass an engine that also exposed credential_id. The review noted this projection had no test anywhere in either product."
+}

@@ -1,0 +1,280 @@
+device_type: nokia_sros
+vendor_family: nokia
+description: Command semantics for Nokia SR OS (TiMOS CLI, classic 7750/7250 routers). Backfills Description/Intent onto the in-code nokia_sros catalog so find_command maps a task to the right TiMOS command instead of an IOS-style guess.
+commands:
+  # Chassis / hardware
+  - command: show version
+    intent: read
+    description: TiMOS software version and uptime.
+  - command: show chassis
+    intent: read
+    description: Chassis summary, type, serial and state.
+  - command: show chassis detail
+    intent: read
+    description: Detailed chassis inventory.
+  - command: show chassis environment
+    intent: read
+    description: Chassis temperature, fans and power environment.
+  - command: show chassis power-supply
+    intent: read
+    description: Power supply status.
+  - command: show chassis ccm
+    intent: read
+    description: Chassis control module status.
+  - command: show card
+    intent: read
+    description: Line card summary.
+  - command: show card state
+    intent: read
+    description: Line card operational state.
+  - command: show card detail
+    intent: read
+    description: Detailed line card inventory.
+  - command: show mda
+    intent: read
+    description: Media dependent adapter MDA summary.
+  - command: show mda detail
+    intent: read
+    description: Detailed MDA inventory.
+  - command: show mcm
+    intent: read
+    description: Media carrier module MCM status.
+  # Ports / interfaces
+  - command: show port
+    intent: read
+    description: Port summary, admin and operational state and speed.
+  - command: show port description
+    intent: read
+    description: Port descriptions.
+  - command: show port detail
+    intent: read
+    description: Detailed port state and counters.
+  - command: show port statistics
+    intent: read
+    description: Port traffic statistics and counters.
+  - command: show eth-tunnel
+    intent: read
+    description: Ethernet tunnel G.8031 summary.
+  - command: show eth-tunnel aps
+    intent: read
+    description: Ethernet tunnel APS protection state.
+  - command: show elmi
+    intent: read
+    description: Ethernet local management interface ELMI summary.
+  - command: show elmi evc
+    intent: read
+    description: Ethernet LMI EVC status.
+  - command: show elmi uni
+    intent: read
+    description: Ethernet LMI UNI status.
+  - command: show interface-group-handler
+    intent: read
+    description: Interface group handler status.
+  # Routing — base router (default instance)
+  - command: show router
+    intent: read
+    description: Base router summary.
+  - command: show router interface
+    intent: read
+    description: Router L3 interface addresses and state.
+  - command: show router interface detail
+    intent: read
+    description: Detailed router interface state.
+  - command: show router route-table
+    intent: read
+    description: IPv4 routing table RIB, the show ip route equivalent.
+  - command: show router route-table summary
+    intent: read
+    description: Routing table summary by protocol.
+  - command: show router arp
+    intent: read
+    description: ARP table.
+  - command: show router neighbor
+    intent: read
+    description: IPv6 neighbor discovery ND table.
+  - command: show router static-route
+    intent: read
+    description: Configured static routes.
+  - command: show router fib 1
+    intent: read
+    description: Forwarding table FIB for slot 1.
+  # BGP
+  - command: show router bgp summary
+    intent: read
+    description: BGP neighbor summary and session state, the show ip bgp summary equivalent.
+  - command: show router bgp neighbor
+    intent: read
+    description: BGP neighbor detail.
+  - command: show router bgp routes
+    intent: read
+    description: BGP routes in the RIB.
+  - command: show router bgp paths
+    intent: read
+    description: BGP path attributes.
+  # OSPF / IS-IS / LDP / RSVP / MPLS
+  - command: show router ospf neighbor
+    intent: read
+    description: OSPF neighbor adjacencies.
+  - command: show router ospf interface
+    intent: read
+    description: OSPF interface state.
+  - command: show router ospf status
+    intent: read
+    description: OSPF process status.
+  - command: show router ospf database
+    intent: read
+    description: OSPF link-state database.
+  - command: show router isis adjacency
+    intent: read
+    description: IS-IS adjacencies.
+  - command: show router isis interface
+    intent: read
+    description: IS-IS interface state.
+  - command: show router isis status
+    intent: read
+    description: IS-IS process status.
+  - command: show router isis database
+    intent: read
+    description: IS-IS link-state database.
+  - command: show router ldp session
+    intent: read
+    description: LDP session state.
+  - command: show router ldp bindings
+    intent: read
+    description: LDP label bindings.
+  - command: show router ldp status
+    intent: read
+    description: LDP process status.
+  - command: show router rsvp session
+    intent: read
+    description: RSVP-TE session state.
+  - command: show router rsvp interface
+    intent: read
+    description: RSVP interface state.
+  - command: show router rsvp neighbor
+    intent: read
+    description: RSVP neighbor state.
+  - command: show router rsvp status
+    intent: read
+    description: RSVP process status.
+  - command: show router mpls lsp
+    intent: read
+    description: MPLS LSP summary.
+  - command: show router mpls lsp terminate
+    intent: read
+    description: MPLS LSPs terminating on this node.
+  - command: show router mpls lsp transit
+    intent: read
+    description: Transit MPLS LSPs.
+  - command: show router mpls interface
+    intent: read
+    description: MPLS-enabled interfaces.
+  - command: show router mpls status
+    intent: read
+    description: MPLS process status.
+  - command: show router mpls sr-te-lsp
+    intent: read
+    description: Segment routing TE LSPs.
+  # Services
+  - command: show service service-using
+    intent: read
+    description: Services configured on the node.
+  - command: show service sap-using
+    intent: read
+    description: Service access points SAPs in use.
+  - command: show service sdp
+    intent: read
+    description: Service distribution points SDPs.
+  - command: show service sdp-using
+    intent: read
+    description: Services using each SDP.
+  - command: show service customer
+    intent: read
+    description: Service customers.
+  # System / log
+  - command: show system information
+    intent: read
+    description: System information, name, type, version and boot.
+  - command: show system cpu
+    intent: read
+    description: CPU utilization.
+  - command: show system memory-pools
+    intent: read
+    description: Memory pool usage.
+  - command: show system thresholds
+    intent: read
+    description: Configured system alarm thresholds.
+  - command: show users
+    intent: read
+    description: Logged-in users and active sessions.
+  - command: show time
+    intent: read
+    description: System clock.
+  - command: show uptime
+    intent: read
+    description: System uptime.
+  - command: show log
+    intent: read
+    description: Event and log summary.
+  - command: show log event-control
+    intent: read
+    description: Per-event logging control settings.
+  - command: show log applications
+    intent: read
+    description: Applications that generate log events.
+  - command: show boot-messages
+    intent: read
+    description: Boot-time log messages.
+  - command: show debug
+    intent: read
+    description: Active debug configuration.
+  # Config / save / rollback / reboot
+  - command: admin display-config
+    intent: read
+    description: Show the running configuration.
+  - command: admin save
+    intent: write
+    description: Save the running configuration to the primary config file.
+  - command: admin save rollback
+    intent: write
+    description: Save a rollback checkpoint.
+  - command: admin reboot
+    intent: disruptive
+    description: Reboot the system, prompts for confirmation.
+  - command: admin reboot now
+    intent: disruptive
+    description: Reboot the system immediately with no prompt.
+  - command: admin disconnect
+    intent: write
+    description: Disconnect a console or management session.
+  - command: admin tech-support
+    intent: read
+    description: Generate a tech-support diagnostic dump.
+  # Config browsing / OAM
+  - command: info
+    intent: read
+    description: Show configuration of the current context.
+  - command: info detail
+    intent: read
+    description: Show full configuration including defaults.
+  - command: ping
+    intent: read
+    description: ICMP reachability test to a destination.
+  - command: traceroute
+    intent: read
+    description: Trace the network path to a destination.
+  - command: telnet
+    intent: read
+    description: Open a Telnet session to a host.
+  - command: ssh
+    intent: read
+    description: Open an SSH session to a host.
+  - command: mrinfo
+    intent: read
+    description: Query a multicast router for its information.
+  - command: mstat
+    intent: read
+    description: Multicast path statistics.
+  - command: mtrace
+    intent: read
+    description: Trace a multicast path.

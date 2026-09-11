@@ -1,0 +1,74 @@
+/* fw-pastel — Notion / Linear-lite / Things 3 school.
+   Warm cream surfaces with subtle butterscotch undertone, large
+   radii (14–20px), tactile soft shadows, secondary coral as the
+   primary action color. Friendly and approachable. */
+
+[data-theme='fw-pastel'] {
+	--radius-base: 0.875rem;       /* 14px */
+	--radius-container: 1.25rem;   /* 20px */
+	--default-border-width: 1px;
+	--heading-font-weight: 700;
+	--heading-letter-spacing: -0.024em;
+	/* Coral as primary action — anchors, focus rings, etc. */
+	--anchor-font-color: var(--color-secondary-600);
+	--anchor-font-color-dark: var(--color-secondary-400);
+
+	/* Warm-cream surface ramp. Steps 50–500 carry a buttery hue
+	   (60–80) for the friendly Notion feel; 600+ cool to a coffee
+	   brown for dark chrome (cards in dark mode, headers). */
+	--color-surface-50: oklch(98.5% 0.014 80);
+	--color-surface-100: oklch(96% 0.018 78);
+	--color-surface-200: oklch(91% 0.022 75);
+	--color-surface-300: oklch(82% 0.024 72);
+	--color-surface-400: oklch(68% 0.025 68);
+	--color-surface-500: oklch(52% 0.025 62);
+	--color-surface-600: oklch(42% 0.022 55);
+	--color-surface-700: oklch(32% 0.02 50);
+	--color-surface-800: oklch(22% 0.018 48);
+	--color-surface-900: oklch(15% 0.016 45);
+	--color-surface-950: oklch(8.5% 0.014 42);
+}
+
+/* Dark mode — coffee/leather warm dark. Keeps the cream identity
+   instead of turning cold blue. */
+[data-theme='fw-pastel'][data-mode='dark'] {
+	--color-surface-50: oklch(97% 0.014 70);
+	--color-surface-100: oklch(93% 0.02 65);
+	--color-surface-200: oklch(86% 0.022 60);
+	--color-surface-300: oklch(76% 0.024 55);
+	--color-surface-400: oklch(60% 0.026 52);
+	--color-surface-500: oklch(46% 0.028 50);
+	--color-surface-600: oklch(35% 0.028 48);
+	--color-surface-700: oklch(26% 0.028 46);
+	--color-surface-800: oklch(18% 0.024 44);
+	--color-surface-900: oklch(11.5% 0.02 42);
+	--color-surface-950: oklch(7% 0.016 40);
+}
+
+/* Solid body — Notion-like, no busy gradient. The surface tinting
+   carries the personality. */
+[data-theme='fw-pastel'][data-mode='light'] body {
+	background: var(--color-surface-50) !important;
+	background-attachment: fixed !important;
+}
+[data-theme='fw-pastel'][data-mode='dark'] body {
+	background: var(--color-surface-950) !important;
+	background-attachment: fixed !important;
+}
+
+/* Soft shadows on raised surfaces — Notion / Things 3 trademark.
+   We can't override every component's shadow utility, but the
+   theme's own card-like surfaces (Skeleton's .card, etc.) pick
+   this up via the box-shadow property. */
+[data-theme='fw-pastel'] .card,
+[data-theme='fw-pastel'] [data-card] {
+	box-shadow:
+		0 1px 2px color-mix(in oklab, var(--color-surface-950) 4%, transparent),
+		0 8px 24px -8px color-mix(in oklab, var(--color-surface-950) 10%, transparent);
+}
+[data-theme='fw-pastel'][data-mode='dark'] .card,
+[data-theme='fw-pastel'][data-mode='dark'] [data-card] {
+	box-shadow:
+		0 1px 2px rgba(0, 0, 0, 0.4),
+		0 8px 24px -8px rgba(0, 0, 0, 0.45);
+}

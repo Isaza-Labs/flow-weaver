@@ -1,0 +1,13 @@
+{
+  "id": "templates.path.empty_is_root",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 2: an empty path is the root value, so {{ steps.x.output }} is the whole step output.",
+  "input": {
+    "outputs": { "ssh": { "stdout": "ok", "exit_code": 0 } },
+    "template": "{{ steps.ssh.output }}"
+  },
+  "expected": { "resolved": { "stdout": "ok", "exit_code": 0 } },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

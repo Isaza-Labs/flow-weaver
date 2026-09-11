@@ -1,0 +1,14 @@
+{
+  "id": "canon.hash.changes_on_input_edit",
+  "family": "canonicalization",
+  "contract_version": "1.0.0",
+  "description": "Editing a node's config changes the schema hash (which invalidates a prior simulation).",
+  "input": {
+    "before": { "nodes": [ { "id": "n1", "snippet_id": "11111111-1111-1111-1111-111111111111", "config_overrides": { "status": "active" } } ], "edges": [] },
+    "after":  { "nodes": [ { "id": "n1", "snippet_id": "11111111-1111-1111-1111-111111111111", "config_overrides": { "status": "decommissioned" } } ], "edges": [] }
+  },
+  "expected": { "schema_hash_changed": true },
+  "equivalence": "subset",
+  "oracle_commit": "fw@95fc69e",
+  "notes": "Links to gate.simulation_stale — this hash change is what marks a prior simulation stale."
+}

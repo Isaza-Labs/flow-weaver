@@ -1,0 +1,60 @@
+{
+  "id": "executor.rollback.non_reversible_node_that_changed_nothing_does_not_spoil_the_plan",
+  "family": "executor",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 2: the run-time plan is about what actually changed. A non_reversible node that ended no_change left nothing behind, so the run is still rolled_back.",
+  "input": {
+    "workflow": {
+      "nodes": [
+        {
+          "id": "a",
+          "snippet_id": "__start__"
+        },
+        {
+          "id": "quiet",
+          "snippet_id": "__end__"
+        },
+        {
+          "id": "c",
+          "snippet_id": "__end__"
+        }
+      ],
+      "edges": [
+        {
+          "source": "a",
+          "target": "quiet",
+          "type": "success"
+        },
+        {
+          "source": "quiet",
+          "target": "c",
+          "type": "success"
+        }
+      ]
+    },
+    "context": {
+      "nodes": {
+        "a": {
+          "result": "changed",
+          "tier": "idempotent"
+        },
+        "quiet": {
+          "result": "no_change",
+          "tier": "non_reversible"
+        },
+        "c": {
+          "result": "failed"
+        }
+      }
+    }
+  },
+  "expected": {
+    "status": "failed",
+    "final_state": "rolled_back",
+    "rollback_plan": [
+      "a"
+    ]
+  },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

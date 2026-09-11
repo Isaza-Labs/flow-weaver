@@ -1,0 +1,17 @@
+**/bin
+**/obj
+**/.vs
+**/.vscode
+**/.idea
+**/*.user
+**/.git
+**/.gitignore
+**/node_modules
+**/keyring
+**/appsettings.*.json
+!**/appsettings.json
+!**/appsettings.Production.json
+deploy
+!deploy/python/**
+docs
+README.md

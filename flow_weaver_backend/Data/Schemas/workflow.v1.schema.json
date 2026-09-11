@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flow-weaver.example.com/schemas/workflow.v1.json",
+  "title": "FlowWeaver Workflow v1",
+  "description": "Canonical shape of Workflow.Nodes and Workflow.Edges. Validated server-side before persisting.",
+  "type": "object",
+  "required": ["nodes", "edges"],
+  "additionalProperties": false,
+  "properties": {
+    "nodes": {
+      "type": "array",
+      "description": "DAG nodes. Must all have unique ids (enforced by the DagParser in Sprint 2).",
+      "items": { "$ref": "#/$defs/node" }
+    },
+    "edges": {
+      "type": "array",
+      "description": "Directed edges between nodes. Source and target must reference existing node ids.",
+      "items": { "$ref": "#/$defs/edge" }
+    }
+  },
+  "$defs": {
+    "node": {
+      "type": "object",
+      "required": ["id", "snippet_id"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Stable identifier within the workflow. Used by edges as source/target."
+        },
+        "snippet_id": {
+          "anyOf": [
+            { "type": "string", "format": "uuid" },
+            { "type": "string", "enum": ["__start__", "__end__", "subflow"] }
+          ],
+          "description": "UUID of the Snippet this node executes, or a reserved marker."
+        },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "config_overrides": {
+          "type": "object",
+          "description": "Per-node overrides merged onto the Snippet defaults at run time."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["task", "decision", "subflow"],
+          "description": "Optional. Defaults to 'task' when absent. 'subflow' is wired in Sprint 3."
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "required": ["source", "target", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Id of the source node."
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Id of the target node."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["success", "failure", "always", "conditional"]
+        },
+        "condition": {
+          "type": "string",
+          "description": "Required when type = 'conditional'. Evaluated by the engine's ConditionEvaluator (Sprint 2.7)."
+        },
+        "source_handle": {
+          "type": "string",
+          "description": "Optional DagNode/SentinelNode handle id on the source side. Purely visual — the engine ignores it. Needed so the frontend can render edges from the exact side the user connected (top/right/bottom/left)."
+        },
+        "target_handle": {
+          "type": "string",
+          "description": "Optional handle id on the target side. Purely visual — see source_handle."
+        }
+      }
+    }
+  }
+}

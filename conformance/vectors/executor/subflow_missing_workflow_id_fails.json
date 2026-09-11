@@ -1,0 +1,20 @@
+{
+  "id": "executor.subflow.missing_workflow_id_fails",
+  "family": "executor",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 5: config_overrides.subflow_workflow_id is required; missing means the step FAILS with subflow_missing. A node without it is not a subflow with no input — there is no workflow to run — and skipping it would stop every success edge out of it while the run reported completed.",
+  "input": {
+    "workflow": {
+      "nodes": [ { "id": "child", "type": "subflow", "snippet_id": "subflow", "config_overrides": { "site": "bog" } } ],
+      "edges": []
+    },
+    "context": { "workflow_id": "22222222-2222-2222-2222-222222222222" }
+  },
+  "expected": {
+    "status": "failed",
+    "steps": [ { "node_id": "child", "result": "failed" } ],
+    "errors": { "child": "subflow_missing" }
+  },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

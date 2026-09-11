@@ -1,0 +1,32 @@
+{
+  "id": "bundle.imported.unknown_trigger_type_is_skipped_with_a_note",
+  "family": "bundle",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 6: portable trigger types are cron and webhook. Another type is exported as-is and SKIPPED WITH A NOTE by an importer that lacks it — not refused, and not silently created as something else.",
+  "input": {
+    "bundle": {
+      "schema_version": "v3",
+      "kind": "flow_weaver.workflow_bundle",
+      "requires": { "snippet_types": [ "ping" ], "capabilities": [ "triggers" ], "secrets": [] },
+      "workflow": { "name": "probe-core" },
+      "nodes": [
+        { "id": "start", "snippet_id": "__start__" },
+        { "id": "probe", "snippet_id": "aaaaaaaa-0000-0000-0000-000000000001", "config_overrides": { "host": "10.0.0.1" } }
+      ],
+      "edges": [ { "source": "start", "target": "probe", "type": "success" } ],
+      "dependencies": {
+        "snippets": [ { "id": "aaaaaaaa-0000-0000-0000-000000000001", "slug": "ping-host", "name": "Ping host", "type": "ping", "target_mode": "once", "timeout_seconds": 30, "idempotency": "idempotent" } ]
+      },
+      "triggers": [ { "name": "on-event", "type": "event", "enabled": true } ]
+    },
+    "local": { "snippet_types": [ "ping" ] }
+  },
+  "expected": {
+    "outcome": "imported",
+    "notes_empty": false,
+    "created": { "snippets": 1, "workflows": 0, "triggers": 0 },
+    "triggers": {}
+  },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

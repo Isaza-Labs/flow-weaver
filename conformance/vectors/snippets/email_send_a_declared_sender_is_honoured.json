@@ -1,0 +1,19 @@
+{
+  "id": "snippets.email_send.a_declared_sender_is_honoured",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "email_send: where the configured channel can set a sender, a declared from_address / from_name is used for the message.",
+  "input": {
+    "type": "email_send",
+    "probe": {
+      "channel": "ops-relay", "to": [ "ops@example.com" ], "subject": "Audit", "body": "done",
+      "from_address": "noreply@example.com", "from_name": "Nightly Audit"
+    }
+  },
+  "expected": {
+    "sent": { "called": true, "from_address": "noreply@example.com", "from_name": "Nightly Audit" }
+  },
+  "equivalence": "subset",
+  "oracle_commit": "fw@fe07550",
+  "notes": "The companion to email_send.unhonoured_field_fails_not_supported. Landed together because a rule with only its refusal branch pinned is half a rule: an implementation that refused EVERY declared sender would pass the other vector and fail every real workflow."
+}

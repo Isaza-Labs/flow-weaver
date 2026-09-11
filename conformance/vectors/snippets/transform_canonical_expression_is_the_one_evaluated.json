@@ -1,0 +1,17 @@
+{
+  "id": "snippets.transform.canonical_expression_is_the_one_evaluated",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "The alias rule end to end for transform: a node carrying both expression and mapping evaluates the CANONICAL expression. Preferring the alias silently ignored the JMESPath the author wrote and produced a differently shaped output for everything downstream.",
+  "input": {
+    "type": "transform",
+    "probe": {
+      "expression": "devices[0].name",
+      "mapping": { "wrong": "devices[1].name" },
+      "input": { "devices": [ { "name": "core-1" }, { "name": "core-2" } ] }
+    }
+  },
+  "expected": { "output": "core-1" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

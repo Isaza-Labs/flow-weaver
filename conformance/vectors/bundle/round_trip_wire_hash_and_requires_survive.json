@@ -1,0 +1,42 @@
+{
+  "id": "bundle.round_trip.wire_hash_and_requires_survive",
+  "family": "bundle",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 8: export, import, export again, and the canonical hash of the bundle's own nodes+edges and the requires block are unchanged. The hash compared is the WIRE form, not the stored row — the row may carry whatever local vocabulary the product runs on, and comparing rows would assert that two products store workflows identically, which is not the contract and is not true. snippet_id and subflow_workflow_id are the exception the round trip must tolerate: they are remapped to the receiving instance's rows by design, so the comparison normalizes them.",
+  "input": {
+    "round_trip": true,
+    "bundle": {
+      "schema_version": "v3",
+      "kind": "flow_weaver.workflow_bundle",
+      "exported_at": "2026-08-27T12:00:00Z",
+      "requires": { "snippet_types": [ "ping" ], "capabilities": [], "secrets": [] },
+      "workflow": { "name": "probe-core", "description": "reachability" },
+      "nodes": [
+        { "id": "start", "snippet_id": "__start__" },
+        { "id": "probe", "snippet_id": "aaaaaaaa-0000-0000-0000-000000000001", "config_overrides": { "host": "10.0.0.1" } },
+        { "id": "done", "snippet_id": "__end__" }
+      ],
+      "edges": [
+        { "source": "start", "target": "probe", "type": "success" },
+        { "source": "probe", "target": "done", "type": "success" }
+      ],
+      "dependencies": {
+        "snippets": [ { "id": "aaaaaaaa-0000-0000-0000-000000000001", "slug": "ping-host", "name": "Ping host", "type": "ping", "target_mode": "once", "timeout_seconds": 30, "idempotency": "idempotent" } ]
+      },
+      "triggers": []
+    },
+    "local": { "snippet_types": [ "ping" ] }
+  },
+  "expected": {
+    "outcome": "imported",
+    "schema_hash_unchanged": true,
+    "requires": {
+      "snippet_types": [ "ping" ],
+      "capabilities": [],
+      "secrets": []
+    }
+  },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3",
+  "notes": "The expected requires block is written from sections 2.1 and 2.2 by hand — one carried snippet of type ping, no node or snippet showing any capability — rather than read back from the implementation that computes it. Comparing the re-export to whatever the same function produced on the way in is how a round-trip test ends up asserting that a function equals itself."
+}

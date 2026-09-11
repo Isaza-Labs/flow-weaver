@@ -1,0 +1,319 @@
+device_type: juniper_junos
+vendor_family: juniper
+description: Command semantics for Juniper Junos. Backfills Description/Intent onto the in-code juniper_junos catalog for find_command.
+commands:
+  - command: show version
+    intent: read
+    description: Software version and chassis summary.
+  - command: show version brief
+    intent: read
+    description: Brief software version summary.
+  - command: show version detail
+    intent: read
+    description: Detailed software version and package information.
+  - command: show chassis hardware
+    intent: read
+    description: Chassis hardware inventory with serial numbers.
+  - command: show chassis hardware detail
+    intent: read
+    description: Detailed chassis hardware inventory.
+  - command: show chassis hardware extensive
+    intent: read
+    description: Extensive chassis hardware inventory and component details.
+  - command: show chassis routing-engine
+    intent: read
+    description: Routing engine status, CPU and memory utilization.
+  - command: show chassis fpc
+    intent: read
+    description: Flexible PIC concentrator FPC status and utilization.
+  - command: show chassis fpc pic-status
+    intent: read
+    description: FPC and PIC online status on the chassis.
+  - command: show chassis environment
+    intent: read
+    description: Chassis environment temperature and fan status.
+  - command: show chassis power
+    intent: read
+    description: Chassis power supply status and consumption.
+  - command: show chassis alarms
+    intent: read
+    description: Active chassis hardware alarms.
+  - command: show system uptime
+    intent: read
+    description: System uptime and last reboot time.
+  - command: show system users
+    intent: read
+    description: Currently logged in users on the system.
+  - command: show system processes
+    intent: read
+    description: Running system processes and resource usage.
+  - command: show system processes extensive
+    intent: read
+    description: Extensive system process CPU and memory statistics.
+  - command: show system storage
+    intent: read
+    description: Filesystem storage usage on the device.
+  - command: show system memory
+    intent: read
+    description: System memory utilization summary.
+  - command: show system buffers
+    intent: read
+    description: Kernel network memory buffer usage.
+  - command: show system alarms
+    intent: read
+    description: Active system software alarms.
+  - command: show system services
+    intent: read
+    description: Enabled system management services.
+  - command: show system commit
+    intent: read
+    description: Configuration commit history.
+  - command: show system core-dumps
+    intent: read
+    description: Saved process core dump files.
+  - command: show system rollback
+    intent: read
+    description: Available configuration rollback entries.
+  - command: show interfaces
+    intent: read
+    description: Interface status, addresses and traffic statistics.
+  - command: show interfaces terse
+    intent: read
+    description: Terse list of interfaces with admin and link state.
+  - command: show interfaces extensive
+    intent: read
+    description: Extensive interface counters and error statistics.
+  - command: show interfaces descriptions
+    intent: read
+    description: Configured interface descriptions and state.
+  - command: show interfaces diagnostics optics
+    intent: read
+    description: Optical transceiver diagnostics on interfaces.
+  - command: show interfaces filters
+    intent: read
+    description: Firewall filters applied to interfaces.
+  - command: show interfaces queue
+    intent: read
+    description: Interface output queue and class-of-service statistics.
+  - command: show route
+    intent: read
+    description: Active route table entries.
+  - command: show route summary
+    intent: read
+    description: Route table summary counts per protocol.
+  - command: show route protocol bgp
+    intent: read
+    description: Routes learned via the bgp protocol.
+  - command: show route protocol ospf
+    intent: read
+    description: Routes learned via the ospf protocol.
+  - command: show route protocol isis
+    intent: read
+    description: Routes learned via the isis protocol.
+  - command: show route protocol direct
+    intent: read
+    description: Directly connected interface routes.
+  - command: show route protocol static
+    intent: read
+    description: Statically configured routes.
+  - command: show route protocol aggregate
+    intent: read
+    description: Aggregate routes in the route table.
+  - command: show route table inet.0
+    intent: read
+    description: IPv4 unicast inet.0 route table.
+  - command: show route table inet6.0
+    intent: read
+    description: IPv6 unicast inet6.0 route table.
+  - command: show route table mpls.0
+    intent: read
+    description: MPLS label switching mpls.0 route table.
+  - command: show route forwarding-table
+    intent: read
+    description: Forwarding table programmed in the data plane.
+  - command: show route forwarding-table summary
+    intent: read
+    description: Forwarding table entry summary counts.
+  - command: show arp
+    intent: read
+    description: ARP table mapping IPv4 addresses to ethernet MAC addresses.
+  - command: show arp no-resolve
+    intent: read
+    description: ARP table without hostname resolution.
+  - command: show ipv6 neighbors
+    intent: read
+    description: IPv6 neighbor discovery cache entries.
+  - command: show bgp summary
+    intent: read
+    description: BGP peer summary with session state and prefix counts.
+  - command: show bgp neighbor
+    intent: read
+    description: Detailed bgp neighbor session information.
+  - command: show bgp group
+    intent: read
+    description: BGP peer group configuration and status.
+  - command: show ospf neighbor
+    intent: read
+    description: OSPF neighbor adjacency state.
+  - command: show ospf interface
+    intent: read
+    description: OSPF enabled interfaces and parameters.
+  - command: show ospf statistics
+    intent: read
+    description: OSPF protocol packet statistics.
+  - command: show ospf database
+    intent: read
+    description: OSPF link-state database entries.
+  - command: show ospf overview
+    intent: read
+    description: OSPF protocol overview and router state.
+  - command: show ospf route
+    intent: read
+    description: Routes computed by the ospf protocol.
+  - command: show isis adjacency
+    intent: read
+    description: IS-IS neighbor adjacency state.
+  - command: show isis interface
+    intent: read
+    description: IS-IS enabled interfaces and parameters.
+  - command: show isis database
+    intent: read
+    description: IS-IS link-state database entries.
+  - command: show isis statistics
+    intent: read
+    description: IS-IS protocol packet statistics.
+  - command: show mpls lsp
+    intent: read
+    description: MPLS label-switched path status.
+  - command: show mpls interface
+    intent: read
+    description: MPLS enabled interfaces.
+  - command: show ldp session
+    intent: read
+    description: LDP session state with peers.
+  - command: show ldp neighbor
+    intent: read
+    description: LDP discovered neighbor information.
+  - command: show rsvp session
+    intent: read
+    description: RSVP signaled session state.
+  - command: show rsvp neighbor
+    intent: read
+    description: RSVP neighbor information.
+  - command: show rsvp interface
+    intent: read
+    description: RSVP enabled interfaces and bandwidth.
+  - command: show lldp neighbors
+    intent: read
+    description: LLDP discovered neighbors on interfaces.
+  - command: show lldp local-information
+    intent: read
+    description: Local LLDP advertised system information.
+  - command: show ethernet-switching table
+    intent: read
+    description: Ethernet-switching MAC address forwarding table.
+  - command: show vlans
+    intent: read
+    description: Configured VLANs and member interfaces.
+  - command: show spanning-tree bridge
+    intent: read
+    description: Spanning-tree bridge parameters and root status.
+  - command: show vrrp
+    intent: read
+    description: VRRP virtual router redundancy group state.
+  - command: show firewall
+    intent: read
+    description: Firewall filter counters and policers.
+  - command: show firewall log
+    intent: read
+    description: Firewall filter log entries.
+  - command: show log messages
+    intent: read
+    description: System messages log file contents.
+  - command: show configuration
+    intent: read
+    description: Active device configuration.
+  - command: show configuration interfaces
+    intent: read
+    description: Interface section of the active configuration.
+  - command: show configuration | display set
+    intent: read
+    description: Active configuration rendered as set commands.
+  - command: show configuration | compare
+    intent: read
+    description: Difference between candidate and active configuration.
+  - command: set cli screen-length 0
+    intent: read
+    description: Disable terminal output paging by length.
+  - command: set cli screen-width 0
+    intent: read
+    description: Disable terminal output line wrapping by width.
+  - command: configure
+    intent: write
+    description: Enter configuration mode to edit the candidate configuration.
+  - command: configure exclusive
+    intent: write
+    description: Enter configuration mode with an exclusive lock.
+  - command: configure private
+    intent: write
+    description: Enter configuration mode with a private candidate copy.
+  - command: commit
+    intent: write
+    description: Commit the candidate configuration to active.
+  - command: commit confirmed
+    intent: write
+    description: Commit configuration with automatic rollback unless confirmed.
+  - command: commit check
+    intent: write
+    description: Validate the candidate configuration without committing.
+  - command: commit comment
+    intent: write
+    description: Commit configuration with an attached log comment.
+  - command: rollback
+    intent: write
+    description: Discard candidate changes and restore the active configuration.
+  - command: rollback 0
+    intent: write
+    description: Reload the active configuration into the candidate.
+  - command: exit
+    intent: read
+    description: Leave the current mode or close the session.
+  - command: exit configuration-mode
+    intent: read
+    description: Leave configuration mode and return to operational mode.
+  - command: top
+    intent: read
+    description: Move to the top of the configuration hierarchy.
+  - command: save
+    intent: write
+    description: Save the candidate configuration to a file.
+  - command: load merge
+    intent: write
+    description: Merge configuration from a file into the candidate.
+  - command: load replace
+    intent: write
+    description: Replace candidate configuration sections from a file.
+  - command: ping
+    intent: read
+    description: Send ICMP echo requests to test reachability.
+  - command: traceroute
+    intent: read
+    description: Trace the network path to a destination.
+  - command: telnet
+    intent: read
+    description: Open a telnet session to a remote host.
+  - command: ssh
+    intent: read
+    description: Open an ssh session to a remote host.
+  - command: monitor traffic
+    intent: read
+    description: Capture and display traffic on an interface.
+  - command: monitor interface
+    intent: read
+    description: Display real-time interface traffic statistics.
+  - command: request system reboot
+    intent: disruptive
+    description: Reboot the device interrupting all forwarding.
+  - command: request system halt
+    intent: disruptive
+    description: Halt the device and stop the operating system.

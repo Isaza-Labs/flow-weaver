@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -8 280 66">
+  <defs>
+    <style>
+      .logo-text { font-family: 'Poppins', 'Segoe UI', Arial, sans-serif; font-weight: 600; }
+    </style>
+  </defs>
+
+  <!-- Network nodes symbol - aligned with chevron -->
+  <g transform="translate(8, 4) scale(0.52)">
+    <!-- Top node - aligned with chevron top (y=12) -->
+    <circle cx="30" cy="15" r="7" fill="none" stroke="#5B6BAA" stroke-width="4.5"/>
+    <!-- Middle node -->
+    <circle cx="8" cy="40" r="7" fill="none" stroke="#5B6BAA" stroke-width="4.5"/>
+    <!-- Bottom node - aligned with chevron bottom (y=38) -->
+    <circle cx="30" cy="65" r="7" fill="none" stroke="#5B6BAA" stroke-width="4.5"/>
+    <!-- Connection lines -->
+    <line x1="14" y1="34" x2="24" y2="22" stroke="#5B6BAA" stroke-width="4.5" stroke-linecap="round"/>
+    <line x1="14" y1="46" x2="24" y2="58" stroke="#5B6BAA" stroke-width="4.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Slash - thinner -->
+  <line x1="48" y1="6" x2="34" y2="44" stroke="#E06B54" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Chevron > - aligned with nodes -->
+  <polyline points="54,12 70,25 54,38" fill="none" stroke="#5B6BAA" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Text: Flow Weaver -->
+  <text x="82" y="35" class="logo-text" fill="#5B6BAA" font-size="30">Flow</text>
+  <text x="145" y="35" class="logo-text" fill="#E06B54" font-size="30">Weaver</text>
+</svg>

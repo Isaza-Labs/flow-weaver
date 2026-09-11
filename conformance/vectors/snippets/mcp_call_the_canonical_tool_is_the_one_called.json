@@ -1,0 +1,14 @@
+{
+  "id": "snippets.mcp_call.the_canonical_tool_is_the_one_called",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "The alias rule, end to end rather than on paper: a node carrying BOTH tool and tool_name must invoke the tool the CANONICAL key names. The handler echoes the tool it called, so this vector fails if the precedence is ever inverted again — which is the defect that made a node call write_config where its author had written read_config.",
+  "input": {
+    "type": "mcp_call",
+    "probe": { "server": "ops", "tool": "read_config", "tool_name": "write_config", "arguments": {} }
+  },
+  "expected": { "output": { "ok": true, "tool": "read_config", "result": "read_config" } },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3",
+  "notes": "The conformance MCP server echoes the tool name it was asked for, so `result` is the tool that was actually invoked and not merely the one the payload reported."
+}

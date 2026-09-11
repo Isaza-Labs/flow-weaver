@@ -1,0 +1,121 @@
+device_type: linux
+vendor_family: linux
+description: Command semantics for a Linux shell. Backfills Description/Intent onto the in-code linux catalog for find_command.
+commands:
+  - command: uname -a
+    intent: read
+    description: Kernel version and system architecture.
+  - command: uname -r
+    intent: read
+    description: Kernel release version string.
+  - command: hostname
+    intent: read
+    description: System hostname.
+  - command: hostname -f
+    intent: read
+    description: Fully qualified domain name hostname.
+  - command: hostname -i
+    intent: read
+    description: Host IP address resolved from the hostname.
+  - command: uptime
+    intent: read
+    description: System uptime and load average.
+  - command: whoami
+    intent: read
+    description: Current effective user name.
+  - command: id
+    intent: read
+    description: Current user and group identity numbers.
+  - command: date
+    intent: read
+    description: Current system date and time.
+  - command: df -h
+    intent: read
+    description: Disk usage per filesystem in human readable sizes.
+  - command: df -hT
+    intent: read
+    description: Disk usage per filesystem with filesystem type.
+  - command: free -h
+    intent: read
+    description: Memory and swap usage in human readable sizes.
+  - command: free -m
+    intent: read
+    description: Memory and swap usage in megabytes.
+  - command: vmstat
+    intent: read
+    description: Virtual memory, process and CPU activity statistics.
+  - command: iostat
+    intent: read
+    description: CPU and disk input output throughput statistics.
+  - command: top -bn1
+    intent: read
+    description: Snapshot of running processes and CPU memory usage.
+  - command: ps aux
+    intent: read
+    description: All running processes with user and resource usage.
+  - command: ps -ef
+    intent: read
+    description: All running processes in full format with parent process.
+  - command: lsof -i
+    intent: read
+    description: Open network sockets and listening ports per process.
+  - command: lscpu
+    intent: read
+    description: CPU architecture and core details.
+  - command: lsblk
+    intent: read
+    description: Block devices and disk partitions tree.
+  - command: lspci
+    intent: read
+    description: PCI hardware devices on the bus.
+  - command: lsmod
+    intent: read
+    description: Loaded kernel modules.
+  - command: dmesg
+    intent: read
+    description: Kernel ring buffer boot and hardware messages.
+  - command: journalctl -xe
+    intent: read
+    description: Recent systemd journal log entries with explanations.
+  - command: ip addr
+    intent: read
+    description: Network interface addresses.
+  - command: ip a
+    intent: read
+    description: Network interface addresses.
+  - command: ip link
+    intent: read
+    description: Network interface link state and MAC addresses.
+  - command: ip route
+    intent: read
+    description: Routing table for IPv4.
+  - command: ip -6 route
+    intent: read
+    description: Routing table for IPv6.
+  - command: ip neigh
+    intent: read
+    description: ARP neighbor table of resolved addresses.
+  - command: ss -tunlp
+    intent: read
+    description: Listening TCP and UDP sockets with owning process.
+  - command: netstat -rn
+    intent: read
+    description: Routing table in numeric form.
+  - command: netstat -tunlp
+    intent: read
+    description: Listening TCP and UDP sockets with owning process.
+  - command: arp -an
+    intent: read
+    description: ARP cache of neighbor IP to MAC mappings.
+  - command: mount
+    intent: read
+    description: Mounted filesystems and their mount points.
+  - command: cat /proc/cpuinfo
+    intent: read
+    description: Detailed CPU processor information.
+  - command: cat /proc/meminfo
+    intent: read
+    description: Detailed memory usage information.
+  - command: cat /etc/os-release
+    intent: read
+    description: Operating system distribution and version.

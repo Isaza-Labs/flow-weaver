@@ -1,0 +1,19 @@
+{
+  "id": "executor.edge.failure_fires_on_failed",
+  "family": "executor",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 1: a failure edge fires when the source failed. The notify-on-failure node runs.",
+  "input": {
+    "workflow": {
+      "nodes": [ { "id": "a", "snippet_id": "__start__" }, { "id": "notify", "snippet_id": "__end__" } ],
+      "edges": [ { "source": "a", "target": "notify", "type": "failure" } ]
+    },
+    "context": { "nodes": { "a": { "result": "failed" }, "notify": { "result": "changed", "tier": "idempotent" } } }
+  },
+  "expected": {
+    "status": "failed",
+    "steps": [ { "node_id": "a", "result": "failed" }, { "node_id": "notify", "result": "changed" } ]
+  },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

@@ -1,0 +1,39 @@
+{
+  "id": "bundle.v2.requires_are_inferred",
+  "family": "bundle",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 2.3: a v2 bundle is read as a v3 bundle with requires INFERRED and no triggers. snippet_types comes from the carried dependencies; capabilities from what the nodes and snippets show — a conditional edge, a pipe inside {{ }}, and a {{ run. reference. The trigger the file carries is dropped, because v2 had no trigger contract to honour.",
+  "input": {
+    "bundle": {
+      "schema_version": "v2",
+      "kind": "nashira.workflow_bundle",
+      "workflow": { "name": "audit" },
+      "nodes": [
+        { "id": "start", "snippet_id": "__start__" },
+        { "id": "show", "snippet_id": "aaaaaaaa-0000-0000-0000-000000000004", "config_overrides": { "commands": [ "show version" ], "banner": "run {{ run.workflow_name }} said {{ steps.start.output.msg | trim }}" } },
+        { "id": "after", "snippet_id": "__end__" }
+      ],
+      "edges": [
+        { "source": "start", "target": "show", "type": "success" },
+        { "source": "show", "target": "after", "type": "conditional", "condition": "{{ steps.show.output.exit_code }} == 0" }
+      ],
+      "dependencies": {
+        "snippets": [ { "id": "aaaaaaaa-0000-0000-0000-000000000004", "slug": "show-version", "name": "Show version", "type": "ssh", "target_mode": "once", "timeout_seconds": 30 } ]
+      },
+      "triggers": [ { "name": "nightly", "type": "cron", "cron_expression": "0 3 * * *", "enabled": true } ]
+    },
+    "local": { "snippet_types": [ "ssh" ] }
+  },
+  "expected": {
+    "outcome": "imported",
+    "requires": {
+      "snippet_types": [ "ssh" ],
+      "capabilities": [ "conditional_edges", "run_namespace", "template_filters" ],
+      "secrets": []
+    },
+    "created": { "snippets": 1, "workflows": 0, "triggers": 0 }
+  },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3",
+  "notes": "Capabilities are listed in ordinal order; the vector states the set the spec's inference rules produce, not the order any one implementation happens to build it in."
+}

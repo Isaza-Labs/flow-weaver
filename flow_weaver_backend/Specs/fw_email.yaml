@@ -1,0 +1,258 @@
+openapi: 3.0.0
+info:
+  title: fw_email
+  version: "1.0"
+  description: >
+    SMTP microservice for outbound email. Five endpoints: plain text,
+    HTML, bulk, and two attachment flavors (inline-text and base64). The
+    agent pairs this with `generate_report` to deliver PDFs/CSVs to the
+    user over email instead of only as a chat download.
+servers:
+  # Overridden via the Integration `base_url`. The default
+  # here is just a sensible placeholder for the spec index — the real
+  # call goes through a registered Integration (`integration_action`)
+  # so base URL + auth live in the integration config, not in the spec.
+  - url: http://192.168.193.22:8092
+components:
+  schemas:
+    AttachmentRequest:
+      type: object
+      required: [filename, content_base64]
+      properties:
+        filename:       { type: string, description: "File name including extension, e.g. 'report.pdf'" }
+        content_base64:
+          type: string
+          description: >
+            Raw file bytes, base64-encoded. PREFER the reference form
+            `${report:<report_artifact_id>}` (the `report_artifact_id`
+            from generate_report's tool_result) — the backend expands it to
+            the artifact's base64 server-side, so you never copy the blob
+            (which gets truncated) and can list several formats as separate
+            attachments in one call. Pasting the literal `base64` still
+            works but is discouraged for anything but tiny files.
+
+    AttachmentTextRequest:
+      type: object
+      required: [filename, content]
+      properties:
+        filename: { type: string, description: "File name including extension, e.g. 'report.csv'" }
+        content:  { type: string, description: "Plain text body of the attachment (CSV, TXT, JSON). Not base64-encoded." }
+
+    EmailRequest:
+      type: object
+      required: [to, subject, body]
+      properties:
+        to:      { type: string, format: email }
+        subject: { type: string }
+        body:    { type: string }
+      example:
+        to: user@example.com
+        subject: Hello from FlowWeaver
+        body: This is the email body.
+
+    EmailHTMLRequest:
+      type: object
+      required: [to, subject, html]
+      properties:
+        to:      { type: string, format: email }
+        subject: { type: string }
+        html:    { type: string, description: "Full HTML document or snippet. Use for branded messages." }
+      example:
+        to: user@example.com
+        subject: Device report
+        html: "<h1>Report</h1><p>10 devices created.</p>"
+
+    EmailBulkRequest:
+      type: object
+      required: [to, subject, body]
+      properties:
+        to:
+          type: array
+          items: { type: string, format: email }
+          description: "List of recipient emails. Each gets an individual copy (no Bcc leak)."
+        subject: { type: string }
+        body:    { type: string, description: "Plain text body." }
+        html:
+          type: string
+          nullable: true
+          description: "Optional HTML body. When present, the mail is sent multipart/alternative."
+      example:
+        to: ["user1@example.com", "user2@example.com"]
+        subject: Bulk notification
+        body: This email was sent to multiple recipients.
+
+    EmailWithTextAttachmentRequest:
+      type: object
+      required: [to, subject, body]
+      properties:
+        to:      { type: string, format: email }
+        subject: { type: string }
+        body:    { type: string }
+        html:
+          type: string
+          nullable: true
+        attachments:
+          type: array
+          nullable: true
+          items: { $ref: "#/components/schemas/AttachmentTextRequest" }
+          description: "Only use this for plain-text payloads (CSV, JSON, TXT). For PDF/XLSX/binary use send-with-attachment."
+      example:
+        to: user@example.com
+        subject: Inventory delta
+        body: Attached is the latest sync report.
+        attachments:
+          - filename: delta.csv
+            content: "Network,Comment\n192.168.1.0/24,Office"
+
+    EmailWithAttachmentRequest:
+      type: object
+      required: [to, subject, body]
+      properties:
+        to:      { type: string, format: email }
+        subject: { type: string }
+        body:    { type: string }
+        html:
+          type: string
+          nullable: true
+        attachments:
+          type: array
+          nullable: true
+          items: { $ref: "#/components/schemas/AttachmentRequest" }
+          description: >
+            One or more file attachments. To deliver the SAME report in
+            several formats (PDF + XLSX + CSV + HTML) in a single email, add
+            one entry per format — each referencing its own artifact via
+            `${report:<report_artifact_id>}`. No per-format limit beyond the
+            ~10 MB total the SMTP relay accepts.
+      example:
+        to: user@example.com
+        subject: Monthly report
+        body: The report is attached in PDF and Excel.
+        attachments:
+          - filename: report.pdf
+            content_base64: "${report:2f5b1c8e-1a2b-4c3d-9e8f-0a1b2c3d4e5f}"
+          - filename: report.xlsx
+            content_base64: "${report:9a8b7c6d-5e4f-3a2b-1c0d-9e8f7a6b5c4d}"
+
+    EmailResponse:
+      type: object
+      required: [status, message, recipients]
+      properties:
+        status:     { type: string, description: "ok | error" }
+        message:    { type: string }
+        recipients:
+          type: array
+          items: { type: string }
+
+paths:
+  /mail/send:
+    post:
+      operationId: fw_email:send_email
+      tags: [email]
+      summary: Send plain text email
+      description: >
+        Simple text/plain delivery. Use when the content is a short
+        notification or a summary line that doesn't need formatting.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EmailRequest" }
+      responses:
+        "200":
+          description: Queued / delivered
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EmailResponse" }
+        "422": { description: Validation error (bad email, missing fields) }
+
+  /mail/send-html:
+    post:
+      operationId: fw_email:send_html_email
+      tags: [email]
+      summary: Send HTML email
+      description: >
+        Use when the user asks for a "branded", "formatted" or
+        "executive" email. Keep the HTML self-contained — external CSS
+        and remote images often get stripped by mail clients.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EmailHTMLRequest" }
+      responses:
+        "200":
+          description: Queued / delivered
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EmailResponse" }
+        "422": { description: Validation error }
+
+  /mail/send-bulk:
+    post:
+      operationId: fw_email:send_bulk_email
+      tags: [email]
+      summary: Send email to multiple recipients
+      description: >
+        One-shot fan-out to a list. Each recipient gets an individual
+        copy — safe to share between users without leaking addresses.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EmailBulkRequest" }
+      responses:
+        "200":
+          description: Queued / delivered
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EmailResponse" }
+        "422": { description: Validation error }
+
+  /mail/send-with-text-attachment:
+    post:
+      operationId: fw_email:send_with_text_attachment
+      tags: [email]
+      summary: Send email with inline text attachments (CSV, TXT, JSON)
+      description: >
+        Shortcut when the attachment is plain text — no base64 needed.
+        Pairs well with the `csv` format of generate_report when the
+        payload is small enough to inline. For PDFs or Excel, use
+        send_with_attachment instead.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EmailWithTextAttachmentRequest" }
+      responses:
+        "200":
+          description: Queued / delivered
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EmailResponse" }
+        "422": { description: Validation error }
+
+  /mail/send-with-attachment:
+    post:
+      operationId: fw_email:send_with_attachment
+      tags: [email]
+      summary: Send email with file attachments (one or many formats)
+      description: >
+        The canonical way to ship artifacts produced by `generate_report`
+        to a user. For each generated report, set `attachments[i].filename`
+        to its `filename` and `attachments[i].content_base64` to
+        `${report:<report_artifact_id>}` — the backend expands the reference
+        to the file bytes. List several entries to attach multiple formats
+        (PDF/XLSX/CSV/HTML) in ONE email; do not send one email per format.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EmailWithAttachmentRequest" }
+      responses:
+        "200":
+          description: Queued / delivered
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EmailResponse" }
+        "422": { description: Validation error }

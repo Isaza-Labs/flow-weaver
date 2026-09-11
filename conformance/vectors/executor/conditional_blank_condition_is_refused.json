@@ -1,0 +1,43 @@
+{
+  "id": "executor.conditional.blank_condition_is_refused",
+  "family": "executor",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 9 / graph-validation: a `conditional` edge with an empty condition is REFUSED before any node runs. A conditional edge exists to gate, and an edge type whose entire purpose is to gate cannot default to a silent no — the run would succeed with the branch simply absent and nothing in the record saying the author forgot to write the expression.",
+  "input": {
+    "workflow": {
+      "nodes": [
+        {
+          "id": "a",
+          "snippet_id": "__start__"
+        },
+        {
+          "id": "b",
+          "snippet_id": "__end__"
+        }
+      ],
+      "edges": [
+        {
+          "source": "a",
+          "target": "b",
+          "type": "conditional",
+          "condition": ""
+        }
+      ]
+    },
+    "context": {
+      "nodes": {
+        "a": {
+          "result": "changed",
+          "tier": "idempotent"
+        }
+      }
+    }
+  },
+  "expected": {
+    "status": "failed",
+    "steps": []
+  },
+  "equivalence": "subset",
+  "oracle_commit": "fw@fe07550",
+  "notes": "CORRECTED 2026-08-29. This vector previously asserted that the edge simply did not fire, and named itself `blank_condition_does_not_fire`. That was reified from the DAG-WALK layer, where an empty expression does evaluate to false — without noticing that the oracle's parser refuses the graph one layer earlier, so no walk ever happens. Nashira accepted such a graph and was tightened to match. The lesson generalises: read a value at the layer the CONTRACT can speak about, not merely at the layer that produced it."
+}

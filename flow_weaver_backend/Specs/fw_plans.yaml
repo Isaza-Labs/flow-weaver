@@ -1,0 +1,137 @@
+openapi: 3.0.0
+info:
+  title: fw_plans
+  version: "1.0"
+  description: Workflow plan lifecycle — draft → submitted → approved/rejected → built.
+servers:
+  - url: /api
+components:
+  securitySchemes:
+    session_jwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      x-credential-ref: "${secret:session:current:jwt}"
+security:
+  - session_jwt: []
+paths:
+  /workflowplan:
+    get:
+      operationId: fw_plans:list_plans
+      tags: [plans]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses: { "200": { description: List } }
+    post:
+      operationId: fw_plans:create_plan
+      tags: [plans]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [intent]
+              properties:
+                intent: { type: string, description: "User's goal in one sentence." }
+                description: { type: string }
+                steps: { type: array, items: { type: object } }
+                services_to_create: { type: array, items: { type: object } }
+                services_to_reuse: { type: array, items: { type: string } }
+                target_devices: { type: array, items: { type: string, format: uuid } }
+                target_pools: { type: array, items: { type: string, format: uuid } }
+                risks: { type: array, items: { type: string } }
+      responses: { "201": { description: Draft plan created } }
+  /workflowplan/{id}:
+    get:
+      operationId: fw_plans:get_plan
+      tags: [plans]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { "200": { description: Plan } }
+    put:
+      operationId: fw_plans:update_plan
+      tags: [plans]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses: { "200": { description: Updated } }
+    delete:
+      operationId: fw_plans:delete_plan
+      tags: [plans]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { "204": { description: Deleted } }
+  /workflowplan/{id}/submit:
+    post:
+      operationId: fw_plans:submit_plan
+      summary: Operator action — move draft to submitted (awaiting admin review).
+      tags: [plans]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { "200": { description: Submitted } }
+  /workflowplan/{id}/approve:
+    post:
+      operationId: fw_plans:approve_plan
+      summary: Admin only — approve a submitted plan.
+      description: >
+        `approved_by` is the only body field accepted. Any additional
+        property is ignored by the DTO (no `comment`, no metadata).
+      tags: [plans]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [approved_by]
+              additionalProperties: false
+              properties:
+                approved_by: { type: string, description: "Username or user id of the approver." }
+      responses:
+        "200": { description: Approved }
+        "400": { description: missing approved_by }
+        "403": { description: admin only }
+  /workflowplan/{id}/reject:
+    post:
+      operationId: fw_plans:reject_plan
+      summary: Admin only — reject with a reason.
+      description: >
+        The reviewer identifier field is `approved_by` here too — the
+        backend reuses the approval field name for both approve and
+        reject. `reason` is a free-form string for the audit trail.
+      tags: [plans]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [approved_by, reason]
+              additionalProperties: false
+              properties:
+                approved_by: { type: string, description: "Username or user id of the reviewer (same field name as approve)." }
+                reason: { type: string }
+      responses:
+        "200": { description: Rejected }
+        "403": { description: admin only }
+  /workflowplan/{id}/build:
+    post:
+      operationId: fw_plans:build_plan
+      summary: Admin only — materialize approved plan into real workflows + services.
+      tags: [plans]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: Built; response includes workflow_id(s) }
+        "403": { description: admin only }
+        "409": { description: plan not approved }

@@ -1,0 +1,20 @@
+{
+  "id": "templates.per_device.once_consumer_does_not_scope",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 6: the same bare field read that works for a per_device consumer does NOT resolve for a once consumer, because a once consumer is handed the envelope and the envelope has no such field.",
+  "input": {
+    "consumer_target_mode": "once",
+    "outputs": {
+      "show": {
+        "devices": [
+          { "device_id": "aaaaaaaa-0000-0000-0000-00000000000a", "output": { "stdout": "from-a" } }
+        ]
+      }
+    },
+    "template": "{{ steps.show.output.stdout }}"
+  },
+  "expected": { "resolved": "unresolved" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

@@ -1,0 +1,29 @@
+version = 1
+
+[[annotations]]
+path = [
+  "*.md",
+  ".env.example",
+  ".github/**",
+  "flow_weaver_backend/**",
+  "flow_weaver_backend.Tests/**",
+  "frontend/**",
+  "deploy/**",
+  "docs/**",
+  "skills/**",
+  "specs/**",
+  "workflows/**",
+  "contracts/**",
+  "tools/**",
+  "examples/**",
+  "compliance/**",
+  "assets/README.md",
+  "assets/ASSET_MANIFEST.csv"
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Isaza Labs LLC"
+SPDX-License-Identifier = "Apache-2.0"
+
+# LICENSE, LICENSES/**, NOTICE, legal/DCO-1.1.txt and third-party files keep
+# their own notices and are intentionally not covered by the blanket annotation.
+

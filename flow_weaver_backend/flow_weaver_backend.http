@@ -1,0 +1,504 @@
+@flow_weaver_backend_HostAddress = http://localhost:5228
+@contentType = application/json
+
+### Ejemplos listos para REST Client / JetBrains HTTP Client.
+### Pega el id que devuelve cada POST en la variable correspondiente para
+### encadenar las llamadas (create → update → delete).
+
+@deviceId = 00000000-0000-0000-0000-000000000001
+@credentialId = 00000000-0000-0000-0000-000000000001
+@inventorySourceId = 00000000-0000-0000-0000-000000000001
+@devicePoolId = 00000000-0000-0000-0000-000000000001
+@serviceDefinitionId = 00000000-0000-0000-0000-000000000001
+@workflowId = 00000000-0000-0000-0000-000000000001
+@workflowTriggerId = 00000000-0000-0000-0000-000000000001
+@workflowPlanId = 00000000-0000-0000-0000-000000000001
+@skillId = 00000000-0000-0000-0000-000000000001
+@integrationId = 00000000-0000-0000-0000-000000000001
+@integrationActionId = 00000000-0000-0000-0000-000000000001
+@aiProviderId = 00000000-0000-0000-0000-000000000001
+@aiAgentId = 00000000-0000-0000-0000-000000000001
+
+### ═══════════════════════════════════════════════════════════════
+###  OpenAPI — documentación generada
+### ═══════════════════════════════════════════════════════════════
+
+GET {{flow_weaver_backend_HostAddress}}/openapi/v1.json
+Accept: application/json
+
+### ═══════════════════════════════════════════════════════════════
+###  Device  /api/device
+### ═══════════════════════════════════════════════════════════════
+
+GET {{flow_weaver_backend_HostAddress}}/api/device
+Accept: application/json
+
+###
+GET {{flow_weaver_backend_HostAddress}}/api/device/{{deviceId}}
+Accept: application/json
+
+###
+POST {{flow_weaver_backend_HostAddress}}/api/device
+Content-Type: {{contentType}}
+
+{
+  "device_name": "router-01",
+  "ip_address": "10.0.0.1",
+  "platform": "cisco_ios",
+  "vendor": "Cisco",
+  "os_version": "17.9.3",
+  "site": "core-dc1",
+  "role": "edge-router",
+  "status": "active"
+}
+
+###
+PUT {{flow_weaver_backend_HostAddress}}/api/device/{{deviceId}}
+Content-Type: {{contentType}}
+
+{
+  "status": "maintenance"
+}
+
+###
+DELETE {{flow_weaver_backend_HostAddress}}/api/device/{{deviceId}}
+
+### ═══════════════════════════════════════════════════════════════
+###  Credential  /api/credential  (password/private_key se cifran)
+### ═══════════════════════════════════════════════════════════════
+
+GET {{flow_weaver_backend_HostAddress}}/api/credential
+Accept: application/json
+
+###
+GET {{flow_weaver_backend_HostAddress}}/api/credential/{{credentialId}}
+
+###
+POST {{flow_weaver_backend_HostAddress}}/api/credential
+Content-Type: {{contentType}}
+
+{
+  "name": "cisco-lab-admin",
+  "type": "ssh_password",
+  "username": "admin",
+  "password": "S3cret!"
+}
+
+###
+PUT {{flow_weaver_backend_HostAddress}}/api/credential/{{credentialId}}
+Content-Type: {{contentType}}
+
+{
+  "password": "NewS3cret!"
+}
+
+###
+DELETE {{flow_weaver_backend_HostAddress}}/api/credential/{{credentialId}}
+
+### ═══════════════════════════════════════════════════════════════
+###  InventorySource  /api/inventorysource
+### ═══════════════════════════════════════════════════════════════
+
+GET {{flow_weaver_backend_HostAddress}}/api/inventorysource
+
+###
+GET {{flow_weaver_backend_HostAddress}}/api/inventorysource/{{inventorySourceId}}
+
+###
+POST {{flow_weaver_backend_HostAddress}}/api/inventorysource
+Content-Type: {{contentType}}
+
+{
+  "name": "netbox-prod",
+  "type": "netbox",
+  "description": "Pull every device from the NetBox prod tenant",
+  "config": { "base_url": "https://netbox.example.com", "token": "..." },
+  "sync_mode": "periodic",
+  "enabled": true
+}
+
+###
+PUT {{flow_weaver_backend_HostAddress}}/api/inventorysource/{{inventorySourceId}}
+Content-Type: {{contentType}}
+
+{ "enabled": false }
+
+###
+DELETE {{flow_weaver_backend_HostAddress}}/api/inventorysource/{{inventorySourceId}}
+
+### ═══════════════════════════════════════════════════════════════
+###  DevicePool  /api/devicepool
+### ═══════════════════════════════════════════════════════════════
+
+GET {{flow_weaver_backend_HostAddress}}/api/devicepool
+
+###
+GET {{flow_weaver_backend_HostAddress}}/api/devicepool/{{devicePoolId}}
+
+###
+POST {{flow_weaver_backend_HostAddress}}/api/devicepool
+Content-Type: {{contentType}}
+
+{
+  "name": "edge-routers-us-east",
+  "description": "All edge routers in US east region",
+  "filter_rules": { "role": "edge-router", "site_prefix": "us-east-" },
+  "static_members": []
+}
+
+###
+PUT {{flow_weaver_backend_HostAddress}}/api/devicepool/{{devicePoolId}}
+Content-Type: {{contentType}}
+
+{ "description": "Updated description" }
+
+###
+DELETE {{flow_weaver_backend_HostAddress}}/api/devicepool/{{devicePoolId}}
+
+### ═══════════════════════════════════════════════════════════════
+###  Snippet  /api/snippet
+### ═══════════════════════════════════════════════════════════════
+
+GET {{flow_weaver_backend_HostAddress}}/api/snippet
+
+###
+GET {{flow_weaver_backend_HostAddress}}/api/snippet/{{snippetId}}
+
+###
+POST {{flow_weaver_backend_HostAddress}}/api/snippet
+Content-Type: {{contentType}}
+
+{
+  "name": "ping-device",
+  "type": "ping",
+  "description": "ICMP reachability check",
+  "target_mode": "per_device",
+  "max_parallel": 10,
+  "timeout_seconds": 30
+}
+
+###
+PUT {{flow_weaver_backend_HostAddress}}/api/snippet/{{snippetId}}
+Content-Type: {{contentType}}
+
+{ "verified": true }
+
+###
+DELETE {{flow_weaver_backend_HostAddress}}/api/snippet/{{snippetId}}
+
+### ═══════════════════════════════════════════════════════════════
+###  Workflow  /api/workflow
+### ═══════════════════════════════════════════════════════════════
+
+GET {{flow_weaver_backend_HostAddress}}/api/workflow
+
+###
+GET {{flow_weaver_backend_HostAddress}}/api/workflow/{{workflowId}}
+
+###
+POST {{flow_weaver_backend_HostAddress}}/api/workflow
+Content-Type: {{contentType}}
+
+{
+  "name": "backup-edge-routers",
+  "description": "Nightly config backup for every edge router",
+  "nodes": [],
+  "edges": []
+}
+
+###
+PUT {{flow_weaver_backend_HostAddress}}/api/workflow/{{workflowId}}
+Content-Type: {{contentType}}
+
+{
+  "description": "Now runs at 02:00 UTC",
+  "change_summary": "Rescheduled nightly run"
+}
+
+###
+DELETE {{flow_weaver_backend_HostAddress}}/api/workflow/{{workflowId}}
+
+### Nested — create a trigger bound to a workflow
+POST {{flow_weaver_backend_HostAddress}}/api/workflow/{{workflowId}}/triggers
+Content-Type: {{contentType}}
+
+{
+  "name": "nightly-02-utc",
+  "type": "cron",
+  "cron_expression": "0 2 * * *",
+  "timezone": "UTC",
+  "enabled": true,
+  "notify_on": ["failure"]
+}
+
+### ═══════════════════════════════════════════════════════════════
+###  WorkflowTrigger  /api/workflowtrigger
+### ═══════════════════════════════════════════════════════════════
+
+GET {{flow_weaver_backend_HostAddress}}/api/workflowtrigger
+
+###
+GET {{flow_weaver_backend_HostAddress}}/api/workflowtrigger/{{workflowTriggerId}}
+
+### Creación plana — rechazada a propósito (usa /api/workflow/{id}/triggers)
+POST {{flow_weaver_backend_HostAddress}}/api/workflowtrigger
+Content-Type: {{contentType}}
+
+{ "name": "x", "type": "cron" }
+
+###
+PUT {{flow_weaver_backend_HostAddress}}/api/workflowtrigger/{{workflowTriggerId}}
+Content-Type: {{contentType}}
+
+{ "enabled": false }
+
+###
+DELETE {{flow_weaver_backend_HostAddress}}/api/workflowtrigger/{{workflowTriggerId}}
+
+### ═══════════════════════════════════════════════════════════════
+###  WorkflowPlan  /api/workflowplan
+### ═══════════════════════════════════════════════════════════════
+
+GET {{flow_weaver_backend_HostAddress}}/api/workflowplan
+
+###
+GET {{flow_weaver_backend_HostAddress}}/api/workflowplan/{{workflowPlanId}}
+
+###
+POST {{flow_weaver_backend_HostAddress}}/api/workflowplan
+Content-Type: {{contentType}}
+
+{
+  "intent": "Back up every edge router nightly",
+  "description": "Use ping + save-config + archive",
+  "target_pools": []
+}
+
+###
+PUT {{flow_weaver_backend_HostAddress}}/api/workflowplan/{{workflowPlanId}}
+Content-Type: {{contentType}}
+
+{ "description": "Also archive running-config" }
+
+### Governance — draft → awaiting_approval
+POST {{flow_weaver_backend_HostAddress}}/api/workflowplan/{{workflowPlanId}}/submit
+
+### Governance — awaiting_approval → approved
+POST {{flow_weaver_backend_HostAddress}}/api/workflowplan/{{workflowPlanId}}/approve
+Content-Type: {{contentType}}
+
+{ "approved_by": "roberto@example.com" }
+
+### Governance — awaiting_approval → rejected
+POST {{flow_weaver_backend_HostAddress}}/api/workflowplan/{{workflowPlanId}}/reject
+Content-Type: {{contentType}}
+
+{
+  "approved_by": "roberto@example.com",
+  "reason": "Targets production without a maintenance window"
+}
+
+### Governance — approved → built  (stub hasta Fase 3)
+POST {{flow_weaver_backend_HostAddress}}/api/workflowplan/{{workflowPlanId}}/build
+
+###
+DELETE {{flow_weaver_backend_HostAddress}}/api/workflowplan/{{workflowPlanId}}
+
+### ═══════════════════════════════════════════════════════════════
+###  Skill  /api/skill
+### ═══════════════════════════════════════════════════════════════
+
+GET {{flow_weaver_backend_HostAddress}}/api/skill
+
+###
+POST {{flow_weaver_backend_HostAddress}}/api/skill
+Content-Type: {{contentType}}
+
+{
+  "name": "backup-config",
+  "skill_type": "workflow",
+  "triggers": ["backup", "save config"],
+  "action_config": { "workflow_ref": "backup-edge-routers" },
+  "enabled": true
+}
+
+###
+GET {{flow_weaver_backend_HostAddress}}/api/skill/{{skillId}}
+
+###
+PUT {{flow_weaver_backend_HostAddress}}/api/skill/{{skillId}}
+Content-Type: {{contentType}}
+
+{ "enabled": false }
+
+###
+DELETE {{flow_weaver_backend_HostAddress}}/api/skill/{{skillId}}
+
+### ═══════════════════════════════════════════════════════════════
+###  Integration  /api/integration
+### ═══════════════════════════════════════════════════════════════
+
+GET {{flow_weaver_backend_HostAddress}}/api/integration
+
+###
+GET {{flow_weaver_backend_HostAddress}}/api/integration/{{integrationId}}
+
+###
+POST {{flow_weaver_backend_HostAddress}}/api/integration
+Content-Type: {{contentType}}
+
+{
+  "name": "netbox",
+  "type": "netbox",
+  "base_url": "https://netbox.example.com/api",
+  "auth_config": { "method": "token", "token": "abcdef123" },
+  "tls_skip_verify": false
+}
+
+###
+PUT {{flow_weaver_backend_HostAddress}}/api/integration/{{integrationId}}
+Content-Type: {{contentType}}
+
+{ "enabled": false }
+
+###
+DELETE {{flow_weaver_backend_HostAddress}}/api/integration/{{integrationId}}
+
+### Nested — create an action under this integration
+POST {{flow_weaver_backend_HostAddress}}/api/integration/{{integrationId}}/actions
+Content-Type: {{contentType}}
+
+{
+  "name": "list-devices",
+  "method": "GET",
+  "path": "/dcim/devices/",
+  "category": "inventory"
+}
+
+### Transactional bundle — integration + skills + specs in one shot
+POST {{flow_weaver_backend_HostAddress}}/api/integration/bundle
+Content-Type: {{contentType}}
+
+{
+  "integration": {
+    "name": "netbox",
+    "type": "netbox",
+    "base_url": "https://netbox.example.com/api",
+    "auth_config": { "method": "token", "token": "abcdef123" }
+  },
+  "skills": [
+    { "name": "netbox.md", "content": "# NetBox\nUse this integration for…", "sort_order": 100 }
+  ],
+  "specs": [
+    { "api": "netbox", "content": "openapi: 3.0.0\npaths: {}\n" }
+  ]
+}
+
+### ═══════════════════════════════════════════════════════════════
+###  IntegrationAction  /api/integrationaction
+### ═══════════════════════════════════════════════════════════════
+
+GET {{flow_weaver_backend_HostAddress}}/api/integrationaction
+
+###
+GET {{flow_weaver_backend_HostAddress}}/api/integrationaction/{{integrationActionId}}
+
+### Creación plana — rechazada (usa /api/integration/{id}/actions)
+POST {{flow_weaver_backend_HostAddress}}/api/integrationaction
+Content-Type: {{contentType}}
+
+{ "name": "x", "method": "GET", "path": "/" }
+
+###
+PUT {{flow_weaver_backend_HostAddress}}/api/integrationaction/{{integrationActionId}}
+Content-Type: {{contentType}}
+
+{ "enabled": false }
+
+###
+DELETE {{flow_weaver_backend_HostAddress}}/api/integrationaction/{{integrationActionId}}
+
+### Flat palette projection for the workflow editor
+GET {{flow_weaver_backend_HostAddress}}/api/integrationaction/actions/all
+
+### ═══════════════════════════════════════════════════════════════
+###  AIProvider  /api/aiprovider  (api_key se cifra)
+### ═══════════════════════════════════════════════════════════════
+
+GET {{flow_weaver_backend_HostAddress}}/api/aiprovider
+
+###
+GET {{flow_weaver_backend_HostAddress}}/api/aiprovider/{{aiProviderId}}
+
+###
+POST {{flow_weaver_backend_HostAddress}}/api/aiprovider
+Content-Type: {{contentType}}
+
+{
+  "name": "anthropic-primary",
+  "type": "anthropic",
+  "base_url": "https://api.anthropic.com",
+  "api_key": "sk-ant-...",
+  "default_model": "claude-opus-4-6"
+}
+
+###
+PUT {{flow_weaver_backend_HostAddress}}/api/aiprovider/{{aiProviderId}}
+Content-Type: {{contentType}}
+
+{ "default_model": "claude-sonnet-4-6" }
+
+###
+DELETE {{flow_weaver_backend_HostAddress}}/api/aiprovider/{{aiProviderId}}
+
+### ═══════════════════════════════════════════════════════════════
+###  AIAgent  /api/aiagent
+### ═══════════════════════════════════════════════════════════════
+
+GET {{flow_weaver_backend_HostAddress}}/api/aiagent
+
+###
+GET {{flow_weaver_backend_HostAddress}}/api/aiagent/{{aiAgentId}}
+
+###
+POST {{flow_weaver_backend_HostAddress}}/api/aiagent
+Content-Type: {{contentType}}
+
+{
+  "name": "netops-orchestrator",
+  "role": "orchestrator",
+  "system_prompt": "You help operators design and run network workflows.",
+  "tools": ["list_workflows", "query_devices", "create_workflow_plan"],
+  "max_iterations": 10,
+  "temperature": 0.2
+}
+
+###
+PUT {{flow_weaver_backend_HostAddress}}/api/aiagent/{{aiAgentId}}
+Content-Type: {{contentType}}
+
+{ "enabled": false }
+
+###
+DELETE {{flow_weaver_backend_HostAddress}}/api/aiagent/{{aiAgentId}}
+
+### ═══════════════════════════════════════════════════════════════
+###  AI Catalog  /api/ai/catalog  (skills .md + specs .yaml)
+### ═══════════════════════════════════════════════════════════════
+
+### Render the system prompt the agent sees (base.md + templates)
+GET {{flow_weaver_backend_HostAddress}}/api/ai/catalog/prompt
+
+### List all operations parsed from /Specs/*.yaml
+GET {{flow_weaver_backend_HostAddress}}/api/ai/catalog/operations
+
+### Filter: only netbox GETs matching "device"
+GET {{flow_weaver_backend_HostAddress}}/api/ai/catalog/operations?api=netbox&method=GET&keyword=device
+
+### Drill into one operation
+GET {{flow_weaver_backend_HostAddress}}/api/ai/catalog/operations/dcim_devices_list
+
+### Re-index after editing a spec file on disk
+POST {{flow_weaver_backend_HostAddress}}/api/ai/catalog/reload
+
+###

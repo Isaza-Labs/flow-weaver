@@ -1,0 +1,115 @@
+openapi: 3.0.0
+info:
+  title: fw_snippets
+  version: "1.0"
+  description: Snippets — the reusable execution blocks workflow nodes reference.
+servers:
+  - url: /api
+components:
+  securitySchemes:
+    session_jwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      x-credential-ref: "${secret:session:current:jwt}"
+security:
+  - session_jwt: []
+paths:
+  /snippet:
+    get:
+      operationId: fw_snippets:list_snippets
+      tags: [snippets]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses: { "200": { description: List } }
+    post:
+      operationId: fw_snippets:create_snippet
+      tags: [snippets]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, type]
+              properties:
+                name: { type: string }
+                description: { type: string }
+                type:
+                  type: string
+                  enum: [ping, rest_call, ssh, python_snippet, ansible_playbook, transform, jmespath, integration_action, netconf, snmp_v3, report]
+                code:
+                  type: string
+                  description: For python_snippet / ansible_playbook / transform — the body.
+                script_language: { type: string, enum: [python, bash, yaml] }
+                target_mode: { type: string, enum: [per_device, once], default: once }
+                max_parallel: { type: integer, default: 10 }
+                timeout_seconds: { type: integer, default: 60 }
+                input_schema: { type: object, description: JSON Schema for node config_overrides }
+                output_schema: { type: object }
+                retry_policy: { type: object }
+                logic_diagram_mermaid:
+                  type: string
+                  description: >
+                    Mermaid source describing the task's internal logic
+                    (inputs, branches, outputs). REQUIRED for python_snippet
+                    and transform — these types carry user-authored logic
+                    that is otherwise opaque. Must start with a Mermaid
+                    directive (graph, flowchart, sequenceDiagram, etc.).
+                    See Skills/mermaid.md for conventions.
+                network_enabled:
+                  type: boolean
+                  description: >
+                    python_snippet ONLY. Set true to run the script in the
+                    relaxed (network-enabled) sandbox with netmiko/paramiko +
+                    host network — for INTERACTIVE SSH the fixed `ssh` step
+                    can't handle (e.g. a password change that prompts for
+                    confirmation, commit confirms). Requires the admin role;
+                    rejected otherwise. See Skills/netmiko_snippets.md.
+      responses: { "201": { description: Created } }
+  /snippet/{id}:
+    get:
+      operationId: fw_snippets:get_snippet
+      tags: [snippets]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { "200": { description: Snippet } }
+    put:
+      operationId: fw_snippets:update_snippet
+      tags: [snippets]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                code: { type: string }
+                timeout_seconds: { type: integer }
+                target_mode: { type: string, enum: [per_device, once] }
+                input_schema: { type: object }
+                output_schema: { type: object }
+                logic_diagram_mermaid:
+                  type: string
+                  description: >
+                    Update the task's Mermaid logic diagram. Whenever
+                    you rewrite `code`, you should also update this so
+                    the diagram stays in sync with the implementation.
+                network_enabled:
+                  type: boolean
+                  description: >
+                    python_snippet only; admin-only. Enables the relaxed
+                    sandbox for interactive netmiko/paramiko SSH. See
+                    Skills/netmiko_snippets.md.
+      responses: { "200": { description: Updated } }
+    delete:
+      operationId: fw_snippets:delete_snippet
+      tags: [snippets]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { "204": { description: Deleted } }

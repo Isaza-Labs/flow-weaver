@@ -1,0 +1,71 @@
+/* fw-aurora — Stripe / Arc / Apple Liquid Glass school.
+   Aesthetic: conic + radial gradient MESH body (directional, deliberate
+   — not a soft watercolor blur), frosted-glass surfaces, big 14-18px
+   radii, layered shadows. Premium and atmospheric. */
+
+[data-theme='fw-aurora'] {
+	--radius-base: 0.75rem;      /* 12px */
+	--radius-container: 1rem;    /* 16px */
+	--default-border-width: 1px;
+
+	/* Surfaces — warm-tinted neutrals so glass overlays read as luminous
+	   rather than washed-out. 600+ pivots to cool indigo to keep chrome
+	   coherent with the brand. */
+	--color-surface-50: oklch(99% 0.005 90);
+	--color-surface-100: oklch(96% 0.008 88);
+	--color-surface-200: oklch(91% 0.011 85);
+	--color-surface-300: oklch(82% 0.013 82);
+	--color-surface-400: oklch(68% 0.014 78);
+	--color-surface-500: oklch(52% 0.014 75);
+	--color-surface-600: oklch(42% 0.02 260);
+	--color-surface-700: oklch(32% 0.025 262);
+	--color-surface-800: oklch(22% 0.028 264);
+	--color-surface-900: oklch(15% 0.025 265);
+	--color-surface-950: oklch(9% 0.022 265);
+}
+
+[data-theme='fw-aurora'][data-mode='dark'] {
+	--color-surface-50: oklch(98% 0.006 265);
+	--color-surface-100: oklch(95% 0.01 265);
+	--color-surface-200: oklch(89% 0.014 265);
+	--color-surface-300: oklch(79% 0.02 265);
+	--color-surface-400: oklch(64% 0.028 265);
+	--color-surface-500: oklch(50% 0.035 265);
+	--color-surface-600: oklch(39% 0.04 265);
+	--color-surface-700: oklch(28% 0.045 265);
+	--color-surface-800: oklch(19% 0.045 265);
+	--color-surface-900: oklch(12% 0.035 265);
+	--color-surface-950: oklch(7% 0.022 265);
+}
+
+/* Gradient mesh body — multi-stop radials over a conic base. The conic
+   gives directional sweep (like Stripe's marketing pages); the radials
+   are brand colours placed at deliberate corners. Stays subtle so
+   foreground content keeps full contrast. */
+[data-theme='fw-aurora'][data-mode='light'] body {
+	background:
+		radial-gradient(ellipse 50% 35% at 8% 8%, color-mix(in oklab, var(--color-warning-500) 32%, transparent), transparent 60%),
+		radial-gradient(ellipse 45% 35% at 95% 15%, color-mix(in oklab, var(--color-tertiary-500) 30%, transparent), transparent 60%),
+		radial-gradient(ellipse 55% 40% at 90% 95%, color-mix(in oklab, var(--color-error-500) 22%, transparent), transparent 60%),
+		radial-gradient(ellipse 50% 40% at 10% 90%, color-mix(in oklab, var(--color-primary-300) 26%, transparent), transparent 60%),
+		conic-gradient(from 230deg at 50% 50%, #fffaf0 0%, #f4faff 28%, #ffeadd 55%, #fff7e0 78%, #fffaf0 100%) !important;
+	background-attachment: fixed !important;
+}
+[data-theme='fw-aurora'][data-mode='dark'] body {
+	background:
+		radial-gradient(ellipse 60% 45% at 8% 12%, color-mix(in oklab, var(--color-primary-500) 55%, transparent), transparent 60%),
+		radial-gradient(ellipse 45% 35% at 100% 18%, color-mix(in oklab, var(--color-secondary-500) 38%, transparent), transparent 60%),
+		radial-gradient(ellipse 55% 40% at 100% 100%, color-mix(in oklab, var(--color-warning-500) 18%, transparent), transparent 60%),
+		radial-gradient(ellipse 60% 40% at 0% 95%, color-mix(in oklab, var(--color-error-500) 22%, transparent), transparent 60%),
+		conic-gradient(from 230deg at 50% 50%, #0a0c1c 0%, #0e1130 28%, #1c1130 55%, #110a1c 78%, #0a0c1c 100%) !important;
+	background-attachment: fixed !important;
+}
+
+/* Component-level glass treatment — opt-in via class but also applied
+   automatically to the layout's `<aside>` (sidebar) so it reads as
+   floating glass over the mesh. Other themes leave the sidebar opaque
+   because their bodies are solid. */
+[data-theme='fw-aurora'] aside {
+	backdrop-filter: blur(24px) saturate(140%);
+	-webkit-backdrop-filter: blur(24px) saturate(140%);
+}

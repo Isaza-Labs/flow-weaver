@@ -1,0 +1,10 @@
+{
+  "id": "templates.condition.and_binds_tighter_than_or",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 9: && binds tighter than ||. Read as true || (false && false) the expression is true; read with || binding tighter it would be (true || false) && false, which is false. The two readings disagree here on purpose.",
+  "input": { "context": {}, "condition": "true || false && false" },
+  "expected": { "result": true },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

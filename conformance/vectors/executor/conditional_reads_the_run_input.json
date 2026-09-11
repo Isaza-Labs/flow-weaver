@@ -1,0 +1,19 @@
+{
+  "id": "executor.conditional.reads_the_run_input",
+  "family": "executor",
+  "contract_version": "1.1.0-draft",
+  "description": "templates/SPEC.md section 9: branching on the run's own input is the case conditional edges exist for. It is how one definition serves a dry run and a real one.",
+  "input": {
+    "workflow": {
+      "nodes": [ { "id": "a", "snippet_id": "__start__" }, { "id": "apply", "snippet_id": "__end__" } ],
+      "edges": [ { "source": "a", "target": "apply", "type": "conditional", "condition": "{{ input.apply }} == true" } ]
+    },
+    "context": {
+      "input": { "apply": false },
+      "nodes": { "a": { "result": "changed", "tier": "idempotent" } }
+    }
+  },
+  "expected": { "steps": [ { "node_id": "a", "result": "changed" }, { "node_id": "apply", "result": "skipped" } ] },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

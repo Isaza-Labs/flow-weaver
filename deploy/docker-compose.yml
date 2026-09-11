@@ -1,0 +1,327 @@
+name: flow-weaver
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: flow-weaver-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-flowweaver}
+      POSTGRES_USER: ${POSTGRES_USER:-flowweaver}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-flowweaver}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-flowweaver} -d ${POSTGRES_DB:-flowweaver}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - flow-weaver-net
+
+  backend:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: flow-weaver-backend:latest
+    container_name: flow-weaver-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      ASPNETCORE_URLS: http://+:8080
+      AiChat__StreamDeadlineSeconds: ${AI_STREAM_DEADLINE_SECONDS:-240}
+      # Which deployment environment this box represents. Gates which workflows
+      # may run: dev-sandbox → drafts only, qa-lab → qa, production → production.
+      # Checked here (the API enqueues runs), so this is the value the Run button
+      # sees. Keep it equal to the worker's below.
+      Workflow__WorkerEnvironment: ${WORKER_ENVIRONMENT:-dev-sandbox}
+      # Frontend origin used to render `{{ run.url }}` in failure emails.
+      # Must be a URL the recipient can actually open, so point it at the
+      # public/VPN hostname rather than localhost on a real deployment.
+      Workflow__PublicBaseUrl: ${FRONTEND_ORIGIN:-http://localhost:3000}
+      # pretty = colored text for `docker logs`; json = CLEF for aggregators.
+      # Unset => auto (pretty on Development, json otherwise).
+      LOG_FORMAT: ${LOG_FORMAT:-pretty}
+      # EF Core SQL verbosity (Warning = silent). Application-services tree
+      # verbosity (Information). Raw LLM SSE chunk dump (triage only).
+      LOG_EF_SQL: ${LOG_EF_SQL:-Warning}
+      LOG_ACTIONS: ${LOG_ACTIONS:-Information}
+      AI_LOG_PAYLOADS: ${AI_LOG_PAYLOADS:-false}
+      # Days of trace_events (chat turns / workflow runs / tool calls) kept
+      # before the retention sweeper deletes them. Keep in sync with the
+      # worker's below — both containers run the sweep. (default 365)
+      Tracing__RetentionDays: ${TRACE_RETENTION_DAYS:-365}
+      # auth_events retention. One row per login, logout, lockout AND token
+      # refresh, so this table grows with session volume rather than with
+      # security events. (default 180)
+      Auth__RetentionDays: ${AUTH_EVENT_RETENTION_DAYS:-180}
+      # audit_logs retention — who changed what. 0 = keep forever, which is
+      # the default on purpose: this is the compliance record. Set a positive
+      # value ONLY to satisfy a policy that requires deletion; the sweep logs
+      # at Warning when it drops rows.
+      Audit__RetentionDays: ${AUDIT_RETENTION_DAYS:-0}
+      # Load-test device simulation (NFR-004). OFF by default. The backend needs
+      # it for the /api/admin/loadtest seed endpoint; keep in lockstep with the
+      # worker. Boot refuses it when WorkerEnvironment=production.
+      Simulation__Enabled: ${SIMULATION_ENABLED:-false}
+      Simulation__LatencyMs: ${SIMULATION_LATENCY_MS:-50}
+      Simulation__FailureRate: ${SIMULATION_FAILURE_RATE:-0}
+      ConnectionStrings__DefaultConnection: Host=${DB_HOST:-db};Port=${DB_PORT:-5432};Database=${POSTGRES_DB:-flowweaver};Username=${POSTGRES_USER:-flowweaver};Password=${POSTGRES_PASSWORD:-flowweaver}
+      DataProtection__KeyRingPath: /app/keyring
+      # JWT_KEY MUST be supplied via .env or environment. Boot fails outside
+      # Development if the value matches a known default. Generate with:
+      #   openssl rand -base64 48
+      Jwt__Key: "${JWT_KEY:?JWT_KEY env var is required - generate with openssl rand -base64 48}"
+      Jwt__Issuer: ${JWT_ISSUER:-flow-weaver}
+      Jwt__Audience: ${JWT_AUDIENCE:-flow-weaver}
+      # Public base URL used to render messaging webhook URLs and the
+      # account-linking link (Slack/Teams/WhatsApp/Telegram). Point it at the
+      # public tunnel hostname (see the `cloudflared` service) or, with Slack
+      # Socket Mode, at the internal URL your VPN users reach. Empty => relative
+      # URLs (won't work for inbound webhooks).
+      Messaging__PublicBaseUrl: ${MESSAGING_PUBLIC_BASE_URL:-}
+      # Native slack_message snippet: bot token (xoxb-…, scope chat:write).
+      Slack__BotToken: ${SLACK_BOT_TOKEN:-}
+      # Proxies whose X-Forwarded-For the backend will believe. The browser
+      # never reaches the backend directly — the frontend container proxies
+      # /api — so without this every request looks like it came from that
+      # container: one constant IP in the audit trail, and a single shared
+      # per-IP login rate-limit budget for the whole platform.
+      #
+      # Scoped to this compose network's fixed subnet (see `networks` below),
+      # NOT 0.0.0.0/0: trusting everyone would let any caller forge its own
+      # address in the audit log and dodge the login limiter entirely.
+      #
+      # Raise ForwardLimit to the number of proxies in the chain if you put
+      # another one in front (cloudflared, nginx, an ALB) — it counts hops
+      # from the backend outwards.
+      Network__TrustedProxies: ${TRUSTED_PROXIES:-172.28.0.0/16}
+      Network__ForwardLimit: ${FORWARD_LIMIT:-1}
+      # This container also runs the job-queue worker loop, BUT it keeps
+      # Docker's default seccomp/AppArmor hardening (unlike the `worker`
+      # service below), so bwrap cannot create namespaces here. It must
+      # therefore NEVER claim `sandbox` jobs (python_snippet steps) — when it
+      # did, python steps failed intermittently with "No permissions to
+      # create new namespace" depending on which container won the claim
+      # race. `default` + `orchestrator` only; python steps are routed to
+      # the worker via the `sandbox` tag.
+      #
+      # Verify after (re)deploy: the boot log line
+      #   Worker <id> started — tags=[default, orchestrator]
+      # must NOT list `sandbox` here (the worker's must).
+      Worker__Tags__0: default
+      Worker__Tags__1: orchestrator
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    volumes:
+      - backend_keyring:/app/keyring
+      # Admin-approved pip packages for python_snippet (installed under /site).
+      # Shared so the worker's provisioner writes and every step container reads.
+      - python_packages:/app/pyenv
+    networks:
+      - flow-weaver-net
+
+  worker:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: flow-weaver-backend:latest
+    container_name: flow-weaver-worker
+    restart: unless-stopped
+    # The worker runs the bwrap sandbox for python_snippet, which needs to
+    # create user/pid/mount namespaces and mount a fresh /proc inside them:
+    #   - seccomp=unconfined   → the default profile blocks a non-root
+    #     process from creating user namespaces.
+    #   - systempaths=unconfined → clears Docker's masked/read-only /proc
+    #     paths; the kernel refuses a fresh procfs mount when /proc is
+    #     partially masked ("Can't mount proc ... Operation not permitted").
+    #   - apparmor=unconfined  → stops a host AppArmor profile from blocking
+    #     the mounts bwrap makes.
+    # The user script is still isolated by bwrap itself (RO binds, dropped
+    # caps, private /tmp); these only relax the WORKER so it can build that
+    # sandbox.
+    #
+    # NOTE these do NOT defeat Ubuntu 23.10+/24.04's
+    # `kernel.apparmor_restrict_unprivileged_userns=1`. That is enforced on the
+    # HOST and it targets exactly the *unconfined* processes `apparmor=
+    # unconfined` produces, so relaxing it here makes no difference — the
+    # symptom is `bwrap: setting up uid map: Permission denied`. And `cap_add:
+    # SYS_ADMIN` below does not reach bwrap either: the worker runs as the
+    # non-root `app` user, and capabilities are granted to root.
+    # Run `sudo ./deploy/setup-host.sh` on the host — it detects which
+    # restriction applies and installs the narrowest fix. See
+    # docs/handlers/python_snippet.md.
+    #
+    # If the host genuinely cannot be changed, there is a container-only route,
+    # but read the cost first — it is in that same doc under "No host changes".
+    # It needs a setuid bwrap in the image plus SYS_ADMIN + NET_ADMIN +
+    # SYS_PTRACE + SYS_CHROOT here, which makes this container roughly
+    # equivalent to root on the host. That is a worse exposure than the
+    # sandbox removes, so it is deliberately not the default.
+    security_opt:
+      - seccomp=unconfined
+      - apparmor=unconfined
+      - systempaths=unconfined
+    cap_add:
+      - SYS_ADMIN
+
+    # tini as PID 1 reaps zombie children left by sandboxed steps (bwrap +
+    # the python/Netmiko/ansible subprocesses it wraps). Unreaped zombies
+    # hold their Linux namespaces open and slowly exhaust
+    # user.max_user_namespaces, which makes bwrap fail INTERMITTENTLY with a
+    # misleading "kernel does not allow user namespaces" (the kernel is
+    # fine — the namespace table is full). Pair with a high
+    # `sysctl user.max_user_namespaces` on the host.
+    #
+    # PythonHandler also defends itself in-process: it caps concurrent
+    # namespace-creating launches (Python__MaxConcurrentSandboxes) and
+    # retries transient setup failures with backoff, so a per-device
+    # fan-out no longer fires N bwrap launches at the same instant. Lower
+    # the cap on a host with a tight user.max_user_namespaces; raise it
+    # once the host sysctl is bumped.
+    init: true
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      WorkerOnly: "true"
+      # The ONLY container allowed to claim `sandbox` jobs (python_snippet
+      # steps): the security_opt relaxations above are what let bwrap build
+      # its namespaces. Declared explicitly so the routing contract with the
+      # backend's Worker__Tags override is visible in one file.
+      Worker__Tags__0: default
+      Worker__Tags__1: orchestrator
+      Worker__Tags__2: sandbox
+      # Keep in lockstep with the backend — same environment gate.
+      Workflow__WorkerEnvironment: ${WORKER_ENVIRONMENT:-dev-sandbox}
+      # The WORKER orchestrates runs, so this is the container that actually
+      # renders `{{ run.url }}`. Keep it equal to the backend's value.
+      Workflow__PublicBaseUrl: ${FRONTEND_ORIGIN:-http://localhost:3000}
+      LOG_FORMAT: ${LOG_FORMAT:-pretty}
+      LOG_EF_SQL: ${LOG_EF_SQL:-Warning}
+      LOG_ACTIONS: ${LOG_ACTIONS:-Information}
+      # trace_events retention — must match the backend's value (both run the
+      # retention sweeper). (default 365)
+      Tracing__RetentionDays: ${TRACE_RETENTION_DAYS:-365}
+      # Same for the two security logs — both containers run the sweep, so a
+      # mismatch would mean the shorter window silently wins.
+      Auth__RetentionDays: ${AUTH_EVENT_RETENTION_DAYS:-180}
+      Audit__RetentionDays: ${AUDIT_RETENTION_DAYS:-0}
+      # Load-test device simulation — the WORKER must have this to fake ping/ssh/
+      # ansible I/O. Boot refuses it when WorkerEnvironment=production. (default false)
+      Simulation__Enabled: ${SIMULATION_ENABLED:-false}
+      Simulation__LatencyMs: ${SIMULATION_LATENCY_MS:-50}
+      Simulation__FailureRate: ${SIMULATION_FAILURE_RATE:-0}
+      # Max simultaneous bwrap/nsjail launches across this worker process.
+      Python__MaxConcurrentSandboxes: ${PYTHON_MAX_CONCURRENT_SANDBOXES:-4}
+      # Extra attempts when a sandbox fails to create its namespace (the
+      # script never ran on a setup failure, so retrying is side-effect free).
+      Python__SandboxSetupRetries: ${PYTHON_SANDBOX_SETUP_RETRIES:-4}
+      # prlimit --nproc cap for the sandbox. RLIMIT_NPROC is per-UID, so it
+      # also counts the worker's own threads — keep it well above the worker's
+      # baseline thread count or bwrap's clone() fails with EAGAIN. Raise on a
+      # busy worker; lower only to tighten the fork-bomb cap.
+      Python__MaxProcesses: ${PYTHON_MAX_PROCESSES:-1024}
+      # Admin-approved python_snippet packages are installed wheels-only by
+      # default — pip never builds/runs sdist packaging code. Set false to allow
+      # source installs (some packages ship no wheel).
+      Python__PipOnlyBinary: ${PYTHON_PIP_ONLY_BINARY:-true}
+      ConnectionStrings__DefaultConnection: Host=${DB_HOST:-db};Port=${DB_PORT:-5432};Database=${POSTGRES_DB:-flowweaver};Username=${POSTGRES_USER:-flowweaver};Password=${POSTGRES_PASSWORD:-flowweaver}
+      DataProtection__KeyRingPath: /app/keyring
+      # JWT_KEY MUST be supplied via .env or environment. Boot fails outside
+      # Development if the value matches a known default. Generate with:
+      #   openssl rand -base64 48
+      Jwt__Key: "${JWT_KEY:?JWT_KEY env var is required - generate with openssl rand -base64 48}"
+      Jwt__Issuer: ${JWT_ISSUER:-flow-weaver}
+      Jwt__Audience: ${JWT_AUDIENCE:-flow-weaver}
+      # Same value as the backend: the messaging worker builds the
+      # account-linking link when it sends the "link your account" prompt.
+      Messaging__PublicBaseUrl: ${MESSAGING_PUBLIC_BASE_URL:-}
+      # Native slack_message snippet: bot token (xoxb-…, scope chat:write).
+      Slack__BotToken: ${SLACK_BOT_TOKEN:-}
+    volumes:
+      - backend_keyring:/app/keyring
+      # Admin-approved pip packages for python_snippet (installed under /site).
+      # Shared so the worker's provisioner writes and every step container reads.
+      - python_packages:/app/pyenv
+    networks:
+      - flow-weaver-net
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.frontend
+    image: flow-weaver-frontend:latest
+    container_name: flow-weaver-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3000
+      ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
+      BACKEND_URL: http://backend:8080
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    networks:
+      - flow-weaver-net
+
+  # Optional public ingress for inbound messaging webhooks (Slack Events API,
+  # etc.) when the host has NO public inbound — only OUTBOUND internet (the
+  # typical VPN-only box). Cloudflare Tunnel dials OUT to Cloudflare and routes
+  # a public hostname to the backend, so no firewall/NAT/port-forward is needed.
+  #
+  # Opt-in (won't start on a normal `up`):
+  #   docker compose --profile tunnel up -d cloudflared
+  #
+  # Setup: in Cloudflare Zero Trust create a Tunnel + a public hostname routed
+  # to http://backend:8080, copy its token into CLOUDFLARE_TUNNEL_TOKEN, and set
+  # MESSAGING_PUBLIC_BASE_URL to that public hostname. (Throwaway alternative
+  # with no account, for quick tests: run `cloudflared tunnel --url
+  # http://localhost:8083` on the host and use the printed URL.)
+  #
+  # NOTE: if you'd rather expose NOTHING publicly, use Slack Socket Mode instead
+  # (the app dials OUT to Slack over a WebSocket) — ask to have it implemented.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: flow-weaver-cloudflared
+    restart: unless-stopped
+    profiles: ["tunnel"]
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on:
+      - backend
+    networks:
+      - flow-weaver-net
+
+volumes:
+  db_data:
+  backend_keyring:
+  python_packages:
+
+networks:
+  flow-weaver-net:
+    driver: bridge
+    # Fixed subnet so Network__TrustedProxies can name it. Docker assigns
+    # bridge subnets dynamically by default, which would make the trusted
+    # range unpredictable — and a trusted range you can't state is one you
+    # end up widening to 0.0.0.0/0.
+    #
+    # Changing this requires recreating the network:
+    #   docker compose down && docker compose up -d
+    # Pick another range via COMPOSE_SUBNET if 172.28.0.0/16 collides with
+    # something on the host (keep TRUSTED_PROXIES in sync).
+    ipam:
+      config:
+        - subnet: ${COMPOSE_SUBNET:-172.28.0.0/16}

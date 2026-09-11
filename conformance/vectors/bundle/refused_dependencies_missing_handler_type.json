@@ -1,0 +1,26 @@
+{
+  "id": "bundle.refused.dependencies_missing_handler_type",
+  "family": "bundle",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 2.1: the importer refuses with bundle_dependencies_missing when its handler registry lacks a snippet type, naming the type and the snippets that use it. Importing a workflow this build cannot execute is the outcome the whole contract exists to prevent.",
+  "input": {
+    "bundle": {
+      "schema_version": "v3",
+      "kind": "flow_weaver.workflow_bundle",
+      "requires": { "snippet_types": [ "email_send" ], "capabilities": [], "secrets": [] },
+      "workflow": { "name": "notify" },
+      "nodes": [
+        { "id": "start", "snippet_id": "__start__" },
+        { "id": "mail", "snippet_id": "aaaaaaaa-0000-0000-0000-000000000003", "config_overrides": { "to": [ "ops@example.com" ], "subject": "hi", "body": "there" } }
+      ],
+      "edges": [ { "source": "start", "target": "mail", "type": "success" } ],
+      "dependencies": {
+        "snippets": [ { "id": "aaaaaaaa-0000-0000-0000-000000000003", "slug": "send-mail", "name": "Send mail", "type": "email_send", "target_mode": "once", "timeout_seconds": 30 } ]
+      }
+    },
+    "local": { "snippet_types": [ "ping", "transform" ] }
+  },
+  "expected": { "outcome": "refused", "codes": [ "bundle_dependencies_missing" ] },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

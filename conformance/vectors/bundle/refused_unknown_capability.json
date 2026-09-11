@@ -1,0 +1,19 @@
+{
+  "id": "bundle.refused.unknown_capability",
+  "family": "bundle",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 2.2: capabilities are a CLOSED vocabulary, and section 1 makes requires the one place where an unknown member is refused instead of ignored. An importer that shrugged at a name it did not know would be guessing about what the workflow needs.",
+  "input": {
+    "bundle": {
+      "schema_version": "v3",
+      "kind": "flow_weaver.workflow_bundle",
+      "requires": { "snippet_types": [], "capabilities": [ "time_travel" ], "secrets": [] },
+      "workflow": { "name": "probe" },
+      "nodes": [ { "id": "start", "snippet_id": "__start__" } ],
+      "edges": []
+    }
+  },
+  "expected": { "outcome": "refused", "codes": [ "bundle_capability_unsupported" ] },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

@@ -1,0 +1,10 @@
+{
+  "id": "templates.condition.reference_without_braces_is_literal_text",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 9: references inside conditions use the same braces as section 1. A bare steps.a.output.x == 1 is a string comparison of the literal text and is NOT the same thing, so it is false even though the step output really is 1.",
+  "input": { "context": { "outputs": { "a": { "x": 1 } } }, "condition": "steps.a.output.x == 1" },
+  "expected": { "result": false },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

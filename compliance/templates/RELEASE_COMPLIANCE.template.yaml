@@ -1,0 +1,23 @@
+schema_version: 1
+product: "FlowWeaver"
+owner: "Isaza Labs LLC"
+release: "[version]"
+commit: "[full SHA]"
+first_party_license: "Apache-2.0"
+artifact_hashes: []
+sboms: []
+third_party_notice: "[path/hash]"
+checks:
+  build: "[pass/fail]"
+  tests: "[pass/fail]"
+  secrets: "[pass/fail]"
+  vulnerabilities: "[pass/fail]"
+  license_coverage: "[pass/fail]"
+  distribution_allowlist: "[pass/fail]"
+approvals:
+  engineering: "[name/date]"
+  security: "[name/date]"
+  license_compliance: "[name/date]"
+  ip_ownership: "[name/date]"
+  release_manager: "[name/date]"
+

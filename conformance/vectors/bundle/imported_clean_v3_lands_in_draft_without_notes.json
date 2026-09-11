@@ -1,0 +1,34 @@
+{
+  "id": "bundle.imported.clean_v3_lands_in_draft_without_notes",
+  "family": "bundle",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 7: an import that degraded nothing produces no notes — silence means nothing was degraded. Section 7 also fixes where it lands: draft, version 1, with no simulation or test evidence, whatever the exporting instance's environment said.",
+  "input": {
+    "bundle": {
+      "schema_version": "v3",
+      "kind": "flow_weaver.workflow_bundle",
+      "exported_at": "2026-08-27T12:00:00Z",
+      "requires": { "snippet_types": [ "ping" ], "capabilities": [], "secrets": [] },
+      "workflow": { "name": "probe-core", "description": "reachability", "environment": "production" },
+      "nodes": [
+        { "id": "start", "snippet_id": "__start__" },
+        { "id": "probe", "snippet_id": "aaaaaaaa-0000-0000-0000-000000000001", "config_overrides": { "host": "10.0.0.1" } }
+      ],
+      "edges": [ { "source": "start", "target": "probe", "type": "success" } ],
+      "dependencies": {
+        "snippets": [ { "id": "aaaaaaaa-0000-0000-0000-000000000001", "slug": "ping-host", "name": "Ping host", "type": "ping", "target_mode": "once", "timeout_seconds": 30, "idempotency": "idempotent" } ]
+      },
+      "triggers": []
+    },
+    "local": { "snippet_types": [ "ping" ] }
+  },
+  "expected": {
+    "outcome": "imported",
+    "codes": [],
+    "notes_empty": true,
+    "created": { "snippets": 1, "workflows": 0, "triggers": 0 },
+    "workflow": { "environment": "draft", "version": 1, "schema_version": "v1", "has_simulation": false }
+  },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

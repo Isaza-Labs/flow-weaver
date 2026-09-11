@@ -1,0 +1,10 @@
+{
+  "id": "snippets.ping.canonical_host_wins_over_device",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "ping: with both keys present the canonical host wins and the alias is dropped, not merged.",
+  "input": { "type": "ping", "input": { "host": "10.0.0.1", "device": "core-1" } },
+  "expected": { "normalized_input": { "host": "10.0.0.1" } },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

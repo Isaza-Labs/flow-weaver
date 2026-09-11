@@ -1,0 +1,88 @@
+/* fw-wordmark — Editorial base + brand duotone typography.
+   Aesthetic: same minimal chrome as fw-editorial (hairline borders,
+   sharp 6px radii, no body gradient), but body text leans into the
+   brand's #4c4c4c grey and headings into #ffd421 yellow — echoing the
+   FlowWeaver wordmark itself ("flow" grey / "Weaver" yellow). */
+
+[data-theme='fw-wordmark'] {
+	--radius-base: 0.375rem;     /* 6px */
+	--radius-container: 0.5rem;  /* 8px */
+	--default-border-width: 1px;
+
+	/* Body text leans into the brand grey (#4c4c4c) in light mode rather
+	   than near-black, so it visually pairs with the yellow accents. */
+	--base-font-color: #4c4c4c;
+	--base-font-color-dark: #d4d4d4;
+	--base-font-weight: 500;
+
+	/* Headings are heavier and use the brand yellow — every h1/h2 across
+	   the app picks this up via Skeleton's heading token. */
+	--heading-font-weight: 700;
+	--heading-letter-spacing: -0.025em;
+	--heading-font-color: var(--color-warning-500);
+	--heading-font-color-dark: var(--color-warning-400);
+
+	/* Links use the warning yellow in both modes so the brand pulses
+	   wherever the user reads. */
+	--anchor-font-color: var(--color-warning-700);
+	--anchor-font-color-dark: var(--color-warning-300);
+	--anchor-font-weight: 600;
+
+	/* Neutral surfaces like Editorial — the duotone does the personality. */
+	--color-surface-50: oklch(99% 0.002 270);
+	--color-surface-100: oklch(97% 0.003 270);
+	--color-surface-200: oklch(93% 0.005 270);
+	--color-surface-300: oklch(86% 0.007 270);
+	--color-surface-400: oklch(70% 0.01 270);
+	--color-surface-500: oklch(55% 0.012 270);
+	--color-surface-600: oklch(42% 0.012 265);
+	--color-surface-700: oklch(28% 0.012 260);
+	--color-surface-800: oklch(18% 0.012 258);
+	--color-surface-900: oklch(13% 0.013 258);
+	--color-surface-950: oklch(9% 0.014 258);
+}
+
+[data-theme='fw-wordmark'][data-mode='dark'] {
+	--color-surface-50: oklch(98% 0.003 270);
+	--color-surface-100: oklch(94% 0.005 270);
+	--color-surface-200: oklch(86% 0.008 270);
+	--color-surface-300: oklch(74% 0.01 268);
+	--color-surface-400: oklch(58% 0.012 265);
+	--color-surface-500: oklch(45% 0.012 263);
+	--color-surface-600: oklch(34% 0.012 260);
+	--color-surface-700: oklch(24% 0.013 258);
+	--color-surface-800: oklch(16% 0.012 258);
+	--color-surface-900: oklch(11% 0.012 258);
+	--color-surface-950: oklch(7% 0.012 258);
+}
+
+/* Solid body — no gradient. The duotone typography is the brand cue. */
+[data-theme='fw-wordmark'][data-mode='light'] body {
+	background: var(--color-surface-50) !important;
+	background-attachment: fixed !important;
+}
+[data-theme='fw-wordmark'][data-mode='dark'] body {
+	background: var(--color-surface-950) !important;
+	background-attachment: fixed !important;
+}
+
+/* Force the heading colour even when Tailwind utility classes like
+   `text-surface-900-100` would otherwise win — the brand cue is
+   meant to be unmissable on top-level page titles. */
+[data-theme='fw-wordmark'] h1,
+[data-theme='fw-wordmark'] .h1 {
+	color: var(--color-warning-500);
+}
+[data-theme='fw-wordmark'][data-mode='dark'] h1,
+[data-theme='fw-wordmark'][data-mode='dark'] .h1 {
+	color: var(--color-warning-400);
+}
+
+/* The active sidebar row gets a yellow accent rail (matches the HTML
+   sample). The base layout uses .nav-item; this rule rides on top. */
+[data-theme='fw-wordmark'] .nav-item[aria-current='page'] {
+	color: var(--color-warning-500);
+}
+[data-theme='fw-wordmark'][data-mode='dark'] .nav-item[aria-current='page'] {
+	color: var(--color-warning-400);
+}

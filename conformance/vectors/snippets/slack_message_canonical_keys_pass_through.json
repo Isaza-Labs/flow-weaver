@@ -1,0 +1,15 @@
+{
+  "id": "snippets.slack_message.canonical_keys_pass_through",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "slack_message: channel, text, thread_ts and blocks are all canonical — the type has no aliases — so the payload reaches the handler exactly as authored.",
+  "input": {
+    "type": "slack_message",
+    "input": { "channel": "#netops", "text": "audit finished", "thread_ts": "1724750400.000100", "blocks": [], "via": "ops-slack" }
+  },
+  "expected": {
+    "normalized_input": { "channel": "#netops", "text": "audit finished", "thread_ts": "1724750400.000100", "blocks": [], "via": "ops-slack" }
+  },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

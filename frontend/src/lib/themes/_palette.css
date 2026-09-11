@@ -1,0 +1,274 @@
+/* FlowWeaver shared palette + universal tokens.
+   Applied to every fw-* theme so the brand colours (primary, secondary,
+   tertiary, success, warning, error) are guaranteed identical across
+   the four selectable themes. Per-theme files only redefine what makes
+   each one visually distinct (surface scale, radii, body atmosphere,
+   heading treatment, border weight, etc.).
+
+   :where() zeros out specificity so per-theme [data-theme='fw-X']
+   selectors (specificity 0,1,0) always win on any token they override. */
+
+:where([data-theme='fw-editorial'],
+       [data-theme='fw-aurora'],
+       [data-theme='fw-brutalist'],
+       [data-theme='fw-wordmark'],
+       [data-theme='fw-pastel'],
+       [data-theme='fw-cyber'],
+       [data-theme='fw-material'],
+       /* User-authored themes (`fw-custom-<uuid>`). They inherit every token
+          here and the runtime-injected rule overrides only the palettes the
+          author actually picked — which is what lets a one-colour theme be
+          valid instead of a half-styled app. */
+       [data-theme^='fw-custom-']) {
+	/* ─── Spacing & typography defaults ───────────────────────────── */
+	--spacing: 0.25rem;
+	--text-scaling: 1.067;
+	--base-font-color: var(--color-surface-950);
+	--base-font-color-dark: var(--color-surface-50);
+	--base-font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	--base-font-size: inherit;
+	--base-line-height: 1.55;
+	--base-font-weight: 400;
+	--base-font-style: normal;
+	--base-letter-spacing: -0.005em;
+	--heading-font-color: inherit;
+	--heading-font-color-dark: inherit;
+	/* Follows the body stack by default. A real value (not `inherit`) so the
+	   heading rule in app.css can consume it through var() — a CSS-wide
+	   keyword doesn't survive var() substitution. */
+	--heading-font-family: var(--base-font-family);
+	--heading-font-weight: 650;
+	--heading-font-style: normal;
+	--heading-letter-spacing: -0.022em;
+	--anchor-font-color: var(--color-primary-700);
+	--anchor-font-color-dark: var(--color-warning-400);
+	--anchor-font-family: inherit;
+	--anchor-font-size: inherit;
+	--anchor-line-height: inherit;
+	--anchor-font-weight: 500;
+	--anchor-font-style: inherit;
+	--anchor-letter-spacing: inherit;
+	--anchor-text-decoration: none;
+	--anchor-text-decoration-hover: underline;
+	--anchor-text-decoration-active: none;
+	--anchor-text-decoration-focus: none;
+	--body-background-color: var(--color-surface-50);
+	--body-background-color-dark: var(--color-surface-950);
+	--default-divide-width: 1px;
+	--default-ring-width: 1px;
+
+	/* Focus-visible outline colour, consumed by app.css. Follows the theme's
+	   own primary in light mode (overridden to warning in dark below), so a
+	   recoloured custom theme carries its accent into the focus ring too. */
+	--fw-accent-ring: var(--color-primary-600);
+
+	/* ─── Primary — indigo (#5c69ab) ──────────────────────────────── */
+	--color-primary-50: #cfd3e5;
+	--color-primary-100: #b8bed9;
+	--color-primary-200: #a1a9ce;
+	--color-primary-300: #8a93c2;
+	--color-primary-400: #737eb7;
+	--color-primary-500: #5c69ab;
+	--color-primary-600: #525e98;
+	--color-primary-700: #485385;
+	--color-primary-800: #3e4772;
+	--color-primary-900: #343c5f;
+	--color-primary-950: #2a314c;
+	--color-primary-contrast-dark: var(--color-primary-950);
+	--color-primary-contrast-light: var(--color-primary-50);
+	--color-primary-contrast-50: var(--color-primary-contrast-dark);
+	--color-primary-contrast-100: var(--color-primary-contrast-dark);
+	--color-primary-contrast-200: var(--color-primary-contrast-dark);
+	--color-primary-contrast-300: var(--color-primary-contrast-dark);
+	--color-primary-contrast-400: var(--color-primary-contrast-light);
+	--color-primary-contrast-500: var(--color-primary-contrast-light);
+	--color-primary-contrast-600: var(--color-primary-contrast-light);
+	--color-primary-contrast-700: var(--color-primary-contrast-light);
+	--color-primary-contrast-800: var(--color-primary-contrast-light);
+	--color-primary-contrast-900: var(--color-primary-contrast-light);
+	--color-primary-contrast-950: var(--color-primary-contrast-light);
+
+	/* ─── Secondary — coral (#e07a5a) ─────────────────────────────── */
+	--color-secondary-50: #ffd7cc;
+	--color-secondary-100: #f9c4b5;
+	--color-secondary-200: #f3b29e;
+	--color-secondary-300: #ec9f88;
+	--color-secondary-400: #e68d71;
+	--color-secondary-500: #e07a5a;
+	--color-secondary-600: #c26a4e;
+	--color-secondary-700: #a55a42;
+	--color-secondary-800: #874937;
+	--color-secondary-900: #6a392b;
+	--color-secondary-950: #4c291f;
+	--color-secondary-contrast-dark: var(--color-secondary-950);
+	--color-secondary-contrast-light: var(--color-secondary-50);
+	--color-secondary-contrast-50: var(--color-secondary-contrast-dark);
+	--color-secondary-contrast-100: var(--color-secondary-contrast-dark);
+	--color-secondary-contrast-200: var(--color-secondary-contrast-dark);
+	--color-secondary-contrast-300: var(--color-secondary-contrast-dark);
+	--color-secondary-contrast-400: var(--color-secondary-contrast-dark);
+	--color-secondary-contrast-500: var(--color-secondary-contrast-light);
+	--color-secondary-contrast-600: var(--color-secondary-contrast-light);
+	--color-secondary-contrast-700: var(--color-secondary-contrast-light);
+	--color-secondary-contrast-800: var(--color-secondary-contrast-light);
+	--color-secondary-contrast-900: var(--color-secondary-contrast-light);
+	--color-secondary-contrast-950: var(--color-secondary-contrast-light);
+
+	/* ─── Tertiary — sky (#83c9eb) ────────────────────────────────── */
+	--color-tertiary-50: #d3e4ea;
+	--color-tertiary-100: #c3dfea;
+	--color-tertiary-200: #b3d9ea;
+	--color-tertiary-300: #a3d4eb;
+	--color-tertiary-400: #93ceeb;
+	--color-tertiary-500: #83c9eb;
+	--color-tertiary-600: #72aecb;
+	--color-tertiary-700: #6093ab;
+	--color-tertiary-800: #4f798c;
+	--color-tertiary-900: #3d5e6c;
+	--color-tertiary-950: #2c434c;
+	--color-tertiary-contrast-dark: var(--color-tertiary-950);
+	--color-tertiary-contrast-light: var(--color-tertiary-50);
+	--color-tertiary-contrast-50: var(--color-tertiary-contrast-dark);
+	--color-tertiary-contrast-100: var(--color-tertiary-contrast-dark);
+	--color-tertiary-contrast-200: var(--color-tertiary-contrast-dark);
+	--color-tertiary-contrast-300: var(--color-tertiary-contrast-dark);
+	--color-tertiary-contrast-400: var(--color-tertiary-contrast-dark);
+	--color-tertiary-contrast-500: var(--color-tertiary-contrast-dark);
+	--color-tertiary-contrast-600: var(--color-tertiary-contrast-light);
+	--color-tertiary-contrast-700: var(--color-tertiary-contrast-light);
+	--color-tertiary-contrast-800: var(--color-tertiary-contrast-light);
+	--color-tertiary-contrast-900: var(--color-tertiary-contrast-light);
+	--color-tertiary-contrast-950: var(--color-tertiary-contrast-light);
+
+	/* ─── Success — green (#67bc57) ───────────────────────────────── */
+	--color-success-50: #bfe5b7;
+	--color-success-100: #addda4;
+	--color-success-200: #9cd591;
+	--color-success-300: #8acc7d;
+	--color-success-400: #79c46a;
+	--color-success-500: #67bc57;
+	--color-success-600: #5ba64d;
+	--color-success-700: #4f8f43;
+	--color-success-800: #437938;
+	--color-success-900: #37622e;
+	--color-success-950: #2b4c24;
+	--color-success-contrast-dark: var(--color-success-950);
+	--color-success-contrast-light: var(--color-success-50);
+	--color-success-contrast-50: var(--color-success-contrast-dark);
+	--color-success-contrast-100: var(--color-success-contrast-dark);
+	--color-success-contrast-200: var(--color-success-contrast-dark);
+	--color-success-contrast-300: var(--color-success-contrast-dark);
+	--color-success-contrast-400: var(--color-success-contrast-dark);
+	--color-success-contrast-500: var(--color-success-contrast-dark);
+	--color-success-contrast-600: var(--color-success-contrast-light);
+	--color-success-contrast-700: var(--color-success-contrast-light);
+	--color-success-contrast-800: var(--color-success-contrast-light);
+	--color-success-contrast-900: var(--color-success-contrast-light);
+	--color-success-contrast-950: var(--color-success-contrast-light);
+
+	/* ─── Warning — FlowWeaver signature yellow (#ffce03) ─────────── */
+	--color-warning-50: #ffeb99;
+	--color-warning-100: #ffe57b;
+	--color-warning-200: #ffdf5d;
+	--color-warning-300: #ffda3f;
+	--color-warning-400: #ffd421;
+	--color-warning-500: #ffce03;
+	--color-warning-600: #dbb103;
+	--color-warning-700: #b79403;
+	--color-warning-800: #947802;
+	--color-warning-900: #705b02;
+	--color-warning-950: #4c3e02;
+	--color-warning-contrast-dark: var(--color-warning-950);
+	--color-warning-contrast-light: var(--color-warning-50);
+	--color-warning-contrast-50: var(--color-warning-contrast-dark);
+	--color-warning-contrast-100: var(--color-warning-contrast-dark);
+	--color-warning-contrast-200: var(--color-warning-contrast-dark);
+	--color-warning-contrast-300: var(--color-warning-contrast-dark);
+	--color-warning-contrast-400: var(--color-warning-contrast-dark);
+	--color-warning-contrast-500: var(--color-warning-contrast-dark);
+	--color-warning-contrast-600: var(--color-warning-contrast-dark);
+	--color-warning-contrast-700: var(--color-warning-contrast-light);
+	--color-warning-contrast-800: var(--color-warning-contrast-light);
+	--color-warning-contrast-900: var(--color-warning-contrast-light);
+	--color-warning-contrast-950: var(--color-warning-contrast-light);
+
+	/* ─── Error — pink/red (#e7577c) ──────────────────────────────── */
+	--color-error-50: #ffccdb;
+	--color-error-100: #fab5c8;
+	--color-error-200: #f59db5;
+	--color-error-300: #f186a2;
+	--color-error-400: #ec6e8f;
+	--color-error-500: #e7577c;
+	--color-error-600: #c84c6c;
+	--color-error-700: #a9405c;
+	--color-error-800: #8a354b;
+	--color-error-900: #6b293b;
+	--color-error-950: #4c1e2b;
+	--color-error-contrast-dark: var(--color-error-950);
+	--color-error-contrast-light: var(--color-error-50);
+	--color-error-contrast-50: var(--color-error-contrast-dark);
+	--color-error-contrast-100: var(--color-error-contrast-dark);
+	--color-error-contrast-200: var(--color-error-contrast-dark);
+	--color-error-contrast-300: var(--color-error-contrast-dark);
+	--color-error-contrast-400: var(--color-error-contrast-dark);
+	--color-error-contrast-500: var(--color-error-contrast-light);
+	--color-error-contrast-600: var(--color-error-contrast-light);
+	--color-error-contrast-700: var(--color-error-contrast-light);
+	--color-error-contrast-800: var(--color-error-contrast-light);
+	--color-error-contrast-900: var(--color-error-contrast-light);
+	--color-error-contrast-950: var(--color-error-contrast-light);
+
+	/* Surface contrast tokens — same shape across themes (light text on
+	   dark surfaces, dark text on light surfaces). The actual surface
+	   COLOURS differ per theme. */
+	--color-surface-contrast-dark: var(--color-surface-950);
+	--color-surface-contrast-light: var(--color-surface-50);
+	--color-surface-contrast-50: var(--color-surface-contrast-dark);
+	--color-surface-contrast-100: var(--color-surface-contrast-dark);
+	--color-surface-contrast-200: var(--color-surface-contrast-dark);
+	--color-surface-contrast-300: var(--color-surface-contrast-dark);
+	--color-surface-contrast-400: var(--color-surface-contrast-light);
+	--color-surface-contrast-500: var(--color-surface-contrast-light);
+	--color-surface-contrast-600: var(--color-surface-contrast-light);
+	--color-surface-contrast-700: var(--color-surface-contrast-light);
+	--color-surface-contrast-800: var(--color-surface-contrast-light);
+	--color-surface-contrast-900: var(--color-surface-contrast-light);
+	--color-surface-contrast-950: var(--color-surface-contrast-light);
+}
+
+/* Focus ring in dark mode — yellow pops on dark surfaces where the primary
+   mid-tones don't. Scoped by attribute pair so every fw-* theme (built-in or
+   custom) gets it without each file restating it. */
+[data-theme^='fw-'][data-mode='dark'] {
+	--fw-accent-ring: var(--color-warning-400);
+}
+
+/* Brand-tinted ::selection — every fw-* theme inherits this. */
+:where([data-theme='fw-editorial'],
+       [data-theme='fw-aurora'],
+       [data-theme='fw-brutalist'],
+       [data-theme='fw-wordmark'],
+       [data-theme='fw-pastel'],
+       [data-theme='fw-cyber'],
+       [data-theme='fw-material']) ::selection {
+	background-color: color-mix(in oklab, var(--color-warning-500) 40%, transparent);
+	color: var(--color-surface-950);
+}
+[data-mode='dark'] :where([data-theme='fw-editorial'],
+                          [data-theme='fw-aurora'],
+                          [data-theme='fw-brutalist'],
+                          [data-theme='fw-wordmark'],
+                          [data-theme='fw-pastel'],
+                          [data-theme='fw-cyber'],
+                          [data-theme='fw-material']) ::selection {
+	color: var(--color-surface-950);
+}
+
+/* Forced-colors fallback — Windows high-contrast keeps the OS chrome
+   regardless of which theme is active. */
+@media (forced-colors: active) {
+	[data-theme^='fw-'] body {
+		background: Canvas !important;
+		color: CanvasText !important;
+	}
+}

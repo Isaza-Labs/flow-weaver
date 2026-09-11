@@ -1,0 +1,11 @@
+{
+  "id": "gate.promote.simulation_missing",
+  "family": "gate",
+  "contract_version": "1.0.0",
+  "description": "Promoting draft->qa with no simulation is refused with 412 simulation_missing.",
+  "input": { "workflow_state": "draft", "simulation": null, "action": "promote:draft->qa" },
+  "expected": { "http_status": 412, "code": "simulation_missing" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@95fc69e",
+  "notes": "Skipped by Nashira until the promotion gate exists (Phase 5.5)."
+}

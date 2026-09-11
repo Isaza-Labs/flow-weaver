@@ -1,0 +1,16 @@
+{
+  "id": "templates.per_device.non_aggregate_output_passes_through",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 6: only outputs with the aggregate shape are scoped. A once producer's output reads the same from a per_device consumer, including one that happens to carry a devices list with no device_id.",
+  "input": {
+    "consumer_target_mode": "per_device",
+    "device": { "id": "aaaaaaaa-0000-0000-0000-00000000000a", "name": "a", "ip": "10.0.0.1" },
+    "outputs": { "inventory": { "devices": [ { "name": "a" }, { "name": "b" } ], "count": 2 } },
+    "template": "{{ steps.inventory.output.count }}"
+  },
+  "expected": { "resolved": 2 },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3",
+  "notes": "Derived from section 6, which defines the aggregate by devices[].device_id and devices[].output and says templates may rely only on that pair, so an ordinary step whose output happens to carry a devices list must not be mistaken for a fan-out. Nashira requires the device_id to be present before it treats an output as a fan-out (VariableResolver.IsAggregate); the oracle was not consulted for this case."
+}

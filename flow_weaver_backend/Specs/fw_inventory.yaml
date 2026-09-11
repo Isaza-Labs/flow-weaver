@@ -1,0 +1,213 @@
+openapi: 3.0.0
+info:
+  title: fw_inventory
+  version: "1.0"
+  description: Devices, device pools, inventory sources, credentials (metadata).
+servers:
+  - url: /api
+components:
+  securitySchemes:
+    session_jwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      x-credential-ref: "${secret:session:current:jwt}"
+security:
+  - session_jwt: []
+paths:
+  # ─── Devices ──────────────────────────────────
+  /device:
+    get:
+      operationId: fw_inventory:list_devices
+      summary: List devices.
+      tags: [devices]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses: { "200": { description: List } }
+    post:
+      operationId: fw_inventory:create_device
+      summary: Create a device. Operator+.
+      tags: [devices]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [device_name, ip_address]
+              properties:
+                device_name: { type: string }
+                ip_address: { type: string }
+                platform: { type: string }
+                vendor: { type: string }
+                os_version: { type: string }
+                site: { type: string }
+                role: { type: string }
+                credential_id: { type: string, format: uuid }
+      responses: { "201": { description: Created } }
+  /device/{id}:
+    get:
+      operationId: fw_inventory:get_device
+      tags: [devices]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { "200": { description: Device } }
+    put:
+      operationId: fw_inventory:update_device
+      tags: [devices]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                device_name: { type: string }
+                ip_address: { type: string }
+                platform: { type: string }
+                vendor: { type: string }
+                site: { type: string }
+                role: { type: string }
+                credential_id: { type: string, format: uuid }
+                status: { type: string }
+      responses: { "200": { description: Updated } }
+    delete:
+      operationId: fw_inventory:delete_device
+      tags: [devices]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { "204": { description: Deleted } }
+
+  # ─── Device pools ─────────────────────────────
+  /devicepool:
+    get:
+      operationId: fw_inventory:list_device_pools
+      tags: [pools]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses: { "200": { description: List } }
+    post:
+      operationId: fw_inventory:create_device_pool
+      tags: [pools]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                description: { type: string }
+                static_members: { type: array, items: { type: string, format: uuid } }
+                filter_query: { type: string }
+      responses: { "201": { description: Created } }
+  /devicepool/{id}:
+    get:
+      operationId: fw_inventory:get_device_pool
+      tags: [pools]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { "200": { description: Pool } }
+    put:
+      operationId: fw_inventory:update_device_pool
+      tags: [pools]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                static_members: { type: array, items: { type: string, format: uuid } }
+                filter_query: { type: string }
+      responses: { "200": { description: Updated } }
+    delete:
+      operationId: fw_inventory:delete_device_pool
+      tags: [pools]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { "204": { description: Deleted } }
+
+  # ─── Inventory sources ────────────────────────
+  /inventorysource:
+    get:
+      operationId: fw_inventory:list_inventory_sources
+      tags: [sources]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+      responses: { "200": { description: List } }
+  /inventorysource/{id}:
+    get:
+      operationId: fw_inventory:get_inventory_source
+      tags: [sources]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { "200": { description: Source } }
+
+  # ─── Credentials (metadata only) ──────────────
+  /credential:
+    get:
+      operationId: fw_inventory:list_credentials
+      summary: List credentials — metadata only, never the plaintext.
+      tags: [credentials]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+      responses: { "200": { description: List } }
+    post:
+      operationId: fw_inventory:create_credential
+      summary: Create a credential. Values are provided by the user, not the agent.
+      tags: [credentials]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, type]
+              properties:
+                name: { type: string }
+                type: { type: string, enum: [ssh, rest, snmp, basic] }
+                username: { type: string }
+                password: { type: string, description: "One-shot write; never returned." }
+                private_key: { type: string, description: "One-shot write; never returned." }
+      responses: { "201": { description: Created } }
+  /credential/{id}:
+    get:
+      operationId: fw_inventory:get_credential
+      summary: Metadata only.
+      tags: [credentials]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { "200": { description: Credential metadata } }
+    put:
+      operationId: fw_inventory:update_credential
+      tags: [credentials]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                username: { type: string }
+                password: { type: string }
+                private_key: { type: string }
+      responses: { "200": { description: Updated } }
+    delete:
+      operationId: fw_inventory:delete_credential
+      tags: [credentials]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { "204": { description: Deleted } }

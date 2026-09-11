@@ -1,0 +1,34 @@
+device_type: paloalto_panos
+vendor_family: paloalto
+description: Allowlisted commands for Palo Alto Networks PAN-OS firewalls.
+commands:
+  - command: show system info
+    intent: read
+    description: Software version, serial, uptime.
+  - command: show system resources
+    intent: read
+    description: CPU, memory, sessions.
+  - command: show interface all
+    intent: read
+    description: Interface state.
+  - command: show routing route
+    intent: read
+    description: Active routing table.
+  - command: show running security-policy
+    intent: read
+    description: Currently committed security policy.
+  - command: show session info
+    intent: read
+    description: Session counters.
+  - command: show config running
+    intent: read
+    description: Full running configuration in XML.
+  - command: configure
+    intent: write
+    description: Enter config mode.
+  - command: commit
+    intent: write
+    description: Persist candidate config.
+  - command: request restart system
+    intent: disruptive
+    description: Reboot the firewall.

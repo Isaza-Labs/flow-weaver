@@ -1,0 +1,13 @@
+{
+  "id": "templates.substitution.whole_string_preserves_object",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "§3 whole-string: an object reference resolves to the object, not to its string form.",
+  "input": {
+    "outputs": { "ping": { "obj": {"a":1}, "arr": [1,2] } },
+    "template": "{{ steps.ping.output.obj }}"
+  },
+  "expected": { "resolved": { "a": 1 } },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

@@ -1,0 +1,16 @@
+{
+  "id": "snippets.mcp_call.default_idempotency_is_requires_compensation",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "snippets/SPEC.md fixes mcp_call's DEFAULT idempotency at requires_compensation. The default is the handler FLOOR: a snippet may declare a stricter tier, never a weaker one, so a floor above the contract's default silently removes the author's ability to declare the tier the contract allows.",
+  "input": {
+    "type": "mcp_call",
+    "declared_idempotency": null
+  },
+  "expected": {
+    "effective_idempotency": "requires_compensation"
+  },
+  "equivalence": "exact",
+  "oracle_commit": "fw@fe07550",
+  "notes": "The default is the handler's DECLARED tier, and declaring the strictest one where the contract says compensable is not a safe over-approximation: the strictest tier is absolute, so it makes the contract's own default undeclarable. A workflow whose mcp_call step the author marked compensable then runs as if they had not, and a failed run reports final_state failed where the oracle reports rolled_back. MCP says nothing about whether a tool writes, so the strictest answer was a guess made on the author's behalf."
+}

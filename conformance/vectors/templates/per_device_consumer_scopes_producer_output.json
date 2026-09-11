@@ -1,0 +1,25 @@
+{
+  "id": "templates.per_device.consumer_scopes_producer_output",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 6: when the consumer is per_device, a producer output with the aggregate shape is scoped to the entry whose device_id is the current device, so a plain field read gets THIS device's value. Extra fields beside devices and inside each entry are allowed and ignored.",
+  "input": {
+    "consumer_target_mode": "per_device",
+    "device": { "id": "aaaaaaaa-0000-0000-0000-00000000000a", "name": "a", "ip": "10.0.0.1" },
+    "outputs": {
+      "show": {
+        "per_device": true,
+        "total": 2,
+        "failed": 0,
+        "devices": [
+          { "device_id": "aaaaaaaa-0000-0000-0000-00000000000a", "device": "a", "success": true, "attempts": 1, "output": { "stdout": "from-a" } },
+          { "device_id": "aaaaaaaa-0000-0000-0000-00000000000b", "device": "b", "success": true, "attempts": 1, "output": { "stdout": "from-b" } }
+        ]
+      }
+    },
+    "template": "{{ steps.show.output.stdout }}"
+  },
+  "expected": { "resolved": "from-a" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

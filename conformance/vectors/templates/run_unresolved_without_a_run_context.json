@@ -1,0 +1,10 @@
+{
+  "id": "templates.run.unresolved_without_a_run_context",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 1/8: with no run namespace in scope the reference is left literal.",
+  "input": { "template": "{{ run.id }}" },
+  "expected": { "resolved": "unresolved" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

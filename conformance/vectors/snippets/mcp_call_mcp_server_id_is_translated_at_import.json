@@ -1,0 +1,10 @@
+{
+  "id": "snippets.mcp_call.mcp_server_id_is_translated_at_import",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "mcp_call: mcp_server_id is a LEGACY ID key, not a handler-level alias. bundle/SPEC.md section 4 translates it against dependencies.mcp_servers at import; a foreign GUID cannot be turned into a local server name by looking at the payload, so normalisation leaves it alone.",
+  "input": { "type": "mcp_call", "input": { "mcp_server_id": "88888888-8888-8888-8888-888888888888", "tool": "read" } },
+  "expected": { "normalized_input": { "mcp_server_id": "88888888-8888-8888-8888-888888888888", "tool": "read" } },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

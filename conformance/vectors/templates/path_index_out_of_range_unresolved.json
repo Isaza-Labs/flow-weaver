@@ -1,0 +1,13 @@
+{
+  "id": "templates.path.index_out_of_range_unresolved",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Sections 2 and 8: an index past the end of the array does not resolve; the reference is left literal.",
+  "input": {
+    "outputs": { "ssh": { "results": [ { "output": "x" } ] } },
+    "template": "{{ steps.ssh.output.results[3].output }}"
+  },
+  "expected": { "resolved": "unresolved" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

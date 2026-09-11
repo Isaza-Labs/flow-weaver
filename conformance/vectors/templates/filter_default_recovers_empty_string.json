@@ -1,0 +1,10 @@
+{
+  "id": "templates.filter.default_recovers_empty_string",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 4: absent includes the EMPTY STRING. This is what makes the same template read the same whether a handler reports no-error as a missing key, as null, or as an empty string.",
+  "input": { "outputs": { "x": { "error": "" } }, "template": "{{ steps.x.output.error | default('none') }}" },
+  "expected": { "resolved": "none" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

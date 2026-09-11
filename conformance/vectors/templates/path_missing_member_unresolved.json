@@ -1,0 +1,10 @@
+{
+  "id": "templates.path.missing_member_unresolved",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 8: a member that does not exist leaves the reference literal (unresolved).",
+  "input": { "outputs": { "ssh": { "stdout": "ok" } }, "template": "{{ steps.ssh.output.nope }}" },
+  "expected": { "resolved": "unresolved" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

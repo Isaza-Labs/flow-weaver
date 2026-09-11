@@ -1,0 +1,10 @@
+{
+  "id": "snippets.ssh.canonical_commands_wins_over_command",
+  "family": "snippets",
+  "contract_version": "1.1.0-draft",
+  "description": "ssh: with both present the canonical commands wins and command is dropped. Merging them would run commands the author did not ask for on a non_reversible type.",
+  "input": { "type": "ssh", "input": { "commands": [ "show run" ], "command": "reload" } },
+  "expected": { "normalized_input": { "commands": [ "show run" ] } },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

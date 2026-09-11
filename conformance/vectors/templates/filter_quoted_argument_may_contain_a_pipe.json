@@ -1,0 +1,10 @@
+{
+  "id": "templates.filter.quoted_argument_may_contain_a_pipe",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 4: pipes OUTSIDE quotes and parentheses separate filters, so a pipe inside a quoted argument is part of the argument.",
+  "input": { "outputs": {}, "template": "{{ steps.x.output.v | default('a|b') }}" },
+  "expected": { "resolved": "a|b" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

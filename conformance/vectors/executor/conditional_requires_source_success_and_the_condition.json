@@ -1,0 +1,18 @@
+{
+  "id": "executor.conditional.requires_source_success_and_the_condition",
+  "family": "executor",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 1: a conditional edge fires when the source succeeded AND the condition holds.",
+  "input": {
+    "workflow": {
+      "nodes": [ { "id": "a", "snippet_id": "__start__" }, { "id": "b", "snippet_id": "__end__" } ],
+      "edges": [ { "source": "a", "target": "b", "type": "conditional", "condition": "{{ steps.a.output.code }} == 200" } ]
+    },
+    "context": {
+      "nodes": { "a": { "result": "changed", "tier": "idempotent", "output": { "code": 200 } }, "b": { "result": "no_change" } }
+    }
+  },
+  "expected": { "steps": [ { "node_id": "a", "result": "changed" }, { "node_id": "b", "result": "no_change" } ] },
+  "equivalence": "subset",
+  "oracle_commit": "fw@1a11ea3"
+}

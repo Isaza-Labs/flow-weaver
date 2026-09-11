@@ -1,0 +1,10 @@
+{
+  "id": "templates.condition.bare_word_literal",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 9: a bare word is a valid <value>, so an unquoted right-hand side compares as a string.",
+  "input": { "context": { "input": { "env": "production" } }, "condition": "{{ input.env }} == production" },
+  "expected": { "result": true },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

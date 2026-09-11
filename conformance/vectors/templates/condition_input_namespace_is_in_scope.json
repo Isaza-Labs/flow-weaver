@@ -1,0 +1,10 @@
+{
+  "id": "templates.condition.input_namespace_is_in_scope",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 9: branching on the run's own input is the case conditional edges exist for. It is how one definition serves a dry run and a real one.",
+  "input": { "context": { "input": { "apply": true } }, "condition": "{{ input.apply }} == true" },
+  "expected": { "result": true },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

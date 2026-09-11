@@ -1,0 +1,13 @@
+{
+  "id": "templates.device.field",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "Section 5: a projected field resolves.",
+  "input": {
+    "device": { "id": "aaaaaaaa-1111-2222-3333-444444444444", "name": "core-1", "ip": "10.0.0.1" },
+    "template": "{{ device.ip }}"
+  },
+  "expected": { "resolved": "10.0.0.1" },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}

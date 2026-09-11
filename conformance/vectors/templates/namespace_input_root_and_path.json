@@ -1,0 +1,13 @@
+{
+  "id": "templates.namespace.input_root",
+  "family": "templates",
+  "contract_version": "1.1.0-draft",
+  "description": "§1: {{ input }} with an empty path is the run input payload's root value.",
+  "input": {
+    "input": { "apply": true, "site": "bog" },
+    "template": "{{ input }}"
+  },
+  "expected": { "resolved": { "apply": true, "site": "bog" } },
+  "equivalence": "exact",
+  "oracle_commit": "fw@1a11ea3"
+}
