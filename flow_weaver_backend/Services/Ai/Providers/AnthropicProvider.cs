@@ -27,15 +27,26 @@ public sealed class AnthropicProvider : IStreamingToolCallingLlmProvider
 
     private readonly ModelLimits? _limits;
     private readonly string _messagesUrl;
+    private readonly string? _workspaceId;
+
+    // Provider Config key holding the workspace this deployment acts in. An
+    // identity-linked API key belongs to a person who may have access to several
+    // workspaces, so the key alone does not say which one to bill and scope the
+    // request to: without the header the API answers 400
+    // "anthropic-workspace-id is required when authenticating with an
+    // identity-linked API key". A plain (workspace-scoped) key carries its own
+    // workspace and needs none of this, which is why it is optional.
+    public const string WorkspaceIdConfigKey = "workspace_id";
 
     public AnthropicProvider(HttpClient http, string apiKey, string? baseUrl, ILogger<AnthropicProvider> logger,
-        ModelLimits? limits = null)
+        ModelLimits? limits = null, string? workspaceId = null)
     {
         _http = http;
         _apiKey = apiKey;
         _baseUrl = (baseUrl ?? "https://api.anthropic.com").TrimEnd('/');
         _logger = logger;
         _limits = limits;
+        _workspaceId = string.IsNullOrWhiteSpace(workspaceId) ? null : workspaceId.Trim();
         // A base URL pasted with the version on it ("…/v1") would otherwise become
         // /v1/v1/messages. See LlmHttp.CombineUrl.
         _messagesUrl = LlmHttp.CombineUrl(_baseUrl, "/v1/messages");
@@ -382,6 +393,11 @@ public sealed class AnthropicProvider : IStreamingToolCallingLlmProvider
             // Anthropic authenticates on its own header, not Authorization: Bearer.
             req.Headers.Add("x-api-key", _apiKey);
             req.Headers.Add("anthropic-version", "2023-06-01");
+            // Only when configured: sending it with a workspace-scoped key is not
+            // an error, but an empty or wrong value is, and every deployment that
+            // uses a plain key would then have to carry one.
+            if (_workspaceId is not null)
+                req.Headers.Add("anthropic-workspace-id", _workspaceId);
             return req;
         }, "anthropic", _logger, ct);
 

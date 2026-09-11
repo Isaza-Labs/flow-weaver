@@ -64,7 +64,8 @@ public class LlmProviderFactory
         return type switch
         {
             LlmProviderCatalog.Anthropic => new AnthropicProvider(
-                http, apiKey, baseUrl, _loggerFactory.CreateLogger<AnthropicProvider>(), limits),
+                http, apiKey, baseUrl, _loggerFactory.CreateLogger<AnthropicProvider>(), limits,
+                workspaceId: ConfigString(provider.Config, AnthropicProvider.WorkspaceIdConfigKey)),
             LlmProviderCatalog.Gemini => new GeminiProvider(
                 http, apiKey, baseUrl, _loggerFactory.CreateLogger<GeminiProvider>(), limits),
             LlmProviderCatalog.Ollama => new OllamaProvider(
@@ -80,6 +81,19 @@ public class LlmProviderFactory
 
             _ => throw new InvalidOperationException($"unsupported provider type: {provider.Type}"),
         };
+    }
+
+    // A string value from a provider's Config, or null when absent or the wrong
+    // shape. Config is operator-editable free-form JSON, so a wrong type here is a
+    // typo to ignore, not a reason to refuse to build the provider.
+    private static string? ConfigString(System.Text.Json.JsonElement config, string key)
+    {
+        if (config.ValueKind != System.Text.Json.JsonValueKind.Object
+            || !config.TryGetProperty(key, out var node)
+            || node.ValueKind != System.Text.Json.JsonValueKind.String)
+            return null;
+        var value = node.GetString();
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
     public async Task<(IStreamingToolCallingLlmProvider provider, string model)> ResolveForAgentAsync(

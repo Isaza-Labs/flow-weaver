@@ -366,7 +366,8 @@ public class ItentialTranslateAndReportThemeTests
         public Guid Seed(
             string category = "api", string action = "workflow.run", string status = "completed",
             Guid? userId = null, string? requestId = "req-1",
-            DateTime? at = null, bool active = true)
+            DateTime? at = null, bool active = true,
+            int? durationMs = null, string? error = null)
         {
             var id = Guid.NewGuid();
             Db.TraceEvents.Add(new TraceEvent
@@ -377,9 +378,26 @@ public class ItentialTranslateAndReportThemeTests
                 Status = status,
                 UserId = userId,
                 RequestId = requestId,
+                DurationMs = durationMs,
+                ErrorMessage = error,
                 Metadata = TestJson.Element("""{"k":1}"""),
                 At = at ?? DateTime.UtcNow,
                 IsActive = active,
+            });
+            Db.SaveChanges();
+            return id;
+        }
+
+        public Guid SeedUser(string username, string email)
+        {
+            var id = Guid.NewGuid();
+            Db.Users.Add(new User
+            {
+                UserId = id,
+                Username = username,
+                Email = email,
+                PasswordHash = "x",
+                IsActive = true,
             });
             Db.SaveChanges();
             return id;
@@ -393,10 +411,11 @@ public class ItentialTranslateAndReportThemeTests
             Assert.IsType<OkObjectResult>(result.Result).Value).ToList();
 
     private static Task<ActionResult<IEnumerable<TraceEventResponse>>> List(
-        TraceFixture f, string? category = null, string? action = null, string? status = null,
-        Guid? userId = null, string? requestId = null,
+        TraceFixture f, string? category = null, string? search = null, string? status = null,
+        string? user = null, string? requestId = null, int? minDurationMs = null,
         DateTime? from = null, DateTime? to = null, int limit = 100, int offset = 0)
-        => f.Build().List(category, action, status, userId, requestId, from, to, limit, offset);
+        => f.Build().List(
+            category, search, status, user, requestId, minDurationMs, from, to, limit, offset);
 
     [Fact]
     public async Task Traces_ReturnsEventsNewestFirst()
@@ -427,7 +446,7 @@ public class ItentialTranslateAndReportThemeTests
         f.Seed(category: "worker", action: "step.exec", status: "failed");
 
         Assert.Single(Rows(await List(f, category: "worker")));
-        Assert.Single(Rows(await List(f, action: "workflow.run")));
+        Assert.Single(Rows(await List(f, search: "workflow.run")));
         Assert.Single(Rows(await List(f, status: "failed")));
     }
 
@@ -450,7 +469,66 @@ public class ItentialTranslateAndReportThemeTests
         f.Seed(userId: user);
         f.Seed(userId: Guid.NewGuid());
 
-        Assert.Equal(user, Assert.Single(Rows(await List(f, userId: user))).UserId);
+        Assert.Equal(user, Assert.Single(Rows(await List(f, user: user.ToString()))).UserId);
+    }
+
+    // The search box is one term over several columns, matched anywhere in each —
+    // people arrive holding a fragment from a log, not the head of a dotted name.
+    [Fact]
+    public async Task Traces_SearchMatchesAnyTextColumnAnywhereInIt()
+    {
+        using var f = new TraceFixture();
+        f.Seed(action: "ai.chat.stream", category: "ai");
+        f.Seed(action: "workflow.run.enqueue", category: "workflow", error: "upstream timed out");
+
+        // Mid-name, where a prefix match would find nothing.
+        Assert.Equal("ai.chat.stream", Assert.Single(Rows(await List(f, search: "chat"))).Action);
+        // Case folds, and the error message counts as searchable text.
+        Assert.Equal("workflow.run.enqueue", Assert.Single(Rows(await List(f, search: "TIMED OUT"))).Action);
+        Assert.Empty(Rows(await List(f, search: "nothing-matches-this")));
+    }
+
+    // A % in the term is a character the user typed, not a wildcard.
+    [Fact]
+    public async Task Traces_SearchTreatsWildcardCharactersLiterally()
+    {
+        using var f = new TraceFixture();
+        f.Seed(action: "cpu.report", error: "at 90% of budget");
+        f.Seed(action: "mem.report", error: "within budget");
+
+        Assert.Equal("cpu.report", Assert.Single(Rows(await List(f, search: "90%"))).Action);
+    }
+
+    // Whoever fired it, by whatever the asker happens to be holding.
+    [Fact]
+    public async Task Traces_UserMatchesUsernameOrEmail()
+    {
+        using var f = new TraceFixture();
+        var ana = f.SeedUser("ana", "ana@example.com");
+        f.SeedUser("bob", "bob@example.com");
+        f.Seed(userId: ana);
+        f.Seed(userId: Guid.NewGuid());
+
+        Assert.Equal(ana, Assert.Single(Rows(await List(f, user: "ana"))).UserId);
+        Assert.Equal(ana, Assert.Single(Rows(await List(f, user: "ANA@example.com"))).UserId);
+        Assert.Empty(Rows(await List(f, user: "nobody")));
+    }
+
+    // Slower-than is the one filter that also picks the order: the newest rows of a
+    // wide window are not the slow ones it was set to find.
+    [Fact]
+    public async Task Traces_SlowerThanFiltersAndOrdersSlowestFirst()
+    {
+        using var f = new TraceFixture();
+        f.Seed(action: "quick", durationMs: 120, at: DateTime.UtcNow);
+        f.Seed(action: "slow", durationMs: 4_000, at: DateTime.UtcNow.AddMinutes(-5));
+        f.Seed(action: "slower", durationMs: 9_000, at: DateTime.UtcNow.AddMinutes(-10));
+        // Still running: no duration yet, so it cannot be "slower than" anything.
+        f.Seed(action: "in-flight", status: "started", durationMs: null, at: DateTime.UtcNow);
+
+        var rows = Rows(await List(f, minDurationMs: 1_000));
+
+        Assert.Equal(new[] { "slower", "slow" }, rows.Select(r => r.Action));
     }
 
     [Fact]
