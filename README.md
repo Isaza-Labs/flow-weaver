@@ -8,7 +8,7 @@ FlowWeaver is a governed, multi-vendor network automation platform. AI can help 
 
 ## Start here
 
-- [Quick start](./QUICKSTART.md)
+- [Quick start](./QUICK_START_GUIDE.md)
 - [Repository and distribution policy](./DISTRIBUTION_POLICY.md)
 - [Recommended repository structure](./docs/repository/REPOSITORY_STRUCTURE.md)
 - [Exact public repository boundary](./PUBLIC_REPOSITORY_CONTENTS.md)
