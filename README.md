@@ -14,12 +14,8 @@ FlowWeaver is a governed, multi-vendor network automation platform. AI can help 
 - [Exact public repository boundary](./PUBLIC_REPOSITORY_CONTENTS.md)
 - [Legal and licensing index](./LEGAL.md)
 - [Project governance](./GOVERNANCE.md)
-- [Maintainers and release authority](./MAINTAINERS.md)
-- [Changelog and versioning](./CHANGELOG.md)
-- [Documentation map](./docs/README.md)
 - [Contribution guide](./CONTRIBUTING.md)
 - [Security policy](./SECURITY.md)
-- [Support and contact routes](./SUPPORT.md)
 - [Third-party notices](./THIRD-PARTY-NOTICES.md)
 - [Trademark policy](./TRADEMARK.md)
 
