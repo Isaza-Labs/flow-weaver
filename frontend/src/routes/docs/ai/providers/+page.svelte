@@ -115,6 +115,21 @@
                 Masked input. Required when creating. On edit, empty means "keep
                 existing"; a non-empty value rotates the stored key.
             </dd>
+            <dt>Workspace ID</dt>
+            <dd>
+                Anthropic only, and optional. Names the workspace the requests
+                bill and are scoped to, sent as the
+                <code>anthropic-workspace-id</code> header. Required when the API
+                key is <em>identity-linked</em> — minted from your own account
+                rather than inside a workspace — because such a key can reach
+                several workspaces and the API refuses to guess; without it every
+                turn fails with <em
+                    >"anthropic-workspace-id is required when authenticating with
+                    an identity-linked API key"</em
+                >. A key created inside a workspace carries its own and needs
+                none. It is the opaque <code>wrkspc_…</code> segment of the
+                workspace URL in the Anthropic Console, not the workspace name.
+            </dd>
             <dt>Enabled</dt>
             <dd>
                 Checkbox. Disabled providers are ignored by the chat router.
@@ -125,6 +140,11 @@
         <ul>
             <li>Name, type, and default model are always required.</li>
             <li>On create the API key is required.</li>
+            <li>
+                A workspace ID that is not a <code>wrkspc_…</code> handle is
+                rejected by the form, so a pasted Console URL or workspace name
+                is caught here rather than on the next chat turn.
+            </li>
             <li>
                 Invalid keys surface as 4xx errors from the provider when you
                 test the row.

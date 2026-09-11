@@ -2,10 +2,20 @@
   // Application trace timeline. Every critical handler (AI chat, tool
   // dispatch, auth login, workflow enqueue, …) writes a row here via
   // ITraceLogger. The page is geared for live debugging:
-  //   - Filters narrow to one module or one user in seconds.
+  //   - Filters narrow to one module, one user or one slow path in seconds.
   //   - Live mode re-fetches every 5s so new rows stream in.
   //   - Expanding a row shows the raw metadata JSON — the single most
   //     useful thing when a chat is "stuck" and you need to know why.
+  //
+  // Three of the filters are worth explaining:
+  //   Search      — one box over action, category, error, request id and the
+  //                 metadata blob. Substring, because nobody arrives knowing
+  //                 the dotted action name from the left.
+  //   User        — id, username or email. "Who set this off" is the question;
+  //                 the uuid is rarely what the asker is holding.
+  //   Slower than — the only filter that also changes the order, to slowest
+  //                 first. A time-ordered page of a wide window does not
+  //                 contain the slow rows the filter was set to find.
   //
   // Works together with `docker logs`: each row carries a request_id that
   // shows up in the Serilog output, so you can pivot from a trace row to
@@ -34,12 +44,20 @@
 
   // Filters.
   let category = $state('');
-  let action = $state('');
+  let search = $state('');
   let status = $state('');
-  let userId = $state('');
-  let requestId = $state('');
+  let user = $state('');
+  let minDuration = $state('');
+  // Bounds every query. Defaults to all of history, as this screen always has —
+  // narrowing it is what makes "slower than 2 s" mean the slowest rows of a window
+  // rather than the 200 most recent qualifying ones out of everything.
+  let windowMinutes = $state('');
   let from = $state('');
   let to = $state('');
+
+  // What the last successful load actually asked for, so the footer describes
+  // the rows on screen rather than whatever has been typed since.
+  let sortedBySlowest = $state(false);
 
   // Live mode. Off by default so a stable filter doesn't keep jumping.
   const REFRESH_MS = 5_000;
@@ -60,20 +78,30 @@
 
   onDestroy(stopPolling);
 
+  // The window selector and the two date inputs are one control with two
+  // shapes: a preset resolves to "since N minutes ago", `custom` hands over to
+  // the pickers, and `all` drops the bound entirely.
+  function range(): { from?: string; to?: string } {
+    if (windowMinutes === 'custom') return { from: dayStart(from), to: dayEnd(to) };
+    if (!windowMinutes) return {};
+    return { from: new Date(Date.now() - Number(windowMinutes) * 60_000).toISOString() };
+  }
+
   async function load(silent = false) {
     if (!silent) loading = true;
     loadError = null;
+    const slower = Number.parseInt(minDuration, 10);
     try {
       rows = await traces.list({
         category: category || undefined,
-        action: action || undefined,
+        search: search.trim() || undefined,
         status: status || undefined,
-        user_id: userId || undefined,
-        request_id: requestId || undefined,
-        from: dayStart(from),
-        to: dayEnd(to),
+        user: user.trim() || undefined,
+        min_duration_ms: Number.isFinite(slower) && slower > 0 ? slower : undefined,
+        ...range(),
         limit: 200,
       });
+      sortedBySlowest = Number.isFinite(slower) && slower > 0;
     } catch (e) {
       loadError = errorMessage(e);
       if (!silent) toast.fromError(e, "Couldn't load traces");
@@ -109,10 +137,11 @@
 
   async function reset() {
     category = '';
-    action = '';
+    search = '';
     status = '';
-    userId = '';
-    requestId = '';
+    user = '';
+    minDuration = '';
+    windowMinutes = '';
     from = '';
     to = '';
     await load();
@@ -156,6 +185,15 @@
 
   const KNOWN_CATEGORIES = ['ai', 'auth', 'tool', 'workflow', 'admin', 'worker', 'system'];
   const KNOWN_STATUSES = ['started', 'completed', 'failed', 'timeout'];
+  const WINDOWS = [
+    { value: '15', label: 'Last 15 min' },
+    { value: '60', label: 'Last hour' },
+    { value: '360', label: 'Last 6 hours' },
+    { value: '1440', label: 'Last 24 hours' },
+    { value: '10080', label: 'Last 7 days' },
+    { value: '', label: 'All time' },
+    { value: 'custom', label: 'Custom range' },
+  ];
 </script>
 
 <svelte:head><title>Traces · Admin · Flow Weaver</title></svelte:head>
@@ -181,7 +219,26 @@
   </PageHeader>
 
   <Card>
-    <div class="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+    <!-- Six controls on one line at desktop; the date pickers and the buttons
+         take the second line so the first never staggers. -->
+    <div class="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-[minmax(0,2fr)_repeat(5,minmax(0,1fr))] gap-3 items-end">
+      <div class="lg:col-span-2 xl:col-span-1">
+        <Input
+          label="Search"
+          help="traces.search"
+          bind:value={search}
+          placeholder="ai.chat, timeout, a conversation id…"
+        />
+      </div>
+      <Input label="User" help="traces.user" bind:value={user} placeholder="name, mail or id" />
+      <Input
+        label="Slower than (ms)"
+        help="traces.min_duration"
+        type="number"
+        min="0"
+        bind:value={minDuration}
+        placeholder="2000"
+      />
       <Select label="Category" help="traces.category" bind:value={category}>
         <option value="">All</option>
         {#each KNOWN_CATEGORIES as c (c)}<option value={c}>{c}</option>{/each}
@@ -190,14 +247,16 @@
         <option value="">All</option>
         {#each KNOWN_STATUSES as s (s)}<option value={s}>{s}</option>{/each}
       </Select>
-      <Input label="Action" help="traces.action" bind:value={action} placeholder="ai.chat.stream" />
-      <Input label="User id" help="audit.user_id" bind:value={userId} placeholder="uuid of actor" />
-      <Input label="Request id" help="traces.request_id" bind:value={requestId} placeholder="correlation id" />
-      <div class="grid grid-cols-2 gap-2">
-        <Input label="From" help="audit.date_range" type="date" bind:value={from} />
-        <Input label="To" help="audit.date_range" type="date" bind:value={to} />
-      </div>
-      <div class="flex items-end gap-2 md:col-span-2">
+      <Select label="Window" help="traces.window" bind:value={windowMinutes}>
+        {#each WINDOWS as w (w.label)}<option value={w.value}>{w.label}</option>{/each}
+      </Select>
+      {#if windowMinutes === 'custom'}
+        <div class="grid grid-cols-2 gap-2">
+          <Input label="From" help="audit.date_range" type="date" bind:value={from} />
+          <Input label="To" help="audit.date_range" type="date" bind:value={to} />
+        </div>
+      {/if}
+      <div class="flex items-end gap-2 md:col-span-2 xl:col-span-3">
         <Button variant="primary" onclick={applyFilters}>Apply</Button>
         <Button variant="ghost" onclick={reset}>Reset</Button>
         <span class="text-[11px] text-surface-500 inline-flex items-center gap-1">
@@ -216,7 +275,7 @@
       <EmptyState
         icon={Activity}
         title="No traces match"
-        description="Widen the date range, or trigger a chat / workflow run to generate some."
+        description="Widen the window, clear a filter, or trigger a chat / workflow run to generate some."
       />
     </Card>
   {:else}
@@ -298,7 +357,9 @@
       </table>
     </Card>
     <div class="text-[11px] text-surface-500">
-      {rows.length} trace{rows.length === 1 ? '' : 's'} shown · {live ? `auto-refresh every ${REFRESH_MS / 1000}s` : 'refresh paused'}
+      {rows.length} trace{rows.length === 1 ? '' : 's'} shown ·
+      {sortedBySlowest ? 'slowest first' : 'newest first'} ·
+      {live ? `auto-refresh every ${REFRESH_MS / 1000}s` : 'refresh paused'}
     </div>
   {/if}
 </div>

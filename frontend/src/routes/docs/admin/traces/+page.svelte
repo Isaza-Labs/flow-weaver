@@ -46,12 +46,39 @@
       Stacked above the list:
     </p>
     <dl>
+      <dt>Search</dt>
+      <dd>
+        One term matched <em>anywhere</em> in the action, the category, the error message,
+        the request id or the metadata JSON — <code>chat</code> finds
+        <code>ai.chat.stream</code>, <code>timeout</code> finds the rows that failed that
+        way, and pasting a request id here reconstructs that call. Substring, not a
+        prefix, and <code>%</code> or <code>_</code> in the term are characters you typed,
+        not wildcards.
+      </dd>
+      <dt>User</dt>
+      <dd>
+        Who set the action off, by user id, username or email — whichever you happen to be
+        holding. Blank on rows with no signed-in user behind them: the seeder, the
+        retention sweeper, anything the worker started on its own.
+      </dd>
       <dt>Category</dt><dd>Coarse grouping — <code>ai</code>, <code>auth</code>, <code>workflow</code>, <code>integration</code>, etc.</dd>
-      <dt>Action</dt><dd>Specific handler name — <code>chat.stream</code>, <code>tool.dispatch</code>, <code>login.succeeded</code>, …</dd>
       <dt>Status</dt><dd>Usually <code>ok</code> / <code>failed</code> / <code>timeout</code>.</dd>
-      <dt>User</dt><dd>Acting user. Select populated from <code>/admin/users</code>.</dd>
-      <dt>Request id</dt><dd>Exact-match filter. Pivots from a single Serilog line back to the trace row.</dd>
-      <dt>From / to</dt><dd>Date inputs.</dd>
+      <dt>Slower than (ms)</dt>
+      <dd>
+        Only rows that finished and took at least this long — the query that finds the
+        problem before anything has actually failed. It is also the one filter that
+        changes the <em>order</em>: results come back slowest first, because the newest
+        rows of a wide window are not the slow ones you asked for. Rows still marked
+        <code>started</code> have no duration yet and never match.
+      </dd>
+      <dt>Window</dt>
+      <dd>
+        Bounds every query — last 15 minutes through 7 days, all time, or
+        <em>Custom range</em>, which hands over to the two date pickers. Defaults to all
+        time; the table grows on every request, so narrow this before widening anything
+        else, and especially before <em>Slower than</em>, which otherwise ranks the
+        slowest rows of the whole history.
+      </dd>
     </dl>
   </section>
 

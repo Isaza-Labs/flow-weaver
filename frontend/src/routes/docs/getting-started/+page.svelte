@@ -15,11 +15,12 @@
   <section>
     <h2>Signing in</h2>
     <p>
-      The sign-in screen is the only public page in the application — every other
-      URL redirects here when no valid session token is present. Deep links are
-      preserved: if you tried to open <code>/runs/abc</code> while logged out, the
-      login URL becomes <code>/login?redirect=/runs/abc</code> and you'll be
-      forwarded to that destination after a successful sign-in.
+      Only three paths are public — <code>/login</code>, <code>/logout</code> and
+      <code>/link</code> (account linking from a chat channel). Every other URL
+      redirects to the sign-in screen when no valid session token is present.
+      Deep links are preserved: if you tried to open <code>/runs/abc</code> while
+      logged out, the login URL becomes <code>/login?redirect=/runs/abc</code> and
+      you'll be forwarded to that destination after a successful sign-in.
     </p>
 
     <h3>Fields</h3>
@@ -42,31 +43,49 @@
   <section>
     <h2>The app shell</h2>
     <p>
-      Every authenticated page shares the same layout. Understanding the three
-      regions up-front saves you a lot of hunting later.
+      Every authenticated page shares the same layout. Understanding its regions
+      up-front saves you a lot of hunting later.
     </p>
 
-    <h3>Left sidebar (60 px wide)</h3>
+    <h3>Left sidebar</h3>
     <p>
-      Primary navigation, grouped by activity:
+      240 px wide, collapsible to a 56 px icon rail. Navigation is grouped by
+      activity, and entries your role doesn't reach are simply absent:
     </p>
     <ul>
-      <li><strong>Dashboard</strong> — the home landing page.</li>
-      <li><strong>Build</strong> — Workflows, Snippets, Integrations.</li>
-      <li><strong>Operate</strong> — Runs, Schedules, Devices, Device pools, Credentials, QA lab.</li>
-      <li><strong>Govern</strong> — Policies. Hidden for non-admin users.</li>
-      <li><strong>Intelligence</strong> — AI hub and all its sub-pages.</li>
+      <li><strong>Dashboard</strong> — the home landing page at <code>/</code>.</li>
+      <li>
+        <strong>Intelligence</strong> — <em>AI</em>. Deliberately the first group after the
+        dashboard and the only <em>featured</em> entry (tinted and ringed rather than plain),
+        because the assistant is the entry point to most of what follows.
+      </li>
+      <li><strong>Build</strong> — Workflows, Subflows, Snippets, Git repos.</li>
+      <li>
+        <strong>Integrate</strong> — everything that connects FlowWeaver to a system outside
+        it: Integrations, and — admin only — Vendor commands, MCP servers, Messaging
+        channels, Email.
+      </li>
+      <li>
+        <strong>Operate</strong> — Runs, Schedules, Devices, Device pools, Credentials,
+        QA lab, and Artifacts (admin only).
+      </li>
+      <li>
+        <strong>Govern</strong> — Policies, Permissions, Python packages. The whole group is
+        admin only.
+      </li>
+      <li><strong>Help</strong> — Documentation (this manual).</li>
     </ul>
     <p>
-      The active section shows a primary-colour accent bar on its left edge and a
-      faint ring on its background pill.
+      The active entry shows a primary-colour accent bar on its left edge and a
+      faint ring on its background pill. Matching is longest-prefix, so
+      <code>/workflows/abc</code> still highlights <em>Workflows</em>.
     </p>
 
     <h3>User row (bottom of the sidebar)</h3>
     <p>
       Shows your initial in a circular avatar, your username, and your role
       (<code>admin</code>, <code>operator</code>, or <code>viewer</code>). Clicking
-      the avatar opens a menu with:
+      the avatar opens a menu — arrow keys move between items, <kbd>Esc</kbd> closes it:
     </p>
     <ul>
       <li><strong>Admin dashboard</strong> — only present for admins. Links to <code>/admin</code>.</li>
@@ -75,16 +94,20 @@
     </ul>
 
     <h3>Footer</h3>
-    <p>Holds two small controls and a version stamp:</p>
+    <p>Holds three small controls and a version stamp:</p>
     <ul>
       <li>
         <strong>Help mascot toggle</strong> — a question-mark button that re-enables the
-        floating guide mascot once you've dismissed it. The mascot surfaces
-        context-aware tips about the page you're on.
+        floating guide mascot. It only appears once you've dismissed the mascot, so it
+        isn't offering you something you already have.
       </li>
       <li>
         <strong>Theme toggle</strong> — switches between light and dark mode. Your
         preference is stored locally.
+      </li>
+      <li>
+        <strong>Collapse sidebar</strong> — shrinks the sidebar to the icon rail. Desktop
+        only, and remembered across sessions.
       </li>
       <li><strong>Version</strong> — the running frontend version (e.g. <code>v0.1.0</code>).</li>
     </ul>
@@ -95,6 +118,54 @@
       <strong>PageHeader</strong> (title + short description + a row of primary actions)
       and continue with cards, tables, or editors.
     </p>
+
+    <h3>On a phone</h3>
+    <p>
+      Below the <code>md</code> breakpoint the sidebar becomes an off-canvas drawer:
+      a top bar appears with a hamburger button and the wordmark, and the drawer slides
+      in over a dimmed backdrop. <kbd>Esc</kbd>, the backdrop, or following any link
+      closes it. The desktop collapse preference is kept separate, so closing the
+      drawer on a phone doesn't shrink your sidebar back on a laptop.
+    </p>
+
+    <h3>Connection banner</h3>
+    <p>
+      A strip above the layout that appears when the frontend loses contact with the
+      backend. If pages look empty or actions silently fail, check for it before
+      assuming your data is gone.
+    </p>
+  </section>
+
+  <section>
+    <h2>The command palette</h2>
+    <p>
+      Press <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>K</kbd> from anywhere — or just
+      <kbd>/</kbd> when your cursor isn't in a text field — to open a searchable
+      list of everything you can do without leaving the keyboard. Entries are
+      grouped:
+    </p>
+    <ul>
+      <li>
+        <strong>Navigate</strong> — every top-level destination: Dashboard, Workflows,
+        Subflows, Snippets, Integrations, Runs, Schedules, Devices, Device pools,
+        Credentials, QA lab, AI, Documentation.
+      </li>
+      <li><strong>Actions</strong> — <em>New workflow</em>, which opens the create form directly.</li>
+      <li>
+        <strong>Appearance</strong> — toggle light/dark, collapse or expand the sidebar,
+        and switch table density between compact and comfortable.
+      </li>
+      <li>
+        <strong>Admin</strong> — Admin dashboard, Artifacts, Policies. Hidden for
+        non-admins.
+      </li>
+    </ul>
+
+    <Callout tone="success" title="Tip">
+      The palette is the fastest way to reach an admin page that isn't in your
+      sidebar group, and the only place the <strong>table density</strong> preference is
+      exposed.
+    </Callout>
   </section>
 
   <section>
@@ -113,25 +184,28 @@
         <tr>
           <td><code>viewer</code></td>
           <td>Read-only observer. Can browse runs, schedules, the QA lab, and chat with the AI.</td>
-          <td>Dashboard, Build (read-only), Operate (read-only), Intelligence.</td>
+          <td>Dashboard, Intelligence, Build (read-only), Integrate (Integrations only), Operate (read-only), Help.</td>
         </tr>
         <tr>
           <td><code>operator</code></td>
-          <td>Day-to-day builder. Can create/edit/delete workflows, snippets, integrations, devices, pools, and credentials.</td>
-          <td>Same as viewer plus write access to all Build and Operate screens.</td>
+          <td>Day-to-day builder. Can create/edit/delete workflows, subflows, snippets, integrations, devices, pools, and credentials.</td>
+          <td>Same as viewer plus write access to all Build, Integrate and Operate screens.</td>
         </tr>
         <tr>
           <td><code>admin</code></td>
-          <td>Full control. Bulk-deletes, role changes, policy authoring, audit inspection.</td>
-          <td>Everything, plus the <strong>Govern</strong> group in the sidebar and the <strong>Admin dashboard</strong> entry in the user menu.</td>
+          <td>Full control. Bulk-deletes, role changes, policy authoring, secrets, audit inspection.</td>
+          <td>Everything, plus the <strong>Govern</strong> group, the admin-only entries under Integrate and Operate, and the <strong>Admin dashboard</strong> in the user menu.</td>
         </tr>
       </tbody>
     </table>
 
-    <Callout tone="admin" title="Admin-only routes">
-      Every <code>/admin/*</code> path and <code>/policies</code> require the
-      <code>admin</code> role. Non-admins who deep-link to those URLs are bounced
-      back to the dashboard by the client-side guard in <code>+layout.svelte</code>.
+    <Callout tone="admin" title="Hidden is not the same as blocked">
+      The client-side guard in <code>+layout.svelte</code> redirects non-admins away
+      from <code>/admin/*</code> only. The other admin-only screens —
+      <code>/policies</code>, <code>/permissions</code>, <code>/vendor-commands</code>,
+      <code>/email</code> — are hidden from the sidebar rather than guarded in the
+      browser; deep-linking to one loads the page but its API calls are rejected.
+      The role check that matters happens on the server, every time.
     </Callout>
   </section>
 
@@ -150,7 +224,7 @@
   </section>
 
   <section>
-    <h2>Your first workflow in five steps</h2>
+    <h2>Your first workflow in six steps</h2>
     <ol>
       <li>
         <strong>Register at least one device.</strong> Open
@@ -170,18 +244,28 @@
         <a href="/workflows"><code>/workflows</code></a>, click <em>New workflow</em>.
         The DAG editor opens with a <code>__start__</code> and <code>__end__</code>
         sentinel node. Drag your snippet into the canvas between them and connect
-        <code>__start__ → your_node → __end__</code>.
+        <code>__start__ → your_node → __end__</code>. Save with the <em>Save</em>
+        button or <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>S</kbd>.
       </li>
       <li>
-        <strong>Run it.</strong> From the editor's <em>Run</em> button, select one
-        or more target devices (or a pool), provide the input payload if the
-        snippet requires one, and submit. You are redirected to the run monitor.
+        <strong>Simulate before you run.</strong> The editor's <em>Simulate</em> button
+        walks the graph without touching a device and reports ordering problems,
+        unresolved templates and missing configuration. Cheaper than finding out on
+        real hardware.
+      </li>
+      <li>
+        <strong>Run it.</strong> Click <em>Run</em>. The dialog collects the runtime
+        input — rendered from the workflow's input schema, so you only see fields it
+        actually declares — and the target devices, with the picker scoped to the
+        workflow's environment. If no node in the graph runs per device, targets are
+        optional and the workflow executes once without a device context.
       </li>
       <li>
         <strong>Inspect the monitor.</strong> The DAG highlights each node with its
         live status; the right-hand timeline lists every step as it executes with
         logs, input, and output. If a node fails, use <em>Fix with AI</em> to
-        hand the context to the assistant.
+        hand the context to the assistant. The eye icon in the editor toolbar
+        re-opens the last run's data without leaving the canvas.
       </li>
     </ol>
 
@@ -191,6 +275,12 @@
       workflow to move it to QA, run it once against the QA lab, and then promote
       again to production.
     </Callout>
+
+    <Callout tone="warning" title="Leaving with unsaved changes">
+      The editor tracks a dirty flag. Navigating away — or closing the browser tab —
+      with unsaved graph changes raises a confirmation first. Choosing
+      <em>Leave anyway</em> discards them.
+    </Callout>
   </section>
 
   <section>
@@ -199,17 +289,39 @@
       <dt>/</dt>
       <dd>Dashboard.</dd>
       <dt>/workflows</dt>
-      <dd>List of workflows. <code>/workflows/{'{id}'}</code> opens the DAG editor.</dd>
+      <dd>
+        List of workflows. <code>/workflows/{'{id}'}</code> opens the DAG editor;
+        <code>?new=1</code> opens the create form directly.
+      </dd>
+      <dt>/subflows</dt>
+      <dd>Reusable sub-graphs, callable as a node from another workflow.</dd>
       <dt>/runs</dt>
-      <dd>Run history. <code>/runs/{'{id}'}/monitor</code> is the live graph view.</dd>
+      <dd>
+        Run history. <code>/runs/{'{id}'}</code> is the detail page and
+        <code>/runs/{'{id}'}/monitor</code> the live graph view.
+      </dd>
+      <dt>/qa</dt>
+      <dd>QA lab — promotion readiness and QA-scoped runs.</dd>
       <dt>/ai/chat</dt>
       <dd>
         Full assistant chat. Accepts <code>?q=</code> to preload a prompt,
         <code>?context=</code> to scope the context, or <code>?fix=</code> with a
         JSON blob to auto-start a diagnosis.
       </dd>
+      <dt>/settings/password</dt>
+      <dd>Change your own password.</dd>
+      <dt>/policies</dt>
+      <dd>Guardrails and approval gates. Admin only.</dd>
+      <dt>/permissions</dt>
+      <dd>Per-user tool permissions for the assistant. Admin only.</dd>
       <dt>/admin</dt>
-      <dd>Admin dashboard (admin only). Children: <code>/admin/users</code>, <code>/admin/audit</code>, <code>/admin/traces</code>, <code>/admin/artifacts</code>.</dd>
+      <dd>
+        Admin dashboard. Children include <code>/admin/users</code>,
+        <code>/admin/audit</code>, <code>/admin/traces</code>,
+        <code>/admin/artifacts</code>, <code>/admin/secrets</code>,
+        <code>/admin/mcp-servers</code>, <code>/admin/messaging-channels</code>,
+        <code>/admin/python-packages</code>, <code>/admin/slo</code>.
+      </dd>
       <dt>/docs</dt>
       <dd>This manual.</dd>
     </dl>

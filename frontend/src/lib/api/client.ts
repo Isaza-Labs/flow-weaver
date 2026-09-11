@@ -1571,10 +1571,19 @@ export interface TraceEvent {
 
 export interface TraceQuery {
   category?: string;
-  action?: string;
+  /**
+   * One free-text term over every text a trace carries — action, category, error
+   * message, request id and the metadata blob. Substring, not equality: people arrive
+   * holding a fragment they saw in a log, not a whole dotted action name.
+   */
+  search?: string;
   status?: string;
-  user_id?: string;
+  /** Who fired it: user id, or part of a username or email. */
+  user?: string;
+  /** Exact. The deep link that reconstructs one request end to end. */
   request_id?: string;
+  /** Only rows that finished and took at least this long. Sorts slowest-first. */
+  min_duration_ms?: number;
   from?: string;
   to?: string;
   limit?: number;

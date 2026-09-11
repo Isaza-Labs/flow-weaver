@@ -535,6 +535,11 @@ export const FIELD_HINTS: Record<string, FieldHint> = {
     label: 'Max output tokens',
     help: 'The longest answer the model may write in one turn. Leave empty for the vendor default: 8192 for Anthropic and Gemini, the model maximum for OpenAI, the model default for Ollama. An answer that hits this cap is marked as cut off in the chat.',
   },
+  'providers.workspace_id': {
+    label: 'Workspace ID',
+    help: 'Which Anthropic workspace this provider bills and scopes its requests to. Required when the API key is identity-linked — one created from your own account rather than inside a workspace — because such a key can reach several workspaces and the API refuses to guess. A key created inside a workspace carries its own and needs none.',
+    detail: 'It is the opaque wrkspc_… segment of the workspace URL in the Anthropic Console, not the workspace name. Get it wrong and every chat turn fails with "must be a valid workspace ID".',
+  },
 
   // ------------------------------------------------------------- Prompt skills
   'skills.name': {
@@ -674,13 +679,21 @@ export const FIELD_HINTS: Record<string, FieldHint> = {
     label: 'Status',
     help: 'Filters by how the action ended. A row still marked started, several seconds old, means the handler is either still running or died without closing its trace.',
   },
-  'traces.action': {
-    label: 'Action',
-    help: 'The specific operation traced.',
+  'traces.search': {
+    label: 'Search',
+    help: 'One term matched anywhere in the action, the category, the error message, the request id or the metadata JSON. Substring, not a prefix — searching timeout finds ai.chat.timeout, and pasting a request id here reconstructs that call.',
   },
-  'traces.request_id': {
-    label: 'Request id',
-    help: 'Ties every trace row emitted by one request together. The fastest way to reconstruct what a single call actually did.',
+  'traces.user': {
+    label: 'User',
+    help: 'Who set the action off, by user id, username or email — whichever you happen to be holding. Blank on rows with no signed-in user behind them: the seeder, the retention sweeper, anything the worker started on its own.',
+  },
+  'traces.min_duration': {
+    label: 'Slower than',
+    help: 'Only rows that finished and took at least this many milliseconds, and the one filter that also changes the order: results come back slowest first, because the newest rows over a wide window are not the slow ones you asked for. Rows still marked started have no duration yet and never match.',
+  },
+  'traces.window': {
+    label: 'Window',
+    help: 'Bounds every query. The table grows on every request, so narrow this before widening anything else; Custom range hands over to the two date pickers.',
   },
   'artifacts.search_title': {
     label: 'Search title',

@@ -55,6 +55,9 @@
     // Ollama the model's default window (which is small — set it).
     let contextWindow = $state("");
     let maxOutputTokens = $state("");
+    // Optional Config.workspace_id, Anthropic only. Empty means "the key carries
+    // its own workspace", which is true of every key created inside one.
+    let workspaceId = $state("");
     let apiKey = $state("");
     let enabled = $state(true);
     let saving = $state(false);
@@ -88,6 +91,7 @@
         defaultModel = "gpt-5.5";
         contextWindow = "";
         maxOutputTokens = "";
+        workspaceId = "";
         apiKey = "";
         enabled = true;
         formError = null;
@@ -103,6 +107,8 @@
         const limits = (p.config?.model_limits ?? {}) as Record<string, unknown>;
         contextWindow = typeof limits.context_window === "number" ? String(limits.context_window) : "";
         maxOutputTokens = typeof limits.max_output_tokens === "number" ? String(limits.max_output_tokens) : "";
+        const cfg = (p.config ?? {}) as Record<string, unknown>;
+        workspaceId = typeof cfg.workspace_id === "string" ? cfg.workspace_id : "";
         apiKey = "";
         enabled = p.enabled;
         formError = null;
@@ -130,8 +136,27 @@
         if (mo === false) return "Max output tokens must be a whole number of tokens (at least 256).";
         if (cw !== null && mo !== null && mo >= cw)
             return "Max output tokens must be smaller than the context window.";
+        // The workspace id is an opaque `wrkspc_…` handle that only appears in the
+        // Console URL, and the two things people reach for instead — the workspace
+        // name and the whole URL — would both be accepted here, saved, and then
+        // rejected by Anthropic one chat turn later with "must be a valid workspace
+        // ID". Naming the mistake here is the difference between a five-second fix
+        // and a hunt through the logs.
+        const ws = workspaceId.trim();
+        if (type === "anthropic" && ws && !WORKSPACE_ID.test(ws)) {
+            // An id buried in a longer string is a pasted URL; anything else —
+            // including a bare `wrkspc_` — is someone who does not have the id yet.
+            const embedded = ws.match(WORKSPACE_ID_ANYWHERE);
+            return embedded
+                ? `Workspace ID looks like a URL — paste only ${embedded[0]}.`
+                : "Workspace ID is the id, not the workspace name. Open the workspace in the Anthropic Console; the id is the wrkspc_… segment of the URL.";
+        }
         return null;
     }
+
+    // Console workspace handles are `wrkspc_` followed by an opaque token.
+    const WORKSPACE_ID = /^wrkspc_[A-Za-z0-9_-]+$/;
+    const WORKSPACE_ID_ANYWHERE = /wrkspc_[A-Za-z0-9_-]+/;
 
     // "" → null (not set); a positive integer → the number; anything else → false.
     function parseLimit(raw: string): number | null | false {
@@ -142,18 +167,29 @@
         return n > 0 ? n : false;
     }
 
-    function modelLimitsConfig(): Record<string, unknown> {
+    // The whole Config object as it will be stored: the keys this form owns,
+    // rewritten from the fields, over whatever else the row already carried —
+    // the backend replaces Config wholesale, so anything dropped here is lost.
+    function buildConfig(): Record<string, unknown> {
         const base = { ...(editing?.config ?? {}) } as Record<string, unknown>;
         const cw = parseLimit(contextWindow);
         const mo = parseLimit(maxOutputTokens);
         if (cw === null && mo === null) {
             delete base.model_limits;
-            return base;
+        } else {
+            const limits: Record<string, number> = {};
+            if (typeof cw === "number") limits.context_window = cw;
+            if (typeof mo === "number") limits.max_output_tokens = mo;
+            base.model_limits = limits;
         }
-        const limits: Record<string, number> = {};
-        if (typeof cw === "number") limits.context_window = cw;
-        if (typeof mo === "number") limits.max_output_tokens = mo;
-        base.model_limits = limits;
+
+        // Only Anthropic reads it, and only the field the user can see decides:
+        // clearing the box has to actually remove the key, or the header would
+        // keep being sent with a workspace nobody can see any more.
+        const ws = workspaceId.trim();
+        if (type === "anthropic" && ws) base.workspace_id = ws;
+        else if (type === "anthropic") delete base.workspace_id;
+
         return base;
     }
 
@@ -170,7 +206,7 @@
                 default_model: defaultModel.trim(),
                 base_url: baseUrl.trim() || null,
                 enabled,
-                config: modelLimitsConfig(),
+                config: buildConfig(),
             };
             // Only send the key when it was set — editing with an empty field
             // preserves the existing ciphertext server-side.
@@ -505,6 +541,16 @@
                 after save — rotate to replace.
             </p>
         </div>
+
+        {#if type === "anthropic"}
+            <Input
+                label="Workspace ID (optional)"
+                help="providers.workspace_id"
+                bind:value={workspaceId}
+                disabled={saving}
+                placeholder="wrkspc_…"
+            />
+        {/if}
 
         <label class="inline-flex items-center gap-2 text-sm" for="provider-enabled">
             <FieldHint id="providers.enabled" />
