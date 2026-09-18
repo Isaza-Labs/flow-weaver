@@ -218,7 +218,7 @@
   }
 </script>
 
-<svelte:head><title>Prompt Skills · AI · Flow Weaver</title></svelte:head>
+<svelte:head><title>Prompt Skills · AI · FlowWeaver</title></svelte:head>
 
 <div class="p-6 max-w-7xl mx-auto space-y-5">
   <PageHeader
@@ -372,7 +372,7 @@
       bind:value={content}
       disabled={saving}
       rows={16}
-      placeholder={'You are the Flow Weaver assistant...\n\nCurrent date: {{CurrentDate}}\n\nTools available:\n{{ToolList}}'}
+      placeholder={'You are the FlowWeaver assistant...\n\nCurrent date: {{CurrentDate}}\n\nTools available:\n{{ToolList}}'}
     />
     {#if editing}
       <label class="inline-flex items-center gap-2 text-sm">

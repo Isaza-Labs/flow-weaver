@@ -205,20 +205,30 @@ public class WorkflowController : ControllerBase
                                           && w.IsActive, ct);
             // A missing workflow isn't authorized here — let EnqueueRunAsync
             // surface the not-found in its usual shape (same in both RBAC modes).
-            if (wf is not null && !await _effective.HasAsync(
-                    "workflow.run",
-                    new PermissionContext(
-                        Environment: wf.Environment,
-                        ResourceType: "workflow",
-                        ResourceId: wf.WorkflowId),
-                    ct))
+            //
+            // The check is per target device: workflow.run with each device's
+            // id / role / pools, plus device.exec.read|write when the graph sends
+            // anything to a device. Without targets it is the environment +
+            // resource check alone.
+            if (wf is not null)
             {
-                _logger.LogWarning(
-                    "workflow.run.permission_denied workflow_id={WorkflowId} environment={Environment} user_id={UserId}",
-                    id, wf.Environment, _caller.UserId);
-                return Problems.Forbidden(
-                    $"you do not have permission to run this workflow in {wf.Environment}",
-                    code: "permission_denied");
+                var denial = await new RunDeviceAuthorizer(_db, _effective).AuthorizeAsync(
+                    wf.WorkflowId, wf.Environment, wf.Nodes, request.Input,
+                    request.TargetDevices, request.TargetPools, ct);
+                if (denial is not null)
+                {
+                    _logger.LogWarning(
+                        "workflow.run.permission_denied workflow_id={WorkflowId} environment={Environment} capability={Capability} device_id={DeviceId} user_id={UserId}",
+                        id, wf.Environment, denial.Capability, denial.DeviceId, _caller.UserId);
+                    var where = denial.DeviceId is null
+                        ? $"in {wf.Environment}"
+                        : $"in {wf.Environment} on device '{denial.DeviceName}'";
+                    return Problems.Forbidden(
+                        denial.Capability == "workflow.run"
+                            ? $"you do not have permission to run this workflow {where}"
+                            : $"you do not have permission to run this workflow {where}: it needs {denial.Capability}",
+                        code: "permission_denied");
+                }
             }
         }
 

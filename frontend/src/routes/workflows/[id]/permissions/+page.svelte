@@ -6,7 +6,7 @@
   let workflowId = $derived($page.params.id ?? '');
 </script>
 
-<svelte:head><title>Permissions · Workflow · Flow Weaver</title></svelte:head>
+<svelte:head><title>Permissions · Workflow · FlowWeaver</title></svelte:head>
 
 <div class="p-6 max-w-4xl mx-auto space-y-5">
   <PageHeader

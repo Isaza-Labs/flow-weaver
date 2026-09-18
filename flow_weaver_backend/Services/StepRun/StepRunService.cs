@@ -84,6 +84,7 @@ public class StepRunService : IStepRun
         InputPayload = s.InputPayload,
         OutputPayload = s.OutputPayload,
         Logs = s.Logs,
+        ErrorCode = s.ErrorCode,
         Error = s.Error,
         StartedAt = s.StartedAt,
         CompletedAt = s.CompletedAt,

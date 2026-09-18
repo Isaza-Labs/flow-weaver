@@ -23,10 +23,13 @@ public class WorkflowTriggerServiceWriteTests
     {
         public AppDbContext Db { get; } = TestDb.NewContext();
 
+        public FakeUser Caller { get; set; } = new();
+
         public WorkflowTriggerService Build() => new(
             new WorkflowTriggerRepository(Db),
             new RepositoryBase<WorkflowModel>(Db),
-            new FakeUser(),
+            Caller,
+            new AllowAllEffectivePermissions(),
             new FakeCrypto(),
             new FakeAudit(), NullLogger<WorkflowTriggerService>.Instance);
 
@@ -431,5 +434,78 @@ public class WorkflowTriggerServiceWriteTests
 
         Assert.IsType<NotFoundObjectResult>(
             (await f.Build().UpdateAsync(Guid.NewGuid(), new UpdateWorkflowTrigger())).Result);
+    }
+    // ─── allow_unsigned is admin-only to switch on ─────────────────────
+
+    // An unsigned webhook is an unauthenticated endpoint that starts runs;
+    // trigger.manage alone (Operator tier) must not be enough to open it.
+    [Fact]
+    public async Task AnOperatorCannotCreateAnUnsignedWebhook()
+    {
+        using var f = new Fixture();
+        f.Caller = new FakeUser { Roles = new[] { "operator" } };
+        var wf = f.SeedWorkflow();
+
+        var result = (await f.Build().PostForWorkflowAsync(wf, Create(allowUnsigned: true))).Result;
+
+        Assert.Equal(403, Assert.IsType<ObjectResult>(result).StatusCode);
+        Assert.Empty(f.Db.Set<WorkflowTriggerModel>());
+    }
+
+    [Fact]
+    public async Task AnOperatorCanStillCreateASignedWebhook()
+    {
+        using var f = new Fixture();
+        f.Caller = new FakeUser { Roles = new[] { "operator" } };
+        var wf = f.SeedWorkflow();
+
+        var result = (await f.Build().PostForWorkflowAsync(wf, Create(allowUnsigned: false))).Result;
+
+        Assert.IsType<CreatedAtActionResult>(result);
+    }
+
+    [Fact]
+    public async Task AnOperatorCannotSwitchAnExistingWebhookToUnsigned()
+    {
+        using var f = new Fixture();
+        f.Caller = new FakeUser { Roles = new[] { "operator" } };
+        var id = f.SeedTrigger(f.SeedWorkflow(), secret: "s");
+
+        var result = (await f.Build().UpdateAsync(id, new UpdateWorkflowTrigger { AllowUnsigned = true })).Result;
+
+        Assert.Equal(403, Assert.IsType<ObjectResult>(result).StatusCode);
+        Assert.False(f.Db.Set<WorkflowTriggerModel>().Single().AllowUnsigned);
+    }
+
+    // Turning it off only tightens security, and editing other fields of a
+    // trigger an admin already made unsigned must keep working.
+    [Fact]
+    public async Task AnOperatorCanSwitchUnsignedOffAndEditAnUnsignedTrigger()
+    {
+        using var f = new Fixture();
+        f.Caller = new FakeUser { Roles = new[] { "operator" } };
+        var id = f.SeedTrigger(f.SeedWorkflow());
+        var row = f.Db.Set<WorkflowTriggerModel>().Single();
+        row.AllowUnsigned = true;
+        f.Db.SaveChanges();
+
+        Assert.Equal("renamed", Ok(await f.Build().UpdateAsync(
+            id, new UpdateWorkflowTrigger { Name = "renamed", AllowUnsigned = true })).Name);
+
+        Assert.False(Ok(await f.Build().UpdateAsync(
+            id, new UpdateWorkflowTrigger { AllowUnsigned = false })).AllowUnsigned);
+        Assert.False(f.Db.Set<WorkflowTriggerModel>().Single().AllowUnsigned);
+    }
+
+    [Fact]
+    public async Task AnAdminCanCreateAnUnsignedWebhook()
+    {
+        using var f = new Fixture();
+        var wf = f.SeedWorkflow();
+
+        var result = (await f.Build().PostForWorkflowAsync(wf, Create(allowUnsigned: true))).Result;
+
+        Assert.IsType<CreatedAtActionResult>(result);
+        Assert.True(f.Db.Set<WorkflowTriggerModel>().Single().AllowUnsigned);
     }
 }

@@ -37,7 +37,7 @@
         <h2>Fields</h2>
         <dl>
             <dt>Name</dt>
-            <dd>Display name. Shows up in the chat sidebar picker.</dd>
+            <dd>Display name. Shows up in the chat's agent picker, above the message box.</dd>
             <dt>Role</dt>
             <dd>
                 Logical handle. <code>assistant</code> is the default; other values
@@ -54,7 +54,7 @@
             <dt>Model override</dt>
             <dd>
                 Model id to send instead of the provider's default. Default:
-                <em>"gpt-5.5"</em>. Leave blank to inherit the provider's
+                <em>"gpt-5.4"</em> in the <em>New agent</em> dialog. Leave blank to inherit the provider's
                 default.
             </dd>
             <dt>System prompt</dt>
@@ -96,27 +96,33 @@
     <section>
         <h2>Default tool list</h2>
         <p>
-            The "New agent" dialog pre-selects the seed tool list in the picker
-            (the same one <code>DefaultAgentSeedService</code> installs):
+            The <em>New agent</em> dialog pre-selects this starter set in the
+            picker:
         </p>
         <ul>
-            <li><code>list_workflows</code></li>
-            <li><code>list_services</code></li>
-            <li><code>query_devices</code></li>
-            <li><code>create_workflow_plan</code></li>
-            <li><code>list_apis</code></li>
-            <li><code>discover_operations</code></li>
-            <li><code>operation_detail</code></li>
-            <li><code>execute_operation</code></li>
-            <li><code>get_run_details</code></li>
-            <li><code>get_step_logs</code></li>
-            <li><code>get_workflow_details</code></li>
-            <li><code>update_workflow_node_config</code></li>
+            <li><code>list_workflows</code> · <code>list_services</code> · <code>query_devices</code> · <code>create_workflow_plan</code></li>
+            <li><code>list_apis</code> · <code>discover_operations</code> · <code>operation_detail</code> · <code>execute_operation</code> · <code>load_skill</code></li>
+            <li><code>get_run_details</code> · <code>get_step_logs</code> · <code>get_workflow_details</code> · <code>update_workflow_node_config</code></li>
+        </ul>
+        <p>
+            The seeded <em>Flow Weaver Assistant</em> gets a broader list
+            (installed by <code>DefaultAgentSeedService</code>, with a
+            max-iterations cap of 20) and new defaults are added to it
+            automatically on upgrade. On top of the tools above it includes:
+        </p>
+        <ul>
+            <li>Catalogue and authoring: <code>list_snippets</code>, <code>create_snippet</code>, <code>list_credentials</code>, <code>evaluate_prompt_sufficiency</code>, <code>simulate_workflow_run</code>, <code>generate_report</code>.</li>
+            <li>Administration (admin-gated at dispatch): <code>create_user</code>, <code>list_users</code>, <code>set_user_role</code>, <code>grant_resource_permission</code>, <code>create_policy</code>, <code>list_policies</code>.</li>
+            <li>Vendor commands: <code>find_command</code>, <code>list_vendor_commands</code>, <code>validate_ssh_commands</code>, <code>create_vendor_command</code>, <code>update_vendor_command</code>, <code>delete_vendor_command</code>.</li>
+            <li>MCP: <code>list_mcp_servers</code>, <code>discover_mcp_tools</code>, <code>call_mcp_tool</code>.</li>
+            <li>Git: <code>git_list_repositories</code>, <code>git_create_remote_repository</code>, <code>git_list_files</code>, <code>git_read_file</code>, <code>git_diff</code>, <code>git_pull</code>, <code>git_write_file</code>, <code>git_commit_push</code>, <code>git_list_webhooks</code>, <code>git_create_webhook</code>.</li>
         </ul>
         <p>
             Uncheck tools the agent shouldn't be allowed to call. The picker only
             offers tools that actually exist on this server, so an allowlist can
-            no longer drift from the registry by typo.
+            no longer drift from the registry by typo. Mutating tools still ask
+            for confirmation, and every call is checked against the caller's
+            permissions at dispatch time.
         </p>
     </section>
 

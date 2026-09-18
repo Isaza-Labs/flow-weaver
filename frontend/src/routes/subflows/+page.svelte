@@ -42,7 +42,7 @@
   }
 </script>
 
-<svelte:head><title>Subflows · Flow Weaver</title></svelte:head>
+<svelte:head><title>Subflows · FlowWeaver</title></svelte:head>
 
 <div class="p-6 max-w-6xl mx-auto space-y-5">
   <PageHeader

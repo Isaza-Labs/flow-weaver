@@ -43,7 +43,7 @@
       Stored as JSON. The top-level fields are:
     </p>
     <dl>
-      <dt>action</dt><dd>Currently only <code>deny</code>.</dd>
+      <dt>action</dt><dd><code>deny</code> (block when <code>when</code> matches) or <code>gate</code> (block a promotion until requirements are met — see below).</dd>
       <dt>reason</dt><dd>Human-readable explanation surfaced in the error the caller receives.</dd>
       <dt>when</dt>
       <dd>
@@ -60,9 +60,44 @@
         <tr><td><code>device_pool</code></td><td>Array of pool ids.</td></tr>
         <tr><td><code>snippet_type</code></td><td>Array of snippet types (<code>python_snippet</code>, <code>ssh</code>, <code>ansible_playbook</code>, …).</td></tr>
         <tr><td><code>description_contains</code></td><td>Substring that must / must not appear in the workflow description.</td></tr>
-        <tr><td><code>action</code></td><td>The operation being attempted (<code>create</code>, <code>update</code>, <code>promote</code>).</td></tr>
+        <tr><td><code>action</code></td><td>The operation being attempted (<code>create</code>, <code>update</code>, <code>run</code>, <code>promote</code>, or <code>ssh_exec</code> for a single SSH command at run time).</td></tr>
+        <tr><td><code>ssh_command_regex</code></td><td>Array of regular expressions (case-insensitive) matched against each command an <code>ssh</code> step is about to send. A match denies that command: the step stops there and the command never reaches the device. This is the only mechanism that <em>blocks</em> CLI commands — the <a href="/docs/vendor-commands">vendor command catalogue</a> only warns. A pattern that does not compile or takes longer than 250 ms counts as no match.</td></tr>
       </tbody>
     </table>
+    <p>Example — never let an SSH step reload a device in production:</p>
+    <pre><code>{`{
+  "action": "deny",
+  "reason": "reload is not allowed in production",
+  "when": { "action": ["ssh_exec"], "env": ["production"], "ssh_command_regex": ["^\\\\s*reload\\\\b"] }
+}`}</code></pre>
+
+    <h3>Gate rules</h3>
+    <p>
+      A <code>gate</code> rule applies to promotions (<code>"on": "promote"</code>),
+      optionally only for a given source (<code>from</code>) and target
+      (<code>to</code>) environment, and denies the promotion when any entry in
+      <code>require</code> is not met. The error lists every unmet requirement.
+    </p>
+    <dl>
+      <dt>successful_runs</dt><dd>At least <code>min</code> successful runs within <code>within_days</code> (0 = any time). <code>scope</code>: <code>this_workflow</code> (default) or <code>any_workflow</code>.</dd>
+      <dt>last_successful_run_within</dt><dd>The last successful run happened within <code>days</code>. Same <code>scope</code> options.</dd>
+      <dt>successful_snippet_runs</dt><dd>At least <code>min</code> successful runs of the listed <code>snippet_ids</code> (any snippet when empty) within <code>within_days</code>.</dd>
+    </dl>
+    <pre><code>{`{
+  "action": "gate",
+  "on": "promote",
+  "from": "qa",
+  "to": "production",
+  "reason": "qa validation required",
+  "require": [
+    { "type": "successful_runs", "min": 1, "within_days": 7, "scope": "this_workflow" }
+  ]
+}`}</code></pre>
+    <p>
+      The visual builder covers both shapes: the <code>deny</code> matchers
+      (including <code>ssh_command_regex</code>) and gate rules with their
+      <code>require</code> list.
+    </p>
   </section>
 
   <section>

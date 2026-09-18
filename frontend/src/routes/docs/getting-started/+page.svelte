@@ -175,6 +175,13 @@
       token when you sign in and controls two things: which sidebar entries
       appear, and which server-side endpoints accept your calls.
     </p>
+    <p>
+      An admin can refine this with <a href="/docs/permissions">granular
+      permissions</a>: capability grants assigned to users, optionally limited to
+      an environment, device or resource, plus per-workflow and per-integration
+      access. The table below is the baseline; see
+      <a href="/docs/reference">Reference</a> for the full role × action matrix.
+    </p>
 
     <table>
       <thead>
@@ -204,7 +211,15 @@
       from <code>/admin/*</code> only. The other admin-only screens —
       <code>/policies</code>, <code>/permissions</code>, <code>/vendor-commands</code>,
       <code>/email</code> — are hidden from the sidebar rather than guarded in the
-      browser; deep-linking to one loads the page but its API calls are rejected.
+      browser; deep-linking to one loads the page and the server decides what its
+      calls may do. Of those four, only <code>/permissions</code> is genuinely
+      admin-only. The other three are admin-only in the sidebar, not on the
+      server: reading the vendor-command catalogue, the corporate policies
+      (<code>/policies</code> and <code>/policies/audit</code>) and the email
+      channel list are all viewer-level capabilities, so a viewer who deep-links
+      to one gets a working page with real data — only the write actions on it
+      (authoring a policy, configuring a channel) are refused. Operators can go
+      further and manage catalogue entries under <code>/vendor-commands</code>.
       The role check that matters happens on the server, every time.
     </Callout>
   </section>
@@ -229,23 +244,30 @@
       <li>
         <strong>Register at least one device.</strong> Open
         <a href="/devices"><code>/devices</code></a>, click <em>New device</em>, and
-        fill in <em>Name</em>, <em>IP address</em>, <em>Platform</em>, and attach a
-        <em>Credential</em> (create one from
-        <a href="/credentials"><code>/credentials</code></a> first).
+        fill in <em>Name</em> and <em>IP address</em>. <em>Platform</em> and a
+        <em>Credential</em> are not needed for a ping, but you will want them as
+        soon as you log in to the device (create the credential from
+        <a href="/credentials"><code>/credentials</code></a> first). Make sure the
+        hammer (<em>draft</em>) icon in the device's <em>Environments</em> column is
+        lit, or a draft run will not reach it.
       </li>
       <li>
-        <strong>Pick or create a snippet.</strong> Browse
-        <a href="/snippets"><code>/snippets</code></a>. For an SSH command, a
-        <em>python_snippet</em> with <code>netmiko</code> is a safe default, or use a
-        built-in <em>ping</em> snippet to start.
+        <strong>Use the built-in <code>ping</code> snippet.</strong> It ships with
+        FlowWeaver, needs no code and no credential, and runs once per target
+        device. You will find it in the editor palette in the next step — no need
+        to create anything in <a href="/snippets"><code>/snippets</code></a>.
       </li>
       <li>
         <strong>Create a workflow.</strong> From
-        <a href="/workflows"><code>/workflows</code></a>, click <em>New workflow</em>.
-        The DAG editor opens with a <code>__start__</code> and <code>__end__</code>
-        sentinel node. Drag your snippet into the canvas between them and connect
-        <code>__start__ → your_node → __end__</code>. Save with the <em>Save</em>
-        button or <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>S</kbd>.
+        <a href="/workflows"><code>/workflows</code></a>, click <em>New workflow</em>,
+        type a name and submit. The new workflow appears in the <em>Draft</em> list;
+        click its name to open the DAG editor, which starts with a
+        <code>__start__</code> and an <code>__end__</code> sentinel node. Drag
+        <code>ping</code> from the palette's <em>Snippets</em> group onto the canvas
+        (on a fresh install it sits in the collapsed <em>Unproven</em> section —
+        typing <code>ping</code> in the search box expands it)
+        and connect <code>__start__ → your_node → __end__</code>. Save with the
+        <em>Save</em> button or <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>S</kbd>.
       </li>
       <li>
         <strong>Simulate before you run.</strong> The editor's <em>Simulate</em> button
@@ -265,9 +287,27 @@
         live status; the right-hand timeline lists every step as it executes with
         logs, input, and output. If a node fails, use <em>Fix with AI</em> to
         hand the context to the assistant. The eye icon in the editor toolbar
-        re-opens the last run's data without leaving the canvas.
+        re-opens the last run's data without leaving the canvas. A successful
+        ping step shows as green; its output carries the reachability result.
       </li>
     </ol>
+
+    <Callout tone="info" title="If the run is refused">
+      <code>409 no runnable targets in environment 'draft'</code> means every
+      device you picked has the <em>draft</em> environment switched off. Light the
+      hammer icon on the device row in <a href="/devices"><code>/devices</code></a>
+      and run again.
+    </Callout>
+
+    <h3>Next: log in to the device</h3>
+    <p>
+      Once the ping works, swap the node for the built-in <code>ssh</code> snippet
+      to run CLI commands. It needs the device's <em>Platform</em> and an attached
+      <em>Credential</em>, and each node sets <code>command</code> (or a
+      <code>commands</code> list) in its config. Writing your own
+      <code>python_snippet</code> with Netmiko or paramiko is the advanced path — see
+      <a href="/docs/snippets">Snippets</a>.
+    </p>
 
     <Callout tone="success" title="Tip">
       Drafts are safe to iterate on — they never fan out to production devices.
@@ -313,14 +353,17 @@
       <dt>/policies</dt>
       <dd>Guardrails and approval gates. Admin only.</dd>
       <dt>/permissions</dt>
-      <dd>Per-user tool permissions for the assistant. Admin only.</dd>
+      <dd>Granular capability grants assigned to users, optionally scoped to an environment, device or resource. Admin only. See <a href="/docs/permissions">Permissions</a>.</dd>
       <dt>/admin</dt>
       <dd>
         Admin dashboard. Children include <code>/admin/users</code>,
         <code>/admin/audit</code>, <code>/admin/traces</code>,
         <code>/admin/artifacts</code>, <code>/admin/secrets</code>,
         <code>/admin/mcp-servers</code>, <code>/admin/messaging-channels</code>,
-        <code>/admin/python-packages</code>, <code>/admin/slo</code>.
+        <code>/admin/python-packages</code>, <code>/admin/slo</code>,
+        <code>/admin/settings</code>, <code>/admin/actions</code>. The
+        <a href="/docs/reference">Reference</a> page lists every screen with its
+        route, minimum role and chapter.
       </dd>
       <dt>/docs</dt>
       <dd>This manual.</dd>

@@ -90,8 +90,11 @@
 
     <h4>Built-in tools</h4>
     <p>
-      A read-only list of the tools the agent can call out of the box,
-      grouped visually with a small wrench icon. Exact names:
+      A short, read-only sample of the tools the agent can call, grouped
+      visually with a small wrench icon. It is not the full catalogue — the
+      default assistant also has vendor-command, Git, MCP, report and
+      administration tools; the complete, live list is the <em>Tools</em>
+      picker on <a href="/docs/ai/agents">Agents</a>. The card shows:
     </p>
     <ul>
       <li><code>list_apis</code> · <code>discover_operations</code></li>
@@ -117,7 +120,7 @@
     <ol>
       <li>
         Picks the active agent (either the <code>agent_id</code> you
-        selected in the sidebar or the default fallback with
+        selected in the composer's agent picker or the default fallback with
         <code>Role = "assistant"</code>).
       </li>
       <li>

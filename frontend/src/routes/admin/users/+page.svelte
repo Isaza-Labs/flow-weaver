@@ -171,7 +171,7 @@
 </script>
 
 <svelte:head>
-  <title>Admin · Users · Flow Weaver</title>
+  <title>Admin · Users · FlowWeaver</title>
 </svelte:head>
 
 <div class="p-6 max-w-7xl mx-auto space-y-6">

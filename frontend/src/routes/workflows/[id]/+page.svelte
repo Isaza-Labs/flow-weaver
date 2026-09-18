@@ -461,7 +461,7 @@
     // test `snippet_id`, and the node id is free-form. This canvas tested the
     // node id instead. That holds for anything it saved itself (it writes
     // `__start__` as the node id too) and fails for everything else: a bundle
-    // imported from Nashira, and Flow Weaver's own load-test seeds, which write
+    // imported from Nashira, and FlowWeaver's own load-test seeds, which write
     // `{"id":"start","snippet_id":"__start__"}`.
     //
     // The symptom is not a missing sentinel, it is two: the real one renders as

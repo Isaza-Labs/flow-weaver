@@ -51,7 +51,7 @@
   }
 </script>
 
-<svelte:head><title>Link account · Flow Weaver</title></svelte:head>
+<svelte:head><title>Link account · FlowWeaver</title></svelte:head>
 
 <div class="min-h-screen flex items-center justify-center p-6 text-surface-900-100">
   <Card>

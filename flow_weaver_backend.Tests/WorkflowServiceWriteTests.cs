@@ -38,13 +38,17 @@ public class WorkflowServiceWriteTests
         public WorkflowValidationResult Result { get; set; } = WorkflowValidationResult.Ok();
         public string? NameSeen { get; private set; }
         public string? DescriptionSeen { get; private set; }
-        public Task<WorkflowValidationResult> ValidateAsync(JsonElement nodes, CancellationToken ct)
+        public Task<WorkflowValidationResult> ValidateAsync(
+            JsonElement nodes, CancellationToken ct, JsonElement? previousNodes = null)
             => Task.FromResult(Result);
+        public JsonElement? PreviousNodesSeen { get; private set; }
         public Task<WorkflowValidationResult> ValidateWithContextAsync(
-            JsonElement nodes, string? workflowName, string? workflowDescription, CancellationToken ct)
+            JsonElement nodes, string? workflowName, string? workflowDescription, CancellationToken ct,
+            JsonElement? previousNodes = null)
         {
             NameSeen = workflowName;
             DescriptionSeen = workflowDescription;
+            PreviousNodesSeen = previousNodes;
             return Task.FromResult(Result);
         }
     }

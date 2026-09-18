@@ -120,9 +120,8 @@
   <section>
     <h2>Role differences</h2>
     <ul>
-      <li><strong>Viewer</strong> — list and download.</li>
-      <li><strong>Operator</strong> — full CRUD.</li>
-      <li><strong>Admin</strong> — same as operator.</li>
+      <li><strong>Viewer / Operator</strong> — no access: the API-specs API is admin-only, whatever the RBAC mode. The agent still uses active specs on everyone's behalf.</li>
+      <li><strong>Admin</strong> — full CRUD, upload, download.</li>
     </ul>
   </section>
 

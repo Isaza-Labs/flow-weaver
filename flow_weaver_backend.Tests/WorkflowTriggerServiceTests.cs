@@ -14,6 +14,7 @@ public class WorkflowTriggerServiceTests
 
     private static WorkflowTriggerService NewSvc(AppDbContext db, FakeUser user)
         => new(new WorkflowTriggerRepository(db), new RepositoryBase<WorkflowModel>(db), user,
+               new AllowAllEffectivePermissions(),
                new FakeCrypto(), new FakeAudit(), NullLogger<WorkflowTriggerService>.Instance);
 
     private static Guid SeedWorkflow(AppDbContext db)

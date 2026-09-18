@@ -45,6 +45,7 @@ public class WorkflowIntentWarningTests
             new RepositoryBase<McpServerModel>(Db),
             new AllowAllEffective(),
             new FakeAppSettings(),
+            new FakeUser(),
             NullLogger<WorkflowReferenceValidator>.Instance);
 
         public Guid SeedSnippet(string type)

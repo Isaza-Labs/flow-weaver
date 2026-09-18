@@ -85,6 +85,7 @@ public class WorkflowImportEndpointTests
                 new AllowAllPerms(),
                 Settings,
                 new UnusedBundleImporter(),
+                new FakePolicyEvaluator(),
                 NullLogger<WorkflowImportController>.Instance);
             controller.ControllerContext = new ControllerContext { HttpContext = HttpContext };
             return controller;

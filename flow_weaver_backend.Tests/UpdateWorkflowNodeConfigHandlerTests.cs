@@ -20,10 +20,12 @@ public class UpdateWorkflowNodeConfigHandlerTests
     private sealed class ScriptedReferenceValidator : IWorkflowReferenceValidator
     {
         public WorkflowValidationResult Result { get; set; } = WorkflowValidationResult.Ok();
-        public Task<WorkflowValidationResult> ValidateAsync(JsonElement nodes, CancellationToken ct)
+        public Task<WorkflowValidationResult> ValidateAsync(
+            JsonElement nodes, CancellationToken ct, JsonElement? previousNodes = null)
             => Task.FromResult(Result);
         public Task<WorkflowValidationResult> ValidateWithContextAsync(
-            JsonElement nodes, string? name, string? description, CancellationToken ct)
+            JsonElement nodes, string? name, string? description, CancellationToken ct,
+            JsonElement? previousNodes = null)
             => Task.FromResult(Result);
     }
 

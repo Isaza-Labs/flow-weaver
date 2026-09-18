@@ -35,9 +35,9 @@ internal sealed class FakeSchemaValidator : IWorkflowSchemaValidator
 
 internal sealed class FakeReferenceValidator : IWorkflowReferenceValidator
 {
-    public Task<WorkflowValidationResult> ValidateAsync(System.Text.Json.JsonElement nodes, CancellationToken ct)
+    public Task<WorkflowValidationResult> ValidateAsync(System.Text.Json.JsonElement nodes, CancellationToken ct, System.Text.Json.JsonElement? previousNodes = null)
         => Task.FromResult(WorkflowValidationResult.Ok());
-    public Task<WorkflowValidationResult> ValidateWithContextAsync(System.Text.Json.JsonElement nodes, string? workflowName, string? workflowDescription, CancellationToken ct)
+    public Task<WorkflowValidationResult> ValidateWithContextAsync(System.Text.Json.JsonElement nodes, string? workflowName, string? workflowDescription, CancellationToken ct, System.Text.Json.JsonElement? previousNodes = null)
         => Task.FromResult(WorkflowValidationResult.Ok());
 }
 
@@ -47,6 +47,17 @@ internal sealed class FakeVendorCommandValidator : IVendorCommandValidator
         => Task.FromResult(WorkflowValidationResult.Ok());
     public Task<IReadOnlyList<string>> ValidateCommandsAsync(string deviceType, IReadOnlyList<string> commands, CancellationToken ct)
         => Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
+}
+
+// Grants every capability, like an admin with no transport ceiling.
+internal sealed class AllowAllEffectivePermissions : flow_weaver_backend.Services.Permission.IEffectivePermissions
+{
+    public Task<bool> HasAsync(string capability, flow_weaver_backend.Services.Permission.PermissionContext ctx, CancellationToken ct = default)
+        => Task.FromResult(true);
+    public Task<bool> HasAsync(string capability, CancellationToken ct = default) => Task.FromResult(true);
+    public Task<IReadOnlySet<string>> CapabilitiesAsync(CancellationToken ct = default)
+        => Task.FromResult<IReadOnlySet<string>>(
+            flow_weaver_backend.Services.Permission.Catalog.CapabilityCatalog.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase));
 }
 
 internal sealed class FakePolicyEvaluator : IPolicyEvaluator

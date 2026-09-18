@@ -20,10 +20,11 @@
       A schedule is one kind of <strong>workflow trigger</strong> — a cron
       expression plus a timezone that fires the workflow on a repeating
       interval. Other trigger types live on the workflow's
-      <a href="/workflows"><em>Triggers</em></a> sub-page: <strong>webhook</strong>
+      <em>Triggers</em> sub-page (<code>/workflows/{'{id}'}/triggers</code>, see <a href="/docs/workflows/triggers">Triggers and webhooks</a>): <strong>webhook</strong>
       triggers expose a public, HMAC-signed <code>POST</code> endpoint
-      (<code>/api/webhooks/workflow/&#123;id&#125;</code>) whose body becomes the run
-      input; this page filters to <code>type === 'schedule'</code> only.
+      (<code>/api/webhooks/workflow/&#123;id&#125;</code>). The JSON body is handed to
+      the run under <code>input.webhook</code> (so a body field <code>x</code> is
+      read as <code>{'{{ input.webhook.x }}'}</code>); this page filters to <code>type === 'schedule'</code> only.
     </p>
     <Callout tone="warning" title="Webhooks don't pick their own devices by default">
       A webhook caller proves it holds the trigger's secret — not that it is a
@@ -31,8 +32,11 @@
       <code>target_devices</code> / <code>target_pools</code> in the body are
       <strong>ignored</strong> unless the trigger sets
       <code>allow_target_override</code>, and the run fires against the devices
-      configured on the trigger. Turn the flag on and the body can
-      <em>narrow</em> that list; it can never extend it. Without this, a leaked
+      configured on the trigger. Turn the flag on and, when the trigger has its
+      own device list, the body can only <em>narrow</em> it — never extend it.
+      A trigger with the flag on and <em>no</em> devices of its own uses the
+      body's devices and pools as sent, so set a device list whenever you enable
+      the flag. Without this, a leaked
       webhook secret would mean "run this workflow against any device in the
       inventory", production included.
     </Callout>

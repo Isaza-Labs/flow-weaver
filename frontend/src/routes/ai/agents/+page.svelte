@@ -227,7 +227,7 @@
   }
 </script>
 
-<svelte:head><title>AI Agents · Flow Weaver</title></svelte:head>
+<svelte:head><title>AI Agents · FlowWeaver</title></svelte:head>
 
 <div class="p-6 max-w-7xl mx-auto space-y-5">
   <PageHeader

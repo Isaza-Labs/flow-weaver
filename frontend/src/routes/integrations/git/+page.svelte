@@ -189,7 +189,7 @@
   const sshFormUrl = $derived(isSshUrl(formUrl));
 </script>
 
-<svelte:head><title>Git repositories · Flow Weaver</title></svelte:head>
+<svelte:head><title>Git repositories · FlowWeaver</title></svelte:head>
 
 <div class="p-6 max-w-7xl mx-auto space-y-5">
   <PageHeader

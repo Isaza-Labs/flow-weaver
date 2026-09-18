@@ -32,6 +32,13 @@ public class StepRunResponse
     [JsonPropertyName("logs")]
     public string Logs { get; set; } = string.Empty;
 
+    // The machine-readable half of a failure (`unresolved_template`,
+    // `integration_not_authored`, …). Persisted since the engine's first
+    // version but never exposed, so the codes the troubleshooting docs index on
+    // were invisible in the UI.
+    [JsonPropertyName("error_code")]
+    public string? ErrorCode { get; set; }
+
     [JsonPropertyName("error")]
     public string Error { get; set; } = string.Empty;
 

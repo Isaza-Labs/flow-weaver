@@ -160,7 +160,7 @@
 </script>
 
 <svelte:head>
-  <title>Admin · Flow Weaver</title>
+  <title>Admin · FlowWeaver</title>
 </svelte:head>
 
 <div class="p-6 max-w-7xl mx-auto space-y-6">
@@ -293,7 +293,7 @@
                 <ArrowUpRight size={12} class="text-surface-500 group-hover:text-primary-300 transition-colors" />
               </div>
               <p class="text-xs text-surface-500 mt-0.5">
-                Service-level objectives — success rate, latency, error budget burn per workflow.
+                Service-level objectives — run latency, error rate, throughput and promotion latency.
               </p>
             </div>
           </div>

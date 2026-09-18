@@ -205,6 +205,7 @@ public class FunctionalScalabilityTests
             new RepositoryBase<McpServerModel>(db),
             effective: null!,
             appSettings: new FakeAppSettings(),
+            caller: new FakeUser(),
             logger: NullLogger<WorkflowReferenceValidator>.Instance);
 
     // Minimal exporter plug-in: a distinct Format + a fixed body.

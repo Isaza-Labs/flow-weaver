@@ -300,7 +300,7 @@
     }
 </script>
 
-<svelte:head><title>AI Providers · Flow Weaver</title></svelte:head>
+<svelte:head><title>AI Providers · FlowWeaver</title></svelte:head>
 
 <div class="p-6 max-w-7xl mx-auto space-y-5">
     <PageHeader

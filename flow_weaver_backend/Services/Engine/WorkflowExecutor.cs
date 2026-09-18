@@ -1,6 +1,7 @@
 using System.Text.Json;
 using flow_weaver_backend.Data.Db;
 using flow_weaver_backend.Dtos;
+using flow_weaver_backend.Services.Ai.Secrets;
 using flow_weaver_backend.Services.Audit;
 using flow_weaver_backend.Services.Promotion;
 using flow_weaver_backend.Services.Worker;
@@ -462,7 +463,11 @@ public sealed class WorkflowExecutor : IWorkflowExecutor
                         aggregatedOutput = AggregatePerDeviceOutput(nodeSteps, names, _logger, group.Key);
                     }
 
-                    completedOutputs[group.Key] = new StepResult(aggregatedOutput);
+                    if (SecretMarkers.ContainsAny(aggregatedOutput))
+                        _logger.LogInformation(
+                            "engine.step.secret_marker_neutralized workflow_run_id={WorkflowRunId} node_id={NodeId} source=step_output",
+                            run.WorkflowRunId, group.Key);
+                    completedOutputs[group.Key] = new StepResult(SecretMarkers.Neutralize(aggregatedOutput));
 
                     // Non-conditional edges: fire on matching result
                     // (success/failure/always). Use the aggregate status.
@@ -525,11 +530,12 @@ public sealed class WorkflowExecutor : IWorkflowExecutor
                         foreach (var edge in outEdges.Where(e => e.EdgeType == "conditional"))
                         {
                             if (enqueuedNodeIds.Contains(edge.Target)) continue;
-                            // `run.InputPayload` / `runContext` are the same
-                            // two objects EnqueueStepAsync feeds to the
-                            // resolver just below, so a condition and the
-                            // payload it gates can never disagree about the
-                            // same run (SPEC §9). deviceContext stays null:
+                            // The same two objects EnqueueStepAsync feeds to
+                            // the resolver just below — run input and run
+                            // context as steps see them, secret markers
+                            // neutralized — so a condition and the payload it
+                            // gates can never disagree about the same run
+                            // (SPEC §9). deviceContext stays null:
                             // an edge fires once at DAG level after its
                             // source completes, so there is no single
                             // current device to bind `{{ device.X }}` to.
@@ -537,8 +543,10 @@ public sealed class WorkflowExecutor : IWorkflowExecutor
                                 && _conditions.Evaluate(
                                     edge.Condition, completedOutputs,
                                     deviceContext: null,
-                                    runInput: run.InputPayload,
-                                    runContext: runContext))
+                                    runInput: RunInputForSteps(run),
+                                    runContext: runContext is { } rc
+                                        ? SecretMarkers.Neutralize(rc)
+                                        : runContext))
                             {
                                 await EnqueueStepAsync(db, queue, run, dag, dag.Nodes[edge.Target],
                                     targets, completedOutputs, enqueuedNodeIds, ct, runContext,
@@ -1088,7 +1096,7 @@ public sealed class WorkflowExecutor : IWorkflowExecutor
                 aggregatedOutput = AggregatePerDeviceOutput(nodeSteps, names, _logger, group.Key);
             }
 
-            completedOutputs[group.Key] = new StepResult(aggregatedOutput);
+            completedOutputs[group.Key] = new StepResult(SecretMarkers.Neutralize(aggregatedOutput));
         }
 
         _logger.LogInformation(
@@ -1122,6 +1130,9 @@ public sealed class WorkflowExecutor : IWorkflowExecutor
         // the same notify-failure sink and each alert must name its own.
         if (runContext.HasValue && failedStepId is not null)
             runContext = WithFailedStep(runContext.Value, failedStepId, failedStepError);
+        // failed_step_error quotes whatever the failing handler reported.
+        if (runContext.HasValue)
+            runContext = SecretMarkers.Neutralize(runContext.Value);
 
         // Sentinel nodes (__start__, __end__) get an immediately-completed
         // step_run with empty output. The orchestrator processes them in the
@@ -1228,14 +1239,20 @@ public sealed class WorkflowExecutor : IWorkflowExecutor
                 .Where(d => deviceIdsToLoad.Contains(d.DeviceId))
                 .ToListAsync(ct);
             foreach (var d in deviceRows)
-                deviceContextsById[d.DeviceId] = BuildDeviceContext(d);
+                deviceContextsById[d.DeviceId] = SecretMarkers.Neutralize(BuildDeviceContext(d));
         }
 
         // Build the step's input: merge run.InputPayload + node.ConfigOverrides,
         // then resolve {{ steps.X.output.Y }} and {{ device.X }} templates
         // using already-completed steps and the current device context.
         // This means the step handler will see a fully resolved payload.
-        var merged = MergePayloads(run.InputPayload, node.ConfigOverrides);
+        var stepRunInput = RunInputForSteps(run);
+        // Silent rewriting is hard to debug: say so once per step when it happened.
+        if (SecretMarkers.ContainsAny(run.InputPayload) && !IsSubflowChild(run))
+            _logger.LogInformation(
+                "engine.step.secret_marker_neutralized workflow_run_id={WorkflowRunId} node_id={NodeId} source=run_input",
+                run.WorkflowRunId, node.Id);
+        var merged = MergePayloads(stepRunInput, node.ConfigOverrides);
 
         JsonElement? DeviceContextFor(Guid? deviceId) =>
             deviceId.HasValue && deviceContextsById.TryGetValue(deviceId.Value, out var ctx)
@@ -1267,7 +1284,7 @@ public sealed class WorkflowExecutor : IWorkflowExecutor
             var scoped = scopeUpstreamDeviceId.HasValue
                 ? ScopeOutputsToDevice(completedOutputs, scopeUpstreamDeviceId.Value)
                 : completedOutputs;
-            var resolved = _resolver.Resolve(merged, scoped, DeviceContextFor(deviceContextId), run.InputPayload, runContext);
+            var resolved = _resolver.Resolve(merged, scoped, DeviceContextFor(deviceContextId), stepRunInput, runContext);
             // Inject the full target list into the input regardless of mode so
             // handlers that want to do their own fan-out (legacy behavior) keep
             // working. For per_device fan-out we also set StepRun.DeviceId on
@@ -1332,6 +1349,37 @@ public sealed class WorkflowExecutor : IWorkflowExecutor
                 run.WorkflowRunId, node.Id, deviceId, unresolved.Count);
         }
 
+        // A python step receives the credentials of every integration its payload
+        // names under `*_integration_id`. Only the workflow's author may choose
+        // those (see AuthoredIntegrationKeys); one chosen by run input or by a
+        // template fails the step before any credential is handed out.
+        IReadOnlyList<string> ForeignIntegrationKeys(JsonElement resolvedInput)
+            => injectSteps
+                ? AuthoredIntegrationKeys.Unauthored(
+                    resolvedInput, node.ConfigOverrides,
+                    IsSubflowChild(run) ? run.InputPayload : null)
+                : Array.Empty<string>();
+
+        void PersistFailedStepForForeignIntegrations(
+            Guid? deviceId, JsonElement attemptedInput, IReadOnlyList<string> keys)
+        {
+            var failedStep = MakeStepRun(run, node, snippetId: svcId, resolvedInput: attemptedInput, deviceId: deviceId);
+            failedStep.Status = StepStatus.Failed;
+            failedStep.ErrorCode = "integration_not_authored";
+            failedStep.Error =
+                $"{string.Join(", ", keys)}: a python step only receives integration credentials for "
+                + "integrations named as a literal id in its own node config. This value came from the "
+                + "run input or a template. Set the integration id directly in the node's config_overrides.";
+            failedStep.ChangedState = false;
+            failedStep.StartedAt = DateTime.UtcNow;
+            failedStep.CompletedAt = DateTime.UtcNow;
+            db.StepRuns.Add(failedStep);
+
+            _logger.LogWarning(
+                "engine.step.integration_not_authored workflow_run_id={WorkflowRunId} node_id={NodeId} device_id={DeviceId} keys={Keys}",
+                run.WorkflowRunId, node.Id, deviceId, string.Join(",", keys));
+        }
+
         if (perDevice && resolvedTargetIds.Count > 1)
         {
             // Fan-out: one step_run per device, each with its own DeviceId
@@ -1344,6 +1392,11 @@ public sealed class WorkflowExecutor : IWorkflowExecutor
                 if (fanUnresolved.Count > 0)
                 {
                     PersistFailedStepForUnresolvedTemplates(deviceId, fanInput, fanUnresolved);
+                    continue;
+                }
+                if (ForeignIntegrationKeys(fanInput) is { Count: > 0 } fanForeign)
+                {
+                    PersistFailedStepForForeignIntegrations(deviceId, fanInput, fanForeign);
                     continue;
                 }
                 var fanStep = MakeStepRun(run, node, snippetId: svcId, resolvedInput: fanInput, deviceId: deviceId);
@@ -1385,6 +1438,11 @@ public sealed class WorkflowExecutor : IWorkflowExecutor
         if (singleUnresolved.Count > 0)
         {
             PersistFailedStepForUnresolvedTemplates(primaryDeviceId, singleInput, singleUnresolved);
+            return;
+        }
+        if (ForeignIntegrationKeys(singleInput) is { Count: > 0 } singleForeign)
+        {
+            PersistFailedStepForForeignIntegrations(primaryDeviceId, singleInput, singleForeign);
             return;
         }
 
@@ -1698,8 +1756,35 @@ public sealed class WorkflowExecutor : IWorkflowExecutor
 
         // Build a child run. The child inherits the parent's targets and
         // merges the parent's input with the subflow node's config_overrides.
-        var merged = MergePayloads(parentRun.InputPayload, node.ConfigOverrides);
+        var merged = MergePayloads(RunInputForSteps(parentRun), node.ConfigOverrides);
         var resolved = _resolver.Resolve(merged, completedOutputs);
+
+        // The child would trust its input's integration ids
+        // (AuthoredIntegrationKeys), so an id this subflow node's author did not
+        // write fails the step here — the same answer a python step gives, rather
+        // than a silent strip that resurfaces as "integration not available"
+        // inside the child.
+        var foreignIntegrationKeys = AuthoredIntegrationKeys.Unauthored(
+            resolved, node.ConfigOverrides,
+            IsSubflowChild(parentRun) ? parentRun.InputPayload : null);
+        if (foreignIntegrationKeys.Count > 0)
+        {
+            var stepFail = MakeStepRun(parentRun, node, snippetId: null, resolvedInput: resolved);
+            stepFail.Status = StepStatus.Failed;
+            stepFail.ErrorCode = "integration_not_authored";
+            stepFail.Error =
+                $"{string.Join(", ", foreignIntegrationKeys)}: a subflow only passes on integration "
+                + "credentials for integrations named as a literal id in this subflow node's own config. "
+                + "This value came from the run input or a template.";
+            stepFail.ChangedState = false;
+            stepFail.StartedAt = DateTime.UtcNow;
+            stepFail.CompletedAt = DateTime.UtcNow;
+            db.StepRuns.Add(stepFail);
+            _logger.LogWarning(
+                "engine.subflow.integration_not_authored parent_run_id={ParentRunId} node_id={NodeId} keys={Keys}",
+                parentRun.WorkflowRunId, node.Id, string.Join(",", foreignIntegrationKeys));
+            return;
+        }
 
         // Same "unresolved templates fail the step" guard as regular
         // step enqueue — a subflow's child run gets populated with the
@@ -1797,6 +1882,12 @@ public sealed class WorkflowExecutor : IWorkflowExecutor
     // An unrecognised environment is treated as draft — it is what the
     // enqueue guard already falls back to, and it keeps a typo from
     // accidentally unlocking production inventory.
+    // Shared with RunDeviceAuthorizer so the permission check and the dispatch
+    // filter can never disagree about which devices a run reaches.
+    internal static bool EnvironmentAllows(
+        string environment, bool allowDraft, bool allowQa, bool allowProduction)
+        => AllowsEnvironment(environment, allowDraft, allowQa, allowProduction);
+
     private static bool AllowsEnvironment(
         string environment, bool allowDraft, bool allowQa, bool allowProduction)
         => environment.ToLowerInvariant() switch
@@ -2012,6 +2103,20 @@ public sealed class WorkflowExecutor : IWorkflowExecutor
     // ───────────────────────────────────────────────────────────────────
     //  Payload helpers
     // ───────────────────────────────────────────────────────────────────
+
+    // The run input as steps see it. Whoever starts a run (a manual caller, a
+    // webhook sender, a trigger's input_defaults) must not be able to name a
+    // `${secret:...}` for a handler to decrypt, so markers in it are
+    // neutralized (SecretMarkers). A subflow child's input is the parent step's
+    // payload, already built from a neutralized input plus the parent's own
+    // authored config, so its markers are the author's and stay live.
+    internal static JsonElement RunInputForSteps(WorkflowRunModel run)
+        => IsSubflowChild(run)
+            ? run.InputPayload
+            : SecretMarkers.Neutralize(run.InputPayload);
+
+    private static bool IsSubflowChild(WorkflowRunModel run)
+        => string.Equals(run.Trigger, "subflow", StringComparison.OrdinalIgnoreCase);
 
     // Shallow merge: ConfigOverrides keys win over run InputPayload keys.
     private static JsonElement MergePayloads(JsonElement runInput, JsonElement configOverrides)

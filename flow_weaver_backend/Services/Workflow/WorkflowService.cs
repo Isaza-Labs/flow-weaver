@@ -332,10 +332,14 @@ public class WorkflowService : IWorkflow
                 });
             }
 
+            // wf.Nodes is what is already saved: the permission gates apply to what
+            // this edit adds, so touching one node doesn't re-ask for the
+            // permissions another node needed.
             var referenceResult = await _referenceValidator.ValidateWithContextAsync(pendingNodes,
                 dto.Name ?? wf.Name,
                 dto.Description ?? wf.Description,
-                default);
+                default,
+                previousNodes: wf.Nodes);
             if (!referenceResult.IsValid)
             {
                 _logger.LogWarning(

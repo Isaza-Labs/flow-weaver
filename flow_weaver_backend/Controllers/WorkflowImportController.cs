@@ -9,6 +9,7 @@ using flow_weaver_backend.Services.Errors;
 using flow_weaver_backend.Services.Import;
 using flow_weaver_backend.Services.Import.Models;
 using flow_weaver_backend.Services.Permission;
+using flow_weaver_backend.Services.Policy;
 using flow_weaver_backend.Services.Identity;
 using flow_weaver_backend.Services.Security;
 using flow_weaver_backend.Services.Validation;
@@ -54,6 +55,7 @@ public class WorkflowImportController : ControllerBase
     private readonly IResourcePermissionService _permissions;
     private readonly flow_weaver_backend.Services.Settings.IAppSettingsService _appSettings;
     private readonly Services.Workflow.IWorkflowBundleImporter _bundleImporter;
+    private readonly IPolicyEvaluator _policies;
     private readonly ILogger<WorkflowImportController> _logger;
 
     public WorkflowImportController(
@@ -68,6 +70,7 @@ public class WorkflowImportController : ControllerBase
         IResourcePermissionService permissions,
         flow_weaver_backend.Services.Settings.IAppSettingsService appSettings,
         Services.Workflow.IWorkflowBundleImporter bundleImporter,
+        IPolicyEvaluator policies,
         ILogger<WorkflowImportController> logger)
     {
         _cache = cache;
@@ -81,6 +84,7 @@ public class WorkflowImportController : ControllerBase
         _permissions = permissions;
         _appSettings = appSettings;
         _bundleImporter = bundleImporter;
+        _policies = policies;
         _logger = logger;
     }
 
@@ -222,6 +226,7 @@ public class WorkflowImportController : ControllerBase
         var report = draft.Report!;
         var conflictRes = dto.ConflictResolution?.ToLowerInvariant() ?? "fresh_copy";
 
+
         // A bundle resolves by identity and carries everything it references, so
         // there is nothing for the wizard's resolutions to resolve. It goes to the
         // same importer POST /api/Workflow/import uses — one transaction, fresh
@@ -262,6 +267,23 @@ public class WorkflowImportController : ControllerBase
             });
         }
 
+        // An import is a create (or an in-place update), never a promotion. This
+        // path used to write `target_environment` straight onto the new row, which
+        // let any caller with workflow.import land a workflow in qa or production
+        // without the QA gate, the second approver or a policy check. Imports now
+        // always land in draft; reaching qa/production goes through promote.
+        //
+        // Checked after the bundle branch on purpose: the bundle importer never
+        // honoured the field (it always creates a draft), so a client that still
+        // sends one there keeps getting the same answer it always got.
+        if (!string.IsNullOrWhiteSpace(dto.TargetEnvironment)
+            && !string.Equals(dto.TargetEnvironment, "draft", StringComparison.OrdinalIgnoreCase))
+        {
+            return Problems.BadRequest(
+                "imports always land in draft — promote the workflow afterwards",
+                code: "import_target_environment_not_allowed");
+        }
+
         // keep_existing cancels the import outright. We mark the draft
         // committed so the user's choice is auditable; no new workflow
         // lands. Returns 200 so the wizard can show "nothing to do"
@@ -294,17 +316,28 @@ public class WorkflowImportController : ControllerBase
 
         // S13.5 — per-resource gating only blocks REPLACE on an existing
         // workflow. Importing as a new row is a create, which the global
-        // Operator policy already authorises.
+        // Operator policy already authorises. Replace soft-deletes the
+        // target, so it takes the same owner grant DELETE /api/Workflow does.
         if (conflictRes == "replace" && report.Conflicts.NameCollision is { } collision)
         {
-            if (!await AuthorizeAsync(collision.MatchingWorkflowId, ResourceRoles.Editor, ct))
+            if (!await AuthorizeAsync(collision.MatchingWorkflowId, ResourceRoles.Owner, ct))
             {
-                return Problems.Forbidden("missing_editor_grant for replace target", code: "missing_editor_grant");
+                return Problems.Forbidden("missing_owner_grant for replace target", code: "missing_owner_grant");
             }
             // Soft-delete the existing row so the import lands without
             // a duplicate. Audit captures who replaced what.
             var existing = await _db.Workflows
                 .FirstOrDefaultAsync(w => w.WorkflowId == collision.MatchingWorkflowId, ct);
+            // Production rows are immutable everywhere else (update and delete
+            // both answer production_immutable); an import must not be the way
+            // around that.
+            if (existing is not null && existing.Environment == "production")
+            {
+                if (tx is not null) await tx.RollbackAsync(ct);
+                return Problems.Conflict(
+                    "a production workflow cannot be replaced by an import — clone it to draft instead",
+                    code: "production_immutable");
+            }
             if (existing is not null)
             {
                 existing.IsActive = false;
@@ -638,10 +671,25 @@ public class WorkflowImportController : ControllerBase
         // (mapping, stubbing, generating). Catches typos in
         // `target_id` and other cases where the remap produced an id
         // that doesn't resolve to a real row.
+        // Updating a structural duplicate in place edits an existing graph, so its
+        // stored nodes are the baseline for the permission gates. Every other
+        // resolution creates a new workflow: everything in it is new.
+        JsonElement? previousNodes = null;
+        if (dto.DuplicateAction == "update_existing"
+            && report.Conflicts.StructuralDuplicate is { } duplicate)
+        {
+            previousNodes = await _db.Workflows
+                .AsNoTracking()
+                .Where(w => w.WorkflowId == duplicate.MatchingWorkflowId && w.IsActive)
+                .Select(w => (JsonElement?)w.Nodes)
+                .FirstOrDefaultAsync(ct);
+        }
+
         var refResult = await _referenceValidator.ValidateWithContextAsync(nodes,
             ReadWrappedString(rewritten, "name"),
             ReadWrappedString(rewritten, "description"),
-            ct);
+            ct,
+            previousNodes);
         if (!refResult.IsValid)
         {
             // FU-1: rollback the staged snippets / integrations so the
@@ -685,6 +733,24 @@ public class WorkflowImportController : ControllerBase
                 ?? throw new InvalidOperationException(
                     $"structural duplicate {dupId} disappeared between analyze and commit");
 
+            if (workflow.Environment == "production")
+            {
+                if (tx is not null) await tx.RollbackAsync(ct);
+                return Problems.Conflict(
+                    "a production workflow cannot be updated by an import — clone it to draft instead",
+                    code: "production_immutable");
+            }
+
+            // Same policy check PUT /api/Workflow applies to an update.
+            var updateBlocked = await EvaluateImportPolicyAsync(
+                "update", workflow.Environment, name,
+                ReadWrappedString(rewritten, "description"), nodes, ct);
+            if (updateBlocked is not null)
+            {
+                if (tx is not null) await tx.RollbackAsync(ct);
+                return updateBlocked;
+            }
+
             // Snapshot the pre-update state so rollback has somewhere to go.
             _db.WorkflowVersions.Add(new flow_weaver_backend.Models.WorkflowVersion
             {
@@ -722,6 +788,16 @@ public class WorkflowImportController : ControllerBase
         }
         else
         {
+            // Same policy check POST /api/Workflow applies to a create.
+            var createBlocked = await EvaluateImportPolicyAsync(
+                "create", "draft", name,
+                ReadWrappedString(rewritten, "description"), nodes, ct);
+            if (createBlocked is not null)
+            {
+                if (tx is not null) await tx.RollbackAsync(ct);
+                return createBlocked;
+            }
+
             workflow = new WorkflowModel
             {
                 WorkflowId = Guid.NewGuid(),
@@ -733,7 +809,7 @@ public class WorkflowImportController : ControllerBase
                 Nodes = nodes,
                 Edges = edges,
                 Metadata = TryGetElement(rewritten, "metadata"),
-                Environment = dto.TargetEnvironment ?? "draft",
+                Environment = "draft",
                 CreatedBy = _caller.Username,
                 ChangeSummary = $"Imported via wizard (token={draft.Token})",
                 IsActive = true,
@@ -790,11 +866,50 @@ public class WorkflowImportController : ControllerBase
         });
     }
 
+    // Mirrors WorkflowService's create/update policy gate so an import can't
+    // land a graph a policy would have refused through the normal endpoints.
+    // Returns the 403 to send, or null when the operation is allowed.
+    private async Task<IActionResult?> EvaluateImportPolicyAsync(
+        string action, string environment, string name, string? description,
+        JsonElement nodes, CancellationToken ct)
+    {
+        var decision = await _policies.EvaluateAsync(new PolicyEvaluationContext(
+            Action: action,
+            Environment: environment,
+            WorkflowName: name,
+            WorkflowDescription: description,
+            Nodes: nodes,
+            DeviceRoles: Array.Empty<string>(),
+            DevicePoolNames: Array.Empty<string>()), ct);
+        if (decision.Allowed) return null;
+
+        _logger.LogWarning(
+            "import.commit.policy_blocked action={Action} policy={Policy} reason={Reason}",
+            action, decision.PolicyName, decision.Reason);
+        await _audit.LogAsync("workflow_import", null, "workflow_import.policy_blocked",
+            after: new { action, policy = decision.PolicyName, reason = decision.Reason });
+        return new ObjectResult(new
+        {
+            error = "policy_blocked",
+            policy = decision.PolicyName,
+            reason = decision.Reason,
+        })
+        { StatusCode = 403 };
+    }
+
     // DELETE /api/workflow/import/{token}
     [HttpDelete("{token:guid}")]
     public IActionResult Delete(Guid token)
     {
-        _cache.Delete(token);
+        // Idempotent 204 either way: the wizard's cleanup must not fail when the
+        // draft is already gone, and answering the same for someone else's token
+        // keeps it from being probed. Only the uploader's draft is removed — an
+        // admin keeps the kill switch for a runaway analyze pipeline, since
+        // cancelling one stops its LLM spend.
+        if (_caller.Roles.Any(r => string.Equals(r, "admin", StringComparison.OrdinalIgnoreCase)))
+            _cache.Delete(token);
+        else
+            _cache.Delete(token, _caller.UserId);
         return NoContent();
     }
 

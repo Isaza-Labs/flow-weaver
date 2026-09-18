@@ -50,10 +50,12 @@ public class WorkflowImportCommitTests
     private sealed class ScriptedReferenceValidator : IWorkflowReferenceValidator
     {
         public WorkflowValidationResult Result { get; set; } = WorkflowValidationResult.Ok();
-        public Task<WorkflowValidationResult> ValidateAsync(JsonElement nodes, CancellationToken ct)
+        public Task<WorkflowValidationResult> ValidateAsync(
+            JsonElement nodes, CancellationToken ct, JsonElement? previousNodes = null)
             => Task.FromResult(Result);
         public Task<WorkflowValidationResult> ValidateWithContextAsync(
-            JsonElement nodes, string? name, string? description, CancellationToken ct)
+            JsonElement nodes, string? name, string? description, CancellationToken ct,
+            JsonElement? previousNodes = null)
             => Task.FromResult(Result);
     }
 
@@ -65,17 +67,33 @@ public class WorkflowImportCommitTests
         public WorkflowValidationResult Validate(JsonElement nodes, JsonElement edges) => Result;
     }
 
+    // Allows everything unless told to deny, and remembers what it was asked.
+    private sealed class RecordingPolicyEvaluator : Services.Policy.IPolicyEvaluator
+    {
+        public bool Deny { get; set; }
+        public List<Services.Policy.PolicyEvaluationContext> Calls { get; } = new();
+        public Task<Services.Policy.PolicyDecision> EvaluateAsync(
+            Services.Policy.PolicyEvaluationContext context, CancellationToken ct)
+        {
+            Calls.Add(context);
+            return Task.FromResult(Deny
+                ? new Services.Policy.PolicyDecision(false, "no-imports", "imports are frozen")
+                : new Services.Policy.PolicyDecision(true, null, null));
+        }
+    }
+
     // ─── Fixture ────────────────────────────────────────────────────────
 
     private sealed class Fixture : IDisposable
     {
         public AppDbContext Db { get; } = TestDb.NewContext();
         public ImportDraftCache Cache { get; } = new();
-        public FakeUser Caller { get; } = new();
+        public FakeUser Caller { get; init; } = new();
         public GatedAppSettings Settings { get; } = new();
         public ScriptedSchemaValidator Schema { get; } = new();
         public ScriptedReferenceValidator References { get; } = new();
         public IResourcePermissionService Permissions { get; set; } = new AllowAllResourcePermissions();
+        public RecordingPolicyEvaluator Policies { get; } = new();
 
         public WorkflowImportController Build()
         {
@@ -91,6 +109,7 @@ public class WorkflowImportCommitTests
                 Permissions,
                 Settings,
                 new UnusedBundleImporter(),
+                Policies,
                 NullLogger<WorkflowImportController>.Instance);
             controller.ControllerContext = new ControllerContext
             {
@@ -276,18 +295,57 @@ public class WorkflowImportCommitTests
         Assert.True(saved.IsActive);
     }
 
-    // The wizard lets the user pick the landing environment; without a
-    // choice a fresh import must land in `draft`, never straight in prod.
-    [Fact]
-    public async Task Commit_HonoursTheTargetEnvironment()
+    // An import is a create, not a promotion: asking for any environment
+    // other than draft would skip the QA gate and the second approver, so it
+    // is refused and nothing is written.
+    [Theory]
+    [InlineData("qa")]
+    [InlineData("production")]
+    [InlineData("staging")]
+    public async Task Commit_RefusesATargetEnvironmentOtherThanDraft(string env)
     {
         using var f = new Fixture();
         var draft = f.ReadyDraft(Report(Workflow("[]")));
 
         var result = await f.Build().Commit(
-            draft.Token, new CommitImportRequest { TargetEnvironment = "staging" }, default);
+            draft.Token, new CommitImportRequest { TargetEnvironment = env }, default);
 
-        Assert.Equal("staging", Read<string>(result, "environment"));
+        Assert.Equal(400, Assert.IsType<ObjectResult>(result).StatusCode);
+        Assert.Empty(f.Db.Workflows);
+        Assert.NotEqual(ImportDraftStatus.Committed, draft.Status);
+    }
+
+    [Theory]
+    [InlineData("draft")]
+    [InlineData("DRAFT")]
+    [InlineData(null)]
+    public async Task Commit_LandsInDraftWhenAskedForDraftOrNothing(string? env)
+    {
+        using var f = new Fixture();
+        var draft = f.ReadyDraft(Report(Workflow("[]")));
+
+        var result = await f.Build().Commit(
+            draft.Token, new CommitImportRequest { TargetEnvironment = env }, default);
+
+        Assert.Equal("draft", Read<string>(result, "environment"));
+        Assert.Equal("draft", Assert.Single(f.Db.Workflows).Environment);
+    }
+
+    // The same create-time policy check POST /api/Workflow runs.
+    [Fact]
+    public async Task Commit_APolicyDenialBlocksTheImport()
+    {
+        using var f = new Fixture();
+        f.Policies.Deny = true;
+        var draft = f.ReadyDraft(Report(Workflow("[]")));
+
+        var result = await f.Build().Commit(draft.Token, new CommitImportRequest(), default);
+
+        Assert.Equal(403, Assert.IsType<ObjectResult>(result).StatusCode);
+        Assert.Empty(f.Db.Workflows);
+        var call = Assert.Single(f.Policies.Calls);
+        Assert.Equal("create", call.Action);
+        Assert.Equal("draft", call.Environment);
     }
 
     // ─── Missing-snippet resolutions ────────────────────────────────────
@@ -767,10 +825,10 @@ public class WorkflowImportCommitTests
         Assert.Equal(2, f.Db.Workflows.Count());
     }
 
-    // With granular gating on, replacing needs an editor grant on the
-    // target — the global Operator policy is not enough.
+    // With granular gating on, replacing needs an owner grant on the
+    // target (it soft-deletes it) — the global Operator policy is not enough.
     [Fact]
-    public async Task Commit_ReplaceWithoutAnEditorGrantIs403()
+    public async Task Commit_ReplaceWithoutAnOwnerGrantIs403()
     {
         using var f = new Fixture();
         f.Settings.Granular = true;
@@ -826,6 +884,35 @@ public class WorkflowImportCommitTests
             draft.Token, new CommitImportRequest { ConflictResolution = "replace" }, default);
 
         Assert.IsType<OkObjectResult>(result);
+    }
+
+    // Production rows can't be updated or deleted through the normal
+    // endpoints; replace must not be a way around that.
+    [Fact]
+    public async Task Commit_ReplaceRefusesAProductionWorkflow()
+    {
+        using var f = new Fixture();
+        var existingId = Guid.NewGuid();
+        f.Db.Workflows.Add(new WorkflowModel
+        {
+            WorkflowId = existingId, Name = "imported",
+            Environment = "production", Version = 3, IsActive = true,
+            Nodes = TestJson.Element("[]"), Edges = TestJson.Element("[]"),
+        });
+        f.Db.SaveChanges();
+
+        var draft = f.ReadyDraft(Report(
+            Workflow("[]"),
+            conflicts: new ConflictsReport
+            {
+                NameCollision = new NameCollision { MatchingWorkflowId = existingId },
+            }));
+
+        var result = await f.Build().Commit(
+            draft.Token, new CommitImportRequest { ConflictResolution = "replace" }, default);
+
+        Assert.Equal(409, Assert.IsType<ObjectResult>(result).StatusCode);
+        Assert.True(Assert.Single(f.Db.Workflows).IsActive);
     }
 
     // ─── rename / fresh_copy ────────────────────────────────────────────
@@ -912,6 +999,103 @@ public class WorkflowImportCommitTests
         var snapshot = Assert.Single(f.Db.WorkflowVersions);
         Assert.Equal(4, snapshot.Version);
         Assert.Equal(dupId, snapshot.WorkflowId);
+    }
+
+    [Fact]
+    public async Task Commit_UpdateExistingRefusesAProductionWorkflow()
+    {
+        using var f = new Fixture();
+        var dupId = Guid.NewGuid();
+        f.Db.Workflows.Add(new WorkflowModel
+        {
+            WorkflowId = dupId, Name = "live",
+            Environment = "production", Version = 7, IsActive = true,
+            Nodes = TestJson.Element("[]"), Edges = TestJson.Element("[]"),
+        });
+        f.Db.SaveChanges();
+
+        var draft = f.ReadyDraft(Report(
+            Workflow("[" + Node("a", "__start__") + "]"),
+            conflicts: new ConflictsReport
+            {
+                StructuralDuplicate = new StructuralDuplicate
+                {
+                    MatchingWorkflowId = dupId,
+                    MatchingWorkflowName = "live",
+                    MatchingWorkflowEnvironment = "production",
+                },
+            }));
+
+        var result = await f.Build().Commit(
+            draft.Token, new CommitImportRequest { DuplicateAction = "update_existing" }, default);
+
+        Assert.Equal(409, Assert.IsType<ObjectResult>(result).StatusCode);
+        var saved = Assert.Single(f.Db.Workflows);
+        Assert.Equal(7, saved.Version);
+        Assert.Equal("live", saved.Name);
+        Assert.Empty(f.Db.WorkflowVersions);
+    }
+
+    [Fact]
+    public async Task Commit_UpdateExistingRunsTheUpdatePolicyCheck()
+    {
+        using var f = new Fixture();
+        f.Policies.Deny = true;
+        var dupId = Guid.NewGuid();
+        f.Db.Workflows.Add(new WorkflowModel
+        {
+            WorkflowId = dupId, Name = "old",
+            Environment = "qa", Version = 2, IsActive = true,
+            Nodes = TestJson.Element("[]"), Edges = TestJson.Element("[]"),
+        });
+        f.Db.SaveChanges();
+
+        var draft = f.ReadyDraft(Report(
+            Workflow("[" + Node("a", "__start__") + "]"),
+            conflicts: new ConflictsReport
+            {
+                StructuralDuplicate = new StructuralDuplicate { MatchingWorkflowId = dupId },
+            }));
+
+        var result = await f.Build().Commit(
+            draft.Token, new CommitImportRequest { DuplicateAction = "update_existing" }, default);
+
+        Assert.Equal(403, Assert.IsType<ObjectResult>(result).StatusCode);
+        Assert.Equal(2, Assert.Single(f.Db.Workflows).Version);
+        var call = Assert.Single(f.Policies.Calls);
+        Assert.Equal("update", call.Action);
+        Assert.Equal("qa", call.Environment);
+    }
+
+    // ─── delete ─────────────────────────────────────────────────────────
+
+    // Only the uploader (or an admin) can cancel a draft. Anyone else gets the
+    // same 204 an unknown token gets (nothing to probe), and the draft survives
+    // un-cancelled.
+    [Fact]
+    public void Delete_AnotherUsersDraftSurvivesForANonAdmin()
+    {
+        using var f = new Fixture { Caller = new FakeUser { Roles = new[] { "operator" } } };
+        var foreign = f.Cache.Create(Guid.NewGuid(), "", Encoding.UTF8.GetBytes("{}"));
+
+        var result = f.Build().Delete(foreign.Token);
+
+        Assert.IsType<NoContentResult>(result);
+        var still = f.Cache.Get(foreign.Token, foreign.UserId);
+        Assert.NotNull(still);
+        Assert.False(still!.CancellationToken.IsCancellationRequested);
+    }
+
+    // An admin keeps the kill switch: cancelling stops a runaway analyze
+    // pipeline's LLM spend.
+    [Fact]
+    public void Delete_AnAdminCanCancelAnotherUsersDraft()
+    {
+        using var f = new Fixture();
+        var foreign = f.Cache.Create(Guid.NewGuid(), "", Encoding.UTF8.GetBytes("{}"));
+
+        Assert.IsType<NoContentResult>(f.Build().Delete(foreign.Token));
+        Assert.Null(f.Cache.Get(foreign.Token, foreign.UserId));
     }
 
     // update_existing without a structural duplicate in the report has

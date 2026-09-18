@@ -202,14 +202,22 @@
 
     <h3>Palette (left, 256 px)</h3>
     <p>
-      Two groups of draggable items, each with its own expand/collapse behaviour.
+      Four groups of draggable items, top to bottom: <em>Composition</em>,
+      <em>Snippets</em>, <em>Integrations</em> and <em>MCP tools</em>.
     </p>
     <dl>
+      <dt>Composition</dt>
+      <dd>
+        A single <strong>Subflow</strong> card — "Call another workflow as a
+        single step". Drop it and pick the workflow in the node dialog. See
+        <a href="/docs/subflows">Subflows</a>.
+      </dd>
       <dt>Snippets</dt>
       <dd>
         <p>
-          Snippets that have <strong>completed at least one run</strong>. Each
-          card shows the name, a small badge with the <code>type</code>, and the
+          A search box (matches name and type) and a <em>+ New</em> link that
+          opens <code>/snippets/new</code>. Below them, the snippets that have
+          <strong>completed at least one run</strong>. Each card shows the name, a small badge with the <code>type</code>, and the
           <code>target_mode</code> below. Drag onto the canvas to drop a new node.
         </p>
         <p>
@@ -238,6 +246,16 @@
         see its categories, expand a category to see the actions. Action cards
         show an HTTP method pill (colour-coded per method) and the path.
         Draggable the same way as snippets.
+      </dd>
+      <dt>MCP tools</dt>
+      <dd>
+        Only shown when at least one <a href="/docs/admin/mcp-servers">MCP
+        server</a> has synced tools. Grouped by server; each card is a tool name
+        (hover for its description). Dropping one creates an
+        <code>mcp_call</code> node with the server and tool already chosen — fill
+        in the arguments in the node dialog. The seeded <code>mcp_call</code>
+        snippet is deliberately left out of the <em>Snippets</em> group, because
+        it is useless without a server and tool.
       </dd>
     </dl>
     <p>
@@ -359,11 +377,15 @@
           <strong>Python script</strong> and <strong>Ansible playbook</strong> are
           read-only renderings, not re-importable.
         </p>
+        <p>
+          To bring an exported file back in, see
+          <a href="/docs/workflows/import">Importing workflows</a>.
+        </p>
       </dd>
       <dt>Run</dt>
       <dd>Opens the <strong>Run dialog</strong> (see below).</dd>
       <dt>Schedules / Triggers</dt>
-      <dd>Shortcuts to <code>/workflows/{'{id}'}/schedules</code> and <code>/workflows/{'{id}'}/triggers</code>, the cron and webhook trigger editors respectively.</dd>
+      <dd>Shortcuts to <code>/workflows/{'{id}'}/schedules</code> and <code>/workflows/{'{id}'}/triggers</code>, the cron and webhook trigger editors respectively. See <a href="/docs/schedules">Schedules</a> and <a href="/docs/workflows/triggers">Triggers and webhooks</a>.</dd>
     </dl>
   </section>
 
@@ -611,6 +633,7 @@
       <li><strong>Viewer</strong> — can open the list and the editor in read-only mode.</li>
       <li><strong>Operator</strong> — full CRUD on draft, run and promote to qa.</li>
       <li><strong>Admin</strong> — same as operator plus promotion to production. In practice, the approval flow means a production promotion requires <em>two</em> distinct identities anyway.</li>
+      <li>With <a href="/docs/permissions">granular permissions</a> enabled, access to a single workflow can be narrowed further from <code>/workflows/{'{id}'}/permissions</code>.</li>
     </ul>
   </section>
 
@@ -622,6 +645,10 @@
       <li><a href="/docs/runs">Runs</a> — everything that happens after you click <em>Run</em>.</li>
       <li><a href="/docs/schedules">Schedules</a> — automate runs with cron and webhook triggers.</li>
       <li><a href="/docs/qa-lab">QA lab</a> — the 48-hour readiness gate for production promotions.</li>
+      <li><a href="/docs/subflows">Subflows</a> — calling one workflow from another.</li>
+      <li><a href="/docs/workflows/import">Importing workflows</a> — bringing exports back in, across instances.</li>
+      <li><a href="/docs/workflows/triggers">Triggers and webhooks</a> — starting a run from an HTTP call.</li>
+      <li><a href="/docs/permissions">Permissions</a> — per-workflow access beyond the base role.</li>
     </ul>
   </section>
 </DocLayout>

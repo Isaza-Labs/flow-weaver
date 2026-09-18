@@ -64,9 +64,13 @@
   <section>
     <h2>Authentication methods</h2>
     <p>
-      Four options, chosen per-integration. Secrets are stored server-side;
-      plaintext values are never returned — editing the row lets you re-enter
-      them for rotation.
+      Six options, chosen per-integration: <code>none</code>, <code>token</code>,
+      <code>bearer</code>, <code>basic</code>, <code>api_key</code> and
+      <code>oauth2_client_credentials</code>. Secrets are stored server-side;
+      plaintext values are never returned. To rotate a secret, expand the row,
+      re-enter the new value in the edit form and click <em>Save</em> — the next
+      call uses it. Then run a <a href="#health-check">health check</a> to confirm
+      the new value is accepted.
     </p>
     <dl>
       <dt>none</dt>
@@ -187,7 +191,7 @@
     </p>
   </section>
 
-  <section>
+  <section id="health-check">
     <h2>Health check</h2>
     <p>
       Clicking <em>Health check</em> fires a probe to the integration's base URL
@@ -318,8 +322,9 @@
       <dt>Type</dt><dd>Required. Select among <code>netbox</code>, <code>servicenow</code>, <code>infoblox</code>, <code>paloalto</code>, <code>generic_rest</code>.</dd>
       <dt>Base URL</dt><dd>Required. Full origin plus any API prefix.</dd>
       <dt>Description</dt><dd>Optional.</dd>
-      <dt>Auth method</dt><dd>One of <code>none</code>, <code>token</code>, <code>bearer</code>, <code>basic</code>, <code>api_key</code>. The rest of the form re-renders based on this.</dd>
-      <dt>Token / Username / Password / API key</dt><dd>Masked inputs. Required for the matching method.</dd>
+      <dt>Auth method</dt><dd>One of the six methods above: <code>none</code>, <code>token</code>, <code>bearer</code>, <code>basic</code>, <code>api_key</code>, <code>oauth2_client_credentials</code>. The rest of the form re-renders based on this.</dd>
+      <dt>Token / Username / Password / API key</dt><dd>Masked inputs. Required for the matching method: a token for <code>token</code> and <code>bearer</code>, username and password for <code>basic</code>, an API key for <code>api_key</code>.</dd>
+      <dt>Token URL / Client ID / Client secret / Scope</dt><dd>Only for <code>oauth2_client_credentials</code>. <em>Token URL</em> and <em>Client ID</em> are required; <em>Scope</em> is optional.</dd>
       <dt>Skip TLS verification</dt><dd>Checkbox.</dd>
     </dl>
 

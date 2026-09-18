@@ -29,7 +29,7 @@ public class WorkflowTriggerControllerTests
     public async Task Read_endpoints_forward()
     {
         using var db = TestDb.NewContext();
-        var svc = new WorkflowTriggerService(new WorkflowTriggerRepository(db), new RepositoryBase<WorkflowModel>(db), _caller, new FakeCrypto(), new FakeAudit(), NullLogger<WorkflowTriggerService>.Instance);
+        var svc = new WorkflowTriggerService(new WorkflowTriggerRepository(db), new RepositoryBase<WorkflowModel>(db), _caller, new AllowAllEffectivePermissions(), new FakeCrypto(), new FakeAudit(), NullLogger<WorkflowTriggerService>.Instance);
         var c = new WorkflowTriggerController(svc);
 
         Assert.IsType<OkObjectResult>((await c.Get()).Result);

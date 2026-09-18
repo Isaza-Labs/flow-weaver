@@ -62,12 +62,12 @@
     // grants, so confirm before saving that transition.
     if (settings && granular && !settings.permissions_granular_gating_enabled) {
       const ok = await confirm({
-        title: 'Enable granular RBAC overlay?',
+        title: 'Enable per-resource grants?',
         message:
           'Operators without an explicit Editor or Owner grant will lose write ' +
           'access to existing workflows and integrations until you grant it under ' +
           "each resource's Permissions menu.",
-        confirmLabel: 'Enable overlay',
+        confirmLabel: 'Enable',
       });
       if (!ok) return;
     }
@@ -105,7 +105,7 @@
   }
 </script>
 
-<svelte:head><title>Settings · Admin · Flow Weaver</title></svelte:head>
+<svelte:head><title>Settings · Admin · FlowWeaver</title></svelte:head>
 
 <div class="p-6 max-w-3xl mx-auto space-y-4">
   <PageHeader

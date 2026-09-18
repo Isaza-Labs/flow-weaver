@@ -63,7 +63,6 @@
   let conflictResolution = $state<ConflictResolution>('fresh_copy');
   let newName = $state('');
   let duplicateAction = $state<'skip' | 'update_existing' | 'import_as_new'>('import_as_new');
-  let targetEnvironment = $state<'draft' | 'qa' | 'production'>('draft');
   let snippetActions = $state<Record<string, ResolvedSnippet>>({});
   let integrationActions = $state<Record<string, ResolvedIntegration>>({});
   let generatingSnippet = $state<string | null>(null);
@@ -268,7 +267,9 @@
       const res = await importWizard.commit(importToken, {
         conflict_resolution: conflictResolution,
         new_name: conflictResolution === 'rename' ? newName : undefined,
-        target_environment: targetEnvironment,
+        // The server refuses anything else: an import is a create, and qa /
+        // production are reached through promotion and its gates.
+        target_environment: 'draft',
         duplicate_action: duplicateAction,
         snippets: snippetActions,
         integrations: integrationActions,
@@ -313,7 +314,7 @@
   });
 </script>
 
-<svelte:head><title>Import workflow · Flow Weaver</title></svelte:head>
+<svelte:head><title>Import workflow · FlowWeaver</title></svelte:head>
 
 <div class="p-6 max-w-5xl mx-auto space-y-5">
   <PageHeader
@@ -458,7 +459,7 @@
             <Select label="Resolution" help="import.conflict_resolution" bind:value={conflictResolution}>
               <option value="rename">Rename the import</option>
               <option value="fresh_copy">Import as fresh copy with timestamped name</option>
-              <option value="replace">Replace the existing workflow (requires editor grant)</option>
+              <option value="replace">Replace the existing workflow (requires owner grant)</option>
               <option value="keep_existing">Keep existing — cancel this import</option>
             </Select>
             {#if conflictResolution === 'rename'}
@@ -637,11 +638,10 @@
       <!-- Target environment -->
       <Card>
         <div class="p-4 space-y-3">
-          <Select label="Target environment" help="import.target_environment" bind:value={targetEnvironment}>
-            <option value="draft">Draft (default)</option>
-            <option value="qa">QA (will run referenced devices in QA pools only)</option>
-            <option value="production">Production (requires approver)</option>
-          </Select>
+          <p class="text-sm text-surface-700-300">
+            The imported workflow lands in <strong>Draft</strong>. Promote it to QA and
+            production afterwards, through the usual gates.
+          </p>
         </div>
       </Card>
 

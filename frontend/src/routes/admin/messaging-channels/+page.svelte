@@ -377,7 +377,7 @@
   }
 </script>
 
-<svelte:head><title>Messaging channels · Flow Weaver</title></svelte:head>
+<svelte:head><title>Messaging channels · FlowWeaver</title></svelte:head>
 
 <div class="p-6 space-y-6">
   <PageHeader title="Messaging channels" description="Connect Slack, Teams, WhatsApp and Telegram to the agent.">

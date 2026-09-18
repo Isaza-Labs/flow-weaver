@@ -225,6 +225,7 @@ public sealed partial class FlowWeaverAdapter
                 new WorkflowTriggerRepository(_db),
                 new WorkflowRepository(_db),
                 new FakeUser(),
+                new AllowAllEffectivePermissions(),
                 new FakeCrypto(),
                 new FakeAudit(),
                 NullLogger<WorkflowTriggerService>.Instance);

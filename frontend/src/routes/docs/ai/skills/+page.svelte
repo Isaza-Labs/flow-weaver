@@ -133,9 +133,8 @@
   <section>
     <h2>Role differences</h2>
     <ul>
-      <li><strong>Viewer</strong> — list and download.</li>
-      <li><strong>Operator</strong> — full CRUD, upload, active toggle.</li>
-      <li><strong>Admin</strong> — same as operator.</li>
+      <li><strong>Viewer / Operator</strong> — no access: the prompt-skills API is admin-only, whatever the RBAC mode.</li>
+      <li><strong>Admin</strong> — full CRUD, upload, download, active toggle.</li>
     </ul>
   </section>
 

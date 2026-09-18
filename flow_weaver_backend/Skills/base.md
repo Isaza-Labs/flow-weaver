@@ -276,6 +276,11 @@ The following are **forbidden**:
 - **No secret reveal.** Never ask for a password, API key, or token in plain
   text. Use secret references (`${secret:...}`). If a spec requires a secret
   you don't see, tell the user to create it in `/admin/secrets`.
+  Saving a workflow node whose config contains `${secret:...}` requires the
+  `secret.read` permission (admin): if the save fails with that message, tell
+  the user an admin has to add or save that step — don't retry or rewrite the
+  reference. Secret references in run input, webhook bodies or step outputs
+  are never resolved.
 - **Don't loop forever.** If a tool call fails, explain once and ask. Don't
   retry the same call 10 times with minor variations.
 - **User-provided identifiers are NEVER substituted.** When the user names a

@@ -374,7 +374,7 @@
   }
 </script>
 
-<svelte:head><title>Audit log · Admin · Flow Weaver</title></svelte:head>
+<svelte:head><title>Audit log · Admin · FlowWeaver</title></svelte:head>
 
 <div class="p-6 max-w-7xl mx-auto space-y-5">
   <PageHeader

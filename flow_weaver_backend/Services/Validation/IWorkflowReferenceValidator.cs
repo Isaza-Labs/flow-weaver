@@ -22,8 +22,13 @@ namespace flow_weaver_backend.Services.Validation;
 // user/agent gets told exactly which node and which field is wrong.
 public interface IWorkflowReferenceValidator
 {
+    // `previousNodes` is the graph as currently stored, when there is one. The
+    // permission gates (a git write, a secret reference) only apply to what this
+    // write ADDS: a node that already had the same write operation, or already
+    // referenced the same secret, is left alone — otherwise editing any other
+    // node of an admin-authored workflow would need the admin's permissions.
     Task<WorkflowValidationResult> ValidateAsync(
-        JsonElement nodes, CancellationToken ct);
+        JsonElement nodes, CancellationToken ct, JsonElement? previousNodes = null);
 
     // Same DAG-reference checks as ValidateAsync, plus heuristic
     // warnings that compare the workflow's stated purpose (name +
@@ -34,5 +39,6 @@ public interface IWorkflowReferenceValidator
         JsonElement nodes,
         string? workflowName,
         string? workflowDescription,
-        CancellationToken ct);
+        CancellationToken ct,
+        JsonElement? previousNodes = null);
 }

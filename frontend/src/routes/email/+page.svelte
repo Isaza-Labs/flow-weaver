@@ -280,7 +280,7 @@
   }
 </script>
 
-<svelte:head><title>Email · Flow Weaver</title></svelte:head>
+<svelte:head><title>Email · FlowWeaver</title></svelte:head>
 
 <div class="p-6 space-y-6">
   <PageHeader

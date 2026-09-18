@@ -1,5 +1,7 @@
 using System.Text.Json;
 using flow_weaver_backend.Data.Repositories;
+using flow_weaver_backend.Services.Ai.Secrets;
+using flow_weaver_backend.Services.Identity;
 using flow_weaver_backend.Services.Permission;
 using flow_weaver_backend.Services.Settings;
 using SnippetModel = flow_weaver_backend.Models.Snippet;
@@ -13,6 +15,9 @@ public class WorkflowReferenceValidator : IWorkflowReferenceValidator
 {
     private const string IntegrationActionSnippetType = "integration_action";
     private const string McpCallSnippetType = "mcp_call";
+    private const string GitSnippetType = "git";
+    private const string GitManageCapability = "git.manage";
+    private const string SecretReadCapability = "secret.read";
 
     // The only non-GUID values WorkflowExecutor.EnqueueStepAsync accepts in
     // snippet_id. Keep in step with that method: a value the engine handles but
@@ -28,6 +33,7 @@ public class WorkflowReferenceValidator : IWorkflowReferenceValidator
     private readonly IRepository<McpServerModel> _mcpServers;
     private readonly IEffectivePermissions _effective;
     private readonly IAppSettingsService _appSettings;
+    private readonly ICurrentUser _caller;
     private readonly ILogger<WorkflowReferenceValidator> _logger;
 
     public WorkflowReferenceValidator(
@@ -37,6 +43,7 @@ public class WorkflowReferenceValidator : IWorkflowReferenceValidator
         IRepository<McpServerModel> mcpServers,
         IEffectivePermissions effective,
         IAppSettingsService appSettings,
+        ICurrentUser caller,
         ILogger<WorkflowReferenceValidator> logger)
     {
         _snippets = snippets;
@@ -45,15 +52,16 @@ public class WorkflowReferenceValidator : IWorkflowReferenceValidator
         _mcpServers = mcpServers;
         _effective = effective;
         _appSettings = appSettings;
+        _caller = caller;
         _logger = logger;
     }
 
     public async Task<WorkflowValidationResult> ValidateAsync(
-        JsonElement nodes, CancellationToken ct)
+        JsonElement nodes, CancellationToken ct, JsonElement? previousNodes = null)
     {
         try
         {
-            return await ValidateCoreAsync(nodes, ct);
+            return await ValidateCoreAsync(nodes, ct, previousNodes);
         }
         catch (OperationCanceledException)
         {
@@ -72,9 +80,10 @@ public class WorkflowReferenceValidator : IWorkflowReferenceValidator
         JsonElement nodes,
         string? workflowName,
         string? workflowDescription,
-        CancellationToken ct)
+        CancellationToken ct,
+        JsonElement? previousNodes = null)
     {
-        var baseResult = await ValidateAsync(nodes, ct);
+        var baseResult = await ValidateAsync(nodes, ct, previousNodes);
         // Errors block: don't bother running heuristics if the DAG is
         // already broken — the user needs to fix that first.
         if (!baseResult.IsValid) return baseResult;
@@ -199,7 +208,7 @@ public class WorkflowReferenceValidator : IWorkflowReferenceValidator
     };
 
     private async Task<WorkflowValidationResult> ValidateCoreAsync(
-        JsonElement nodes, CancellationToken ct)
+        JsonElement nodes, CancellationToken ct, JsonElement? previousNodes = null)
     {
         if (nodes.ValueKind != JsonValueKind.Array)
         {
@@ -279,6 +288,24 @@ public class WorkflowReferenceValidator : IWorkflowReferenceValidator
         if (badSentinels.Count > 0)
             return WorkflowValidationResult.Invalid(badSentinels);
 
+        // A `${secret:...}` reference in a node's config is decrypted by the
+        // worker and handed to the step — a python step can print it. Naming a
+        // secret in a workflow is therefore reading it: it takes secret.read
+        // (Admin tier), the same as the secrets API. Run-time data can't carry a
+        // live reference at all (see SecretMarkers).
+        var secretNodes = NewSecretReferencingNodes(nodes, previousNodes);
+        if (secretNodes.Count > 0 && !await CallerHoldsAdminTierAsync(SecretReadCapability, ct))
+        {
+            var secretErrors = secretNodes
+                .Select(n => $"node '{n}': its config references a secret (${{secret:…}}), which "
+                    + $"requires the {SecretReadCapability} permission. Ask an admin to add or save this step.")
+                .ToList();
+            _logger.LogWarning(
+                "validation.reference.secret_denied user_id={UserId} count={Count}",
+                CallerIdForLog(), secretErrors.Count);
+            return WorkflowValidationResult.Invalid(secretErrors);
+        }
+
         if (snippetIds.Count == 0)
         {
             _logger.LogDebug(
@@ -294,6 +321,7 @@ public class WorkflowReferenceValidator : IWorkflowReferenceValidator
         // O(nodes) — the node array is small (tens, not thousands), so a
         // nested enumeration over it is cheaper than a second index.
         var danglingRefs = new List<string>();
+        var gitWriteNodes = new List<(string nodeId, string operation, JsonElement node)>();
 
         foreach (var node in nodes.EnumerateArray())
         {
@@ -326,6 +354,13 @@ public class WorkflowReferenceValidator : IWorkflowReferenceValidator
                 continue;
             }
 
+            if (string.Equals(type, GitSnippetType, StringComparison.OrdinalIgnoreCase)
+                && GitWriteOperation(node) is { } gitOp)
+            {
+                gitWriteNodes.Add((nodeId, gitOp, node));
+                continue;
+            }
+
             var isIntegration = string.Equals(type, IntegrationActionSnippetType, StringComparison.OrdinalIgnoreCase);
             var isMcp = string.Equals(type, McpCallSnippetType, StringComparison.OrdinalIgnoreCase);
             if (!isIntegration && !isMcp) continue;
@@ -348,6 +383,27 @@ public class WorkflowReferenceValidator : IWorkflowReferenceValidator
                 "validation.reference.dangling_snippet_ids count={Count}",
                 danglingRefs.Count);
             return WorkflowValidationResult.Invalid(danglingRefs);
+        }
+
+        // A git step runs in the worker as "workflow-runner", with no user
+        // behind it, so the handler cannot check anything. Writes (write_file,
+        // commit, pull, push) are git.manage — Admin tier — everywhere else
+        // (the git_* agent tools, the repository page); authoring them into a
+        // workflow must not be the way around that. Checked here, where the
+        // author is known.
+        var newGitWriteNodes = gitWriteNodes
+            .Where(g => !AlreadyWroteToGit(previousNodes, g.node))
+            .ToList();
+        if (newGitWriteNodes.Count > 0 && !await CallerHoldsAdminTierAsync(GitManageCapability, ct))
+        {
+            var gitErrors = newGitWriteNodes
+                .Select(g => $"node '{g.nodeId}': git operation '{g.operation}' changes a repository and "
+                    + $"requires the {GitManageCapability} permission. Ask an admin to add or save this step.")
+                .ToList();
+            _logger.LogWarning(
+                "validation.reference.git_denied user_id={UserId} count={Count}",
+                CallerIdForLog(), gitErrors.Count);
+            return WorkflowValidationResult.Invalid(gitErrors);
         }
 
         if (integrationActionNodes.Count == 0 && mcpCallNodes.Count == 0)
@@ -533,6 +589,151 @@ public class WorkflowReferenceValidator : IWorkflowReferenceValidator
             return WorkflowValidationResult.Ok();
         }
         return WorkflowValidationResult.Invalid(errors);
+    }
+
+    // Returns the operation when a git node would change a repository, null for
+    // a read or a node with no operation yet (the handler rejects that at run
+    // time). A templated operation can resolve to anything, so it counts as a
+    // write.
+    private static string? GitWriteOperation(JsonElement node)
+    {
+        if (!node.TryGetProperty("config_overrides", out var co)
+            || co.ValueKind != JsonValueKind.Object
+            || !co.TryGetProperty("operation", out var opEl))
+            return null;
+        // A template (or any non-string) can resolve to anything, so it counts as
+        // a write. JSON null is simply "not set yet", like a missing key.
+        if (opEl.ValueKind == JsonValueKind.Null) return null;
+        if (opEl.ValueKind != JsonValueKind.String) return opEl.ToString();
+        var op = (opEl.GetString() ?? string.Empty).Trim();
+        if (op.Length == 0) return null;
+        return string.Equals(op, "read_file", StringComparison.OrdinalIgnoreCase) ? null : op;
+    }
+
+    // Nodes that reference a secret in a way the stored graph did not already
+    // hold. The comparison is a fingerprint of the privileged fact — the node,
+    // the snippet that will consume the payload, the field the marker sits in,
+    // and the marker itself — so an unrelated edit (or a reformatted payload)
+    // costs nothing, while moving a saved marker to another node, another
+    // field, or onto another snippet is a new reference and is gated.
+    private static List<string> NewSecretReferencingNodes(JsonElement nodes, JsonElement? previousNodes)
+    {
+        var result = new List<string>();
+        if (nodes.ValueKind != JsonValueKind.Array) return result;
+        foreach (var node in nodes.EnumerateArray())
+        {
+            if (node.ValueKind != JsonValueKind.Object
+                || !node.TryGetProperty("config_overrides", out var co)
+                || !SecretMarkers.ContainsAny(co))
+                continue;
+            var nodeId = NodeId(node);
+            var fingerprints = SecretFingerprints(node, co);
+            var already = PreviousNode(previousNodes, nodeId) is { } before
+                          && before.TryGetProperty("config_overrides", out var beforeConfig)
+                ? SecretFingerprints(before, beforeConfig)
+                : new HashSet<string>(StringComparer.Ordinal);
+            if (fingerprints.All(already.Contains)) continue;
+            result.Add(nodeId);
+        }
+        return result;
+    }
+
+    // One entry per `${secret:…}` reference: snippet that consumes it, the path
+    // inside config_overrides, and the reference text.
+    private static HashSet<string> SecretFingerprints(JsonElement node, JsonElement config)
+    {
+        var snippet = node.TryGetProperty("snippet_id", out var sid) && sid.ValueKind == JsonValueKind.String
+            ? sid.GetString() ?? string.Empty
+            : string.Empty;
+        var found = new HashSet<string>(StringComparer.Ordinal);
+        Walk(config, string.Empty);
+        return found;
+
+        void Walk(JsonElement el, string path)
+        {
+            switch (el.ValueKind)
+            {
+                case JsonValueKind.String:
+                    foreach (System.Text.RegularExpressions.Match m in SecretReferencePattern.Matches(
+                                 el.GetString() ?? string.Empty))
+                        found.Add($"{snippet}|{path}|{m.Value.ToLowerInvariant()}");
+                    break;
+                case JsonValueKind.Object:
+                    foreach (var p in el.EnumerateObject())
+                        Walk(p.Value, path.Length == 0 ? p.Name : $"{path}.{p.Name}");
+                    break;
+                case JsonValueKind.Array:
+                    var i = 0;
+                    foreach (var item in el.EnumerateArray())
+                        Walk(item, $"{path}[{i++}]");
+                    break;
+            }
+        }
+    }
+
+    private static readonly System.Text.RegularExpressions.Regex SecretReferencePattern =
+        new(@"\$\{secret:[^}]*\}",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase
+            | System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    private static string NodeId(JsonElement node)
+        => node.TryGetProperty("id", out var id) && id.ValueKind == JsonValueKind.String
+            ? id.GetString() ?? "(unknown)"
+            : "(unknown)";
+
+    // The stored node with this id, or null when the node is new.
+    private static JsonElement? PreviousNode(JsonElement? previousNodes, string nodeId)
+    {
+        if (previousNodes is not { ValueKind: JsonValueKind.Array } array) return null;
+        foreach (var node in array.EnumerateArray())
+        {
+            if (node.ValueKind != JsonValueKind.Object) continue;
+            if (!node.TryGetProperty("id", out var id) || id.ValueKind != JsonValueKind.String) continue;
+            if (string.Equals(id.GetString(), nodeId, StringComparison.Ordinal)) return node;
+        }
+        return null;
+    }
+
+    // Was this exact git write — same operation, same repository — already
+    // saved on this node? Changing the operation or the repository is a new
+    // write and is gated again.
+    private static bool AlreadyWroteToGit(JsonElement? previousNodes, JsonElement node)
+    {
+        if (PreviousNode(previousNodes, NodeId(node)) is not { } before) return false;
+        if (GitWriteOperation(before) is not { } beforeOp) return false;
+        if (GitWriteOperation(node) is not { } nowOp) return false;
+        return string.Equals(beforeOp, nowOp, StringComparison.OrdinalIgnoreCase)
+               && string.Equals(GitRepositoryRef(before), GitRepositoryRef(node), StringComparison.OrdinalIgnoreCase);
+    }
+
+    // The repository a git node points at: `repository_id`, or the name-based
+    // `repository` key the handler accepts instead.
+    private static string GitRepositoryRef(JsonElement node)
+    {
+        if (!node.TryGetProperty("config_overrides", out var co) || co.ValueKind != JsonValueKind.Object)
+            return string.Empty;
+        foreach (var key in new[] { "repository_id", "repository" })
+            if (co.TryGetProperty(key, out var v) && v.ValueKind == JsonValueKind.String)
+                return v.GetString() ?? string.Empty;
+        return string.Empty;
+    }
+
+    // Same decision [HasPermission(capability)] makes for an Admin-tier
+    // capability: granular mode asks the caller's grants; legacy mode keeps the
+    // tier, i.e. admin only. EffectivePermissions applies the transport ceiling
+    // and the admin bypass in both.
+    // MutableCurrentUser.UserId throws when nothing is bound, and a log argument
+    // is evaluated eagerly — which would turn a denial into a 500.
+    private Guid CallerIdForLog() => _caller.IsAuthenticated ? _caller.UserId : Guid.Empty;
+
+    private async Task<bool> CallerHoldsAdminTierAsync(string capability, CancellationToken ct)
+    {
+        var settings = await _appSettings.GetAsync(ct);
+        if (RbacModes.IsGranular(settings.RbacMode))
+            return await _effective.HasAsync(capability, ct);
+
+        var isAdmin = _caller.Roles.Any(r => string.Equals(r, "admin", StringComparison.OrdinalIgnoreCase));
+        return isAdmin && await _effective.HasAsync(capability, ct);
     }
 
     private static bool TryReadGuid(JsonElement el, string key, out Guid value, out string error)

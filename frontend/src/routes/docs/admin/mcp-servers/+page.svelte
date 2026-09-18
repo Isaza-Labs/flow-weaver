@@ -21,7 +21,7 @@
     <h2>Concept</h2>
     <p>
       <strong>MCP</strong> (Model Context Protocol) is an open standard for exposing
-      <em>tools</em> to AI agents. Flow-weaver acts as an MCP <strong>client</strong>:
+      <em>tools</em> to AI agents. FlowWeaver acts as an MCP <strong>client</strong>:
       you register a remote server, and its tools become available to the
       <strong>chat agent</strong> and to a new <strong>MCP call</strong> workflow
       node — both through the same executor.
@@ -49,7 +49,7 @@
       <li><strong>Bearer token</strong> — an <code>Authorization: Bearer</code> token.</li>
       <li><strong>Basic</strong> — a username + password, sent as <code>Authorization: Basic</code> (base64 of <code>user:password</code>). The username is stored in the clear; the password is encrypted.</li>
       <li><strong>Custom secret headers</strong> — a JSON object of header → value.</li>
-      <li><strong>OAuth — client credentials</strong> — machine-to-machine; paste client id + secret and flow-weaver fetches/refreshes the token automatically.</li>
+      <li><strong>OAuth — client credentials</strong> — machine-to-machine; paste client id + secret and FlowWeaver fetches/refreshes the token automatically.</li>
       <li><strong>OAuth — authorization code</strong> — save the server, then click <strong>Authorize</strong> to consent via redirect (PKCE, with automatic discovery and token refresh).</li>
     </ul>
   </section>
@@ -70,11 +70,11 @@
 
   <section>
     <h2>Permissions</h2>
-    <p>Create a permission grant (Govern → Permissions) with:</p>
+    <p>Create a permission grant (Govern → Permissions, see <a href="/docs/permissions">Permissions</a>) with:</p>
     <ul>
       <li><code>mcpserver.read</code> / <code>mcpserver.manage</code> — view / manage servers.</li>
       <li><code>mcp.read</code> — let the agent discover tools.</li>
-      <li><code>mcp.execute</code> — call a tool. This can be <strong>scoped by server and by tool</strong>, so a user (or a Slack/Telegram channel) can be limited to exactly the tools they should run.</li>
+      <li><code>mcp.execute</code> — call a tool. This can be <strong>scoped by server and by tool</strong>, so a user (or a Slack/Telegram channel) can be limited to exactly the tools they should run. The visual condition builder has no fields for these two scopes — write them in the grant's <em>JSON</em> tab. Conditions are only enforced in <code>granular</code> RBAC mode.</li>
     </ul>
   </section>
 

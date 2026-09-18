@@ -638,8 +638,9 @@ public sealed class WorkflowBundleService(
         foreach (var secret in requires.Secrets)
             notes.Add(
                 $"secret reference {secret.Ref} (used by {string.Join(", ", secret.UsedBy)}) was kept verbatim. "
-                + "This instance resolves ${secret:…} references only inside python_snippet payloads; other "
-                + "step types receive the marker literally. Make sure the secret exists here before the first run.");
+                + "This instance resolves ${secret:…} references in python_snippet payloads, ssh credentials and "
+                + "rest_call urls/headers; saving such a step needs the secret.read permission. Make sure the "
+                + "secret exists here before the first run.");
 
         // ── triggers ────────────────────────────────────────────────────
         var triggerDtos = await ResolveTriggersAsync(bundle.Triggers, notes, ct);

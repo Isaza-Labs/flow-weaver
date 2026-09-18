@@ -5,6 +5,7 @@ using flow_weaver_backend.Services.Common;
 using flow_weaver_backend.Services.Interfaces;
 using flow_weaver_backend.Services.Scheduler;
 using flow_weaver_backend.Services.Identity;
+using flow_weaver_backend.Services.Permission;
 using Microsoft.AspNetCore.Mvc;
 using WorkflowModel = flow_weaver_backend.Models.Workflow;
 using WorkflowTriggerModel = flow_weaver_backend.Models.WorkflowTrigger;
@@ -47,6 +48,7 @@ public class WorkflowTriggerService : IWorkflowTrigger
     private readonly IWorkflowTriggerRepository _triggers;
     private readonly IRepository<WorkflowModel> _workflows;
     private readonly ICurrentUser _caller;
+    private readonly IEffectivePermissions _effective;
     private readonly ICredentialEncryptionService _crypto;
     private readonly IAuditLogger _audit;
     private readonly ILogger<WorkflowTriggerService> _logger;
@@ -55,6 +57,7 @@ public class WorkflowTriggerService : IWorkflowTrigger
         IWorkflowTriggerRepository triggers,
         IRepository<WorkflowModel> workflows,
         ICurrentUser caller,
+        IEffectivePermissions effective,
         ICredentialEncryptionService crypto,
         IAuditLogger audit,
         ILogger<WorkflowTriggerService> logger)
@@ -62,6 +65,7 @@ public class WorkflowTriggerService : IWorkflowTrigger
         _triggers = triggers;
         _workflows = workflows;
         _caller = caller;
+        _effective = effective;
         _crypto = crypto;
         _audit = audit;
         _logger = logger;
@@ -92,6 +96,32 @@ public class WorkflowTriggerService : IWorkflowTrigger
     private static string GenerateSecret() =>
         System.Convert.ToHexString(
             System.Security.Cryptography.RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
+
+    private bool IsAdmin() =>
+        _caller.Roles.Any(r => string.Equals(r, "admin", StringComparison.OrdinalIgnoreCase));
+
+    // allow_unsigned turns a webhook into an unauthenticated public endpoint
+    // that starts runs. trigger.manage is Operator tier, so without this check
+    // any operator could open that door; switching it ON is admin-only, the
+    // same way network_enabled is on snippets. Turning it off is always allowed.
+    //
+    // The capability is checked as well as the role so a transport ceiling (a
+    // messaging channel's max_role) caps an admin here too — "no escalation by
+    // transport" holds for this privilege like every other.
+    private async Task<ObjectResult?> GuardAllowUnsignedAsync(bool turningOn, string operation)
+    {
+        if (!turningOn) return null;
+        if (IsAdmin() && await _effective.HasAsync("trigger.manage")) return null;
+        _logger.LogWarning(
+            "workflow_trigger.{Operation}.forbidden user_id={UserId} reason=allow_unsigned_admin_only",
+            operation, _caller.UserId);
+        return new ObjectResult(new
+        {
+            error = "allow_unsigned requires the admin role — it accepts webhook calls with no signature.",
+            code = "allow_unsigned_admin_only",
+        })
+        { StatusCode = 403 };
+    }
 
     public async Task<ActionResult<ListResponse<WorkflowTriggerResponse>>> GetAsync(int limit = 50, int offset = 0)
     {
@@ -196,6 +226,9 @@ public class WorkflowTriggerService : IWorkflowTrigger
                 return new BadRequestObjectResult(new { error = cronError });
             }
         }
+
+        var unsignedGuard = await GuardAllowUnsignedAsync(dto.AllowUnsigned == true, "create");
+        if (unsignedGuard is not null) return unsignedGuard;
 
         // Parent workflow must exist.
         var workflowExists = await _workflows.ExistsAsync(workflowId);
@@ -334,6 +367,10 @@ public class WorkflowTriggerService : IWorkflowTrigger
                 trigger.WorkflowTriggerId);
             return new BadRequestObjectResult(new { error = cronError });
         }
+
+        var unsignedGuard = await GuardAllowUnsignedAsync(
+            dto.AllowUnsigned == true && !trigger.AllowUnsigned, "update");
+        if (unsignedGuard is not null) return unsignedGuard;
 
         // Snapshot before the dto lands (`trigger` is tracked).
         var auditBefore = TriggerAudit(trigger);

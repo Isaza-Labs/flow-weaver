@@ -159,7 +159,8 @@ public sealed class UpdateWorkflowNodeConfigHandler : IToolHandler
             // the merged config. Without this gate the agent could overwrite a
             // valid node with a placeholder and only discover the mistake at
             // the next run.
-            var referenceResult = await _referenceValidator.ValidateAsync(merged, ct);
+            var referenceResult = await _referenceValidator.ValidateAsync(
+                merged, ct, previousNodes: workflow.Nodes);
             if (!referenceResult.IsValid)
             {
                 _logger.LogWarning(

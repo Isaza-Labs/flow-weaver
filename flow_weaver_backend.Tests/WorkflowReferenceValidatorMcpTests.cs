@@ -38,7 +38,7 @@ public class WorkflowReferenceValidatorMcpTests
             new IntegrationRepository(db),
             new RepositoryBase<IntegrationAction>(db),
             new RepositoryBase<McpServer>(db),
-            eff, settings, NullLogger<WorkflowReferenceValidator>.Instance);
+            eff, settings, new FakeUser(), NullLogger<WorkflowReferenceValidator>.Instance);
         return (v, snippetId, serverId);
     }
 
@@ -118,7 +118,7 @@ public class WorkflowReferenceValidatorMcpTests
         var v = new WorkflowReferenceValidator(
             new SnippetRepository(db), new IntegrationRepository(db),
             new RepositoryBase<IntegrationAction>(db), new RepositoryBase<McpServer>(db),
-            new AllowEffective(), new FakeAppSettings(), NullLogger<WorkflowReferenceValidator>.Instance);
+            new AllowEffective(), new FakeAppSettings(), new FakeUser(), NullLogger<WorkflowReferenceValidator>.Instance);
 
         var nodes = TestJson.Element($$"""
             [{ "id": "build-report", "snippet_id": "{{snippetId}}",

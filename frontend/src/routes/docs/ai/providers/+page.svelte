@@ -158,8 +158,8 @@
             <li>
                 <strong>Viewer</strong> — see provider metadata (never keys).
             </li>
-            <li><strong>Operator</strong> — full CRUD and test.</li>
-            <li><strong>Admin</strong> — same as operator.</li>
+            <li><strong>Operator</strong> — same as viewer.</li>
+            <li><strong>Admin</strong> — create, edit, delete and test (<code>aiprovider.manage</code>, because a provider holds an API key).</li>
         </ul>
     </section>
 

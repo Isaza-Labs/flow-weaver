@@ -240,7 +240,7 @@
   }
 </script>
 
-<svelte:head><title>Vendor commands · Flow Weaver</title></svelte:head>
+<svelte:head><title>Vendor commands · FlowWeaver</title></svelte:head>
 
 <div class="p-6 max-w-7xl mx-auto space-y-5">
   <PageHeader

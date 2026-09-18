@@ -320,7 +320,7 @@
   }
 </script>
 
-<svelte:head><title>MCP servers · Flow Weaver</title></svelte:head>
+<svelte:head><title>MCP servers · FlowWeaver</title></svelte:head>
 
 <div class="p-6 space-y-6">
   <PageHeader

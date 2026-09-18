@@ -30,7 +30,7 @@ public class IntegrationActionNodeIdTests
     private static WorkflowReferenceValidator Validator(AppDbContext db)
         => new(new SnippetRepository(db), new IntegrationRepository(db),
                new RepositoryBase<IntegrationAction>(db), new RepositoryBase<McpServer>(db),
-               effective: null!, appSettings: new FakeAppSettings(),
+               effective: null!, appSettings: new FakeAppSettings(), caller: new FakeUser(),
                logger: NullLogger<WorkflowReferenceValidator>.Instance);
 
     private static JsonElement Nodes(string snippetId) => JsonDocument.Parse($$"""

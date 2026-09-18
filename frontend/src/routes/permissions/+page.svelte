@@ -278,7 +278,7 @@
   }
 </script>
 
-<svelte:head><title>Permissions · Flow Weaver</title></svelte:head>
+<svelte:head><title>Permissions · FlowWeaver</title></svelte:head>
 
 <div class="p-6 max-w-7xl mx-auto space-y-5">
   <PageHeader

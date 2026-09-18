@@ -5,7 +5,7 @@
 
 <DocLayout
   title="Snippets"
-  lead="Reusable building blocks workflows can call. A snippet is a single unit of work — Python code, an Ansible play, a REST call, a JMESPath transform, a ping, or a stored integration action."
+  lead="Reusable building blocks workflows can call. A snippet is a single unit of work — Python code, an Ansible play, a REST call, a JMESPath transform, a ping, a stored integration action, a Git operation, a Slack message or an email."
 >
   <Callout tone="where" title="Where to find it">
     List: <a href="/snippets"><code>/snippets</code></a> ·
@@ -73,6 +73,11 @@
           <td><code>{'{}'}</code>.</td>
         </tr>
         <tr>
+          <td><code>git</code></td>
+          <td>Read, write, commit, push or pull against a registered <a href="/docs/git-repos">Git repository</a>. The handler reads its parameters (<code>operation</code>, <code>repository_id</code> or <code>repository</code>, <code>path</code>, <code>ref</code>, <code>content</code>, <code>commit_message</code>, <code>branch</code>, <code>push</code>, …) from each node's config, not from the snippet body — the full list is in <a href="/docs/git-repos">Git repositories</a>. Defaults to target mode <code>once</code>.</td>
+          <td><code>{'{ "operation": "read_file", "repository_id": "…", "path": "configs/example.cfg", "ref": "main" }'}</code> (documentation only).</td>
+        </tr>
+        <tr>
           <td><code>slack_message</code></td>
           <td>Posts a message to a Slack channel (<code>chat.postMessage</code>). Native built-in: the bot token is a deployment secret (<code>Slack:BotToken</code> / <code>SLACK_BOT_TOKEN</code>), and each node sets <code>channel</code> + <code>text</code> in its config. Slack returns <code>ok=false</code> (not an HTTP error) on failure — branch on <code>output.ok</code>.</td>
           <td><code>{'{ "channel": "#alerts", "text": "…" }'}</code>.</td>
@@ -84,6 +89,29 @@
         </tr>
       </tbody>
     </table>
+    <p>
+      These are the ten types the <em>Type</em> picker on the create page offers.
+      FlowWeaver also ships <strong>built-in snippets</strong> whose handler types
+      you cannot pick when creating one — they are seeded at startup and you use
+      them as they are (or copy them with <em>Start from</em>):
+    </p>
+    <ul>
+      <li><code>ssh</code> — run one or many commands on a device over SSH (Netmiko), with vendor-aware prompt and paging handling. Target mode <code>per_device</code>.</li>
+      <li><code>report</code> — build a downloadable HTML/CSV/XLSX/PDF document; downstream nodes read <code>{'{{ steps.X.output.base64 }}'}</code> and <code>{'{{ steps.X.output.filename }}'}</code>.</li>
+      <li><code>mcp_call</code> — call a tool on a registered <a href="/docs/admin/mcp-servers">MCP server</a>; dropped from the palette's <em>MCP</em> section.</li>
+    </ul>
+    <p>Three terms are easy to mix up:</p>
+    <ul>
+      <li><strong>Type</strong> — the handler that executes the snippet: one of the ten creatable values above, or a built-in handler type.</li>
+      <li><strong>Alias</strong> — <code>jmespath</code> behaves exactly like <code>transform</code>; it is kept so migrated content keeps working.</li>
+      <li>
+        <strong>Property</strong> — a setting on a snippet of some type, not a type of its own.
+        <a href="#network-enabled">Network-enabled</a> is a property of a
+        <code>python_snippet</code>. Likewise the seeded SSH baseline (paramiko) is a
+        <code>python_snippet</code> with a particular body, which is why it is not in the
+        <em>Type</em> list — copy it with <em>Start from</em> instead.
+      </li>
+    </ul>
   </section>
 
   <section>
@@ -155,12 +183,23 @@
       <dd>Required. Any string.</dd>
       <dt>Description</dt>
       <dd>Optional one-liner.</dd>
+      <dt>Start from</dt>
+      <dd>
+        Optional. <em>Blank</em> creates a generic starter for the chosen type;
+        picking an existing snippet creates a copy of it (body, schemas and
+        timeouts), and locks <em>Type</em> and <em>Target mode</em> to the
+        source's values. The name defaults to <em>"&lt;source&gt; (copy)"</em>.
+        Copying a network-enabled snippet as a non-admin produces a copy with
+        network access turned off, and a warning toast says so.
+      </dd>
       <dt>Type</dt>
-      <dd>Select among the seven types listed above.</dd>
+      <dd>Select among the ten types listed above.</dd>
       <dt>Target mode</dt>
       <dd>
-        <code>per_device</code> or <code>once</code>. You can change to
-        <code>per_pool</code> later from the editor.
+        <code>per_device</code> or <code>once</code>. Defaults to
+        <code>once</code> for <code>git</code>, <code>slack_message</code> and
+        <code>email_send</code>, and to <code>per_device</code> otherwise. You can
+        change to <code>per_pool</code> later from the editor.
       </dd>
     </dl>
     <p>
@@ -215,7 +254,9 @@
       </li>
       <li>
         <strong>Fallback</strong> — plain code/configuration textarea for anything
-        else.
+        else (<code>git</code>, <code>slack_message</code>, <code>email_send</code>).
+        For those three the body is documentation only: the handler reads its
+        parameters from each workflow node's config.
       </li>
     </ul>
 
@@ -358,13 +399,19 @@
       modules (<code>json</code>, <code>re</code>, <code>datetime</code>, …). When
       a snippet needs more, an <strong>admin</strong> extends the list
       at <a href="/admin/python-packages"><code>/admin/python-packages</code></a>.
+      This section is a summary; the full procedure is in
+      <a href="/docs/admin/python-packages">Python packages</a>.
     </p>
 
     <Callout tone="admin" title="Admin-only, sandbox unchanged">
       Only admins manage the list — it relaxes which modules may be imported, so
       the admin is the final barrier. It does <strong>not</strong> lift the rest
-      of the sandbox: <code>exec</code>/<code>eval</code>/<code>__import__</code>/<code>open()</code>
-      stay blocked, and the snippet still runs with <strong>no network</strong>
+      of the sandbox: dangerous built-ins (<code>exec</code>, <code>eval</code>,
+      <code>compile</code>, <code>__import__</code>, <code>open()</code>,
+      <code>getattr</code>/<code>setattr</code>/<code>delattr</code>,
+      <code>vars</code>/<code>globals</code>/<code>locals</code>, <code>input</code>,
+      <code>breakpoint</code>, <code>memoryview</code>), interpreter internals and
+      relative imports stay blocked, and the snippet still runs with <strong>no network</strong>
       unless it's also <a href="#network-enabled">network-enabled</a>.
     </Callout>
 
@@ -396,6 +443,52 @@
       module" error. Installs default to wheels-only (no package build code runs);
       an admin can relax that per deployment.
     </p>
+  </section>
+
+  <section id="integration-credentials">
+    <h2>Integration credentials in Python</h2>
+    <p>
+      A <code>python_snippet</code> can call a registered
+      <a href="/docs/integrations">integration</a> with its stored credentials:
+      put <code>&lt;handle&gt;_integration_id</code> (for example
+      <code>netbox_integration_id</code>) in the node's config with the
+      integration's id or exact name, and the script calls
+      <code>integration("netbox")</code>. The runtime hands the script that
+      integration's base URL and auth headers.
+    </p>
+    <Callout tone="warning" title="The id must be written in the node">
+      Because the script can read those headers, only the workflow's author picks
+      the integration: the value must be a literal in the node's own config. An id
+      that comes from the run input, a trigger's input defaults or a
+      <code>{'{{ … }}'}</code> template fails the step with
+      <code>integration_not_authored</code> before any credential is handed out. A
+      subflow only passes on the ids written in its subflow node.
+    </Callout>
+    <p>The check mirrors what the handler itself reads, key for key:</p>
+    <ul>
+      <li>
+        It looks at <strong>one object only</strong> — the payload's
+        <code>input</code> object when it has one, the payload itself otherwise,
+        never both. A key in the object the handler ignores is ignored here too,
+        so the step never fails over a value no script can reach. The matching
+        config entry has to sit in the same place: a key under
+        <code>input</code> is compared against the config's <code>input</code>
+        object, a top-level key against the config's top level.
+      </li>
+      <li>
+        A value counts as authored when the node's config holds the same key with
+        the same value as a plain string — byte for byte, and with no
+        <code>{'{{'}</code> in it. A subflow child also accepts a key it inherited
+        from its parent's subflow node, because that input was already filtered
+        by this same rule.
+      </li>
+      <li>
+        Only entries the handler would act on are considered: the value must be a
+        non-blank string. A bare <code>_integration_id</code> key, with nothing
+        before the underscore, leaves an empty handle that the handler skips, so
+        it grants nothing and is not checked.
+      </li>
+    </ul>
   </section>
 
   <section>

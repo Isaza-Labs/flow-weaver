@@ -22,7 +22,11 @@
       label: 'Build',
       items: [
         { href: '/docs/workflows', label: 'Workflows' },
+        { href: '/docs/workflows/import', label: 'Importing workflows' },
+        { href: '/docs/workflows/triggers', label: 'Triggers and webhooks' },
+        { href: '/docs/subflows', label: 'Subflows' },
         { href: '/docs/snippets', label: 'Snippets' },
+        { href: '/docs/git-repos', label: 'Git repositories' },
       ],
     },
     {
@@ -31,6 +35,7 @@
       label: 'Integrate',
       items: [
         { href: '/docs/integrations', label: 'Integrations' },
+        { href: '/docs/vendor-commands', label: 'Vendor commands', adminOnly: true },
         { href: '/docs/admin/mcp-servers', label: 'MCP servers', adminOnly: true },
         { href: '/docs/ai/channels', label: 'Messaging channels' },
         { href: '/docs/email', label: 'Email', adminOnly: true },
@@ -52,6 +57,8 @@
       adminOnly: true,
       items: [
         { href: '/docs/policies', label: 'Policies', adminOnly: true },
+        { href: '/docs/permissions', label: 'Permissions', adminOnly: true },
+        { href: '/docs/admin/python-packages', label: 'Python packages', adminOnly: true },
       ],
     },
     {
@@ -61,8 +68,8 @@
         { href: '/docs/ai/chat', label: 'Chat' },
         { href: '/docs/ai/providers', label: 'Providers' },
         { href: '/docs/ai/agents', label: 'Agents' },
-        { href: '/docs/ai/skills', label: 'Skills' },
-        { href: '/docs/ai/specs', label: 'API specs' },
+        { href: '/docs/ai/skills', label: 'Skills', adminOnly: true },
+        { href: '/docs/ai/specs', label: 'API specs', adminOnly: true },
       ],
     },
     {
@@ -74,6 +81,10 @@
         { href: '/docs/admin/audit', label: 'Audit log', adminOnly: true },
         { href: '/docs/admin/traces', label: 'Traces', adminOnly: true },
         { href: '/docs/admin/artifacts', label: 'Artifacts', adminOnly: true },
+        { href: '/docs/admin/secrets', label: 'Secrets', adminOnly: true },
+        { href: '/docs/admin/slo', label: 'Service-level objectives', adminOnly: true },
+        { href: '/docs/admin/settings', label: 'Application settings', adminOnly: true },
+        { href: '/docs/admin/actions', label: 'Reusable actions (legacy)', adminOnly: true },
       ],
     },
     {
@@ -81,6 +92,14 @@
       items: [
         { href: '/docs/account', label: 'Account & session' },
         { href: '/docs/themes', label: 'Themes' },
+      ],
+    },
+    {
+      label: 'Reference',
+      items: [
+        { href: '/docs/reference', label: 'Screens and roles' },
+        { href: '/docs/troubleshooting', label: 'Troubleshooting' },
+        { href: '/docs/glossary', label: 'Glossary' },
       ],
     },
   ];

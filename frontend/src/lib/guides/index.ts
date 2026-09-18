@@ -40,7 +40,7 @@ export const GUIDE_ENTRIES: GuideEntry[] = [
     ],
     aiContext:
       'The user is on /workflows/import, uploading a foreign workflow definition (FlowWeaver v1, n8n, Itential or generic DAG) for the agent to translate, with a dependency-resolution step before the import is committed.',
-    docsHref: '/docs/workflows',
+    docsHref: '/docs/workflows/import',
   },
 
   // ---------- Per-resource permissions ----------
@@ -49,26 +49,27 @@ export const GUIDE_ENTRIES: GuideEntry[] = [
     title: 'Workflow permissions',
     intro: 'Per-resource grants for this one workflow: give individual users owner, editor, runner or viewer on it without changing their global role.',
     tips: [
-      'Grants here only raise privileges on this workflow — they never reduce what a role already allows',
+      'These grants are only checked while "Per-resource grants" is enabled in Admin → Settings; then operators need editor or owner here to change this workflow',
       'Admins always pass, so there is no need to grant them anything',
-      'owner can delete and re-grant; editor can change the graph; runner can only execute; viewer is read-only',
+      'editor can change the workflow; owner can also delete it; runner and viewer are recorded but not checked today',
       'Global RBAC still applies underneath — this is an overlay, not a replacement',
     ],
     aiContext:
       'The user is on the per-workflow permissions page at /workflows/<id>/permissions, managing per-resource grants (owner/editor/runner/viewer) for a single workflow.',
+    docsHref: '/docs/permissions',
   },
   {
     match: (p) => /^\/integrations\/[^/]+\/permissions$/.test(p),
     title: 'Integration permissions',
     intro: 'Per-resource grants for this one integration: give individual users owner, editor, runner or viewer on it without changing their global role.',
     tips: [
-      'Grants here only raise privileges on this integration',
+      'These grants are only checked while "Per-resource grants" is enabled in Admin → Settings; then operators need editor or owner here to change this integration',
       'Admins always pass',
-      'runner is the useful one for service accounts — it can invoke actions but not edit the connection',
+      'runner and viewer are recorded but not checked today — only editor (change) and owner (delete) are enforced',
     ],
     aiContext:
       'The user is on the per-integration permissions page at /integrations/<id>/permissions, managing per-resource grants for a single integration.',
-    docsHref: '/docs/integrations',
+    docsHref: '/docs/permissions',
   },
 
   // ---------- Runs ----------
@@ -141,7 +142,7 @@ export const GUIDE_ENTRIES: GuideEntry[] = [
     ],
     aiContext:
       'The user is on /subflows, the index of workflows tagged as reusable subflows that other workflows invoke via a subflow node.',
-    docsHref: '/docs/workflows',
+    docsHref: '/docs/subflows',
   },
   {
     match: (p) => p === '/vendor-commands',
@@ -154,6 +155,7 @@ export const GUIDE_ENTRIES: GuideEntry[] = [
     ],
     aiContext:
       'The user is on /vendor-commands, the per-vendor command catalog that drives the SSH command validator warnings on workflow create/update.',
+    docsHref: '/docs/vendor-commands',
   },
 
   // ---------- Govern ----------
@@ -196,6 +198,7 @@ export const GUIDE_ENTRIES: GuideEntry[] = [
     ],
     aiContext:
       'The user is on /permissions, managing granular capability grants (capability keys plus optional environment/device/resource conditions) assigned to users.',
+    docsHref: '/docs/permissions',
   },
 
   // ---------- Intelligence ----------
@@ -265,7 +268,7 @@ export const GUIDE_ENTRIES: GuideEntry[] = [
     ],
     aiContext:
       'The user is on a Git repository detail page at /integrations/git/<id>, browsing and editing a server-side working copy of a registered remote.',
-    docsHref: '/docs/integrations',
+    docsHref: '/docs/git-repos',
   },
   {
     match: (p) => p === '/integrations/git',
@@ -278,7 +281,7 @@ export const GUIDE_ENTRIES: GuideEntry[] = [
     ],
     aiContext:
       'The user is on /integrations/git, registering Git remotes with credentials for server-side clone/commit/push.',
-    docsHref: '/docs/integrations',
+    docsHref: '/docs/git-repos',
   },
 
   // ---------- Administration ----------
@@ -349,13 +352,15 @@ export const GUIDE_ENTRIES: GuideEntry[] = [
   {
     match: (p) => p === '/admin/settings',
     title: 'Settings',
-    intro: 'Global toggles — the granular RBAC overlay and feature flags. Changes propagate within about a minute because the server caches them.',
+    intro: 'Global access and import settings — per-resource grants, RBAC mode, and the import fuzzy-match thresholds. Changes propagate within about a minute because the server caches them.',
     tips: [
-      'Granular RBAC has to be switched on here before capability grants take effect',
+      'Capability grants only take effect once RBAC mode is set to granular here',
+      'Per-resource grants is a separate toggle: it makes workflow and integration writes require an editor/owner grant on the row',
       'A toggle that seems not to apply is usually just the cache TTL — wait a minute before debugging',
     ],
     aiContext:
-      'The user is on /admin/settings, flipping global feature flags including the granular RBAC overlay, with a server-side cache TTL of about a minute.',
+      'The user is on /admin/settings, changing the per-resource grants toggle, the RBAC mode (legacy/granular) and the import fuzzy-match thresholds, with a server-side cache TTL of about a minute.',
+    docsHref: '/docs/admin/settings',
   },
   {
     match: (p) => p === '/admin/secrets',
@@ -368,6 +373,7 @@ export const GUIDE_ENTRIES: GuideEntry[] = [
     ],
     aiContext:
       'The user is on /admin/secrets, managing named encrypted secrets that OpenAPI specs reference when the agent calls REST operations.',
+    docsHref: '/docs/admin/secrets',
   },
   {
     match: (p) => p === '/admin/mcp-servers',
@@ -419,6 +425,7 @@ export const GUIDE_ENTRIES: GuideEntry[] = [
     ],
     aiContext:
       'The user is on /admin/python-packages, managing the allowlist of importable modules for python_snippet plus the pip spec the worker installs.',
+    docsHref: '/docs/admin/python-packages',
   },
   {
     match: (p) => p === '/admin/slo',
@@ -430,6 +437,7 @@ export const GUIDE_ENTRIES: GuideEntry[] = [
     ],
     aiContext:
       'The user is on /admin/slo, reviewing platform service-level objectives aggregated over a selectable window.',
+    docsHref: '/docs/admin/slo',
   },
   {
     match: (p) => p === '/admin/actions',
@@ -441,6 +449,7 @@ export const GUIDE_ENTRIES: GuideEntry[] = [
     ],
     aiContext:
       'The user is on /admin/actions, a read-only view of the legacy reusable-actions/skills table.',
+    docsHref: '/docs/admin/actions',
   },
   {
     match: (p) => p === '/admin',
@@ -556,7 +565,7 @@ export const GUIDE_ENTRIES: GuideEntry[] = [
     ],
     aiContext:
       'The user is on the generic triggers page at /workflows/<id>/triggers, which surfaces all four trigger types (manual, api, schedule, event) for one workflow with type-tabbed filtering.',
-    docsHref: '/docs/schedules',
+    docsHref: '/docs/workflows/triggers',
   },
 
   // ---------- Workflows ----------

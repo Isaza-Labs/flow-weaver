@@ -43,15 +43,6 @@
       </li>
     </ul>
 
-    <h3>Agent picker (only when more than one exists)</h3>
-    <p>
-      A select appears below the header when there is more than one
-      agent. Options are the agent <em>name</em>s plus a "Default" entry
-      for whichever agent is role <code>assistant</code>. The selection is
-      used for new conversations; existing conversations keep whichever agent
-      they started with.
-    </p>
-
     <h3>Conversation row</h3>
     <p>
       Each row shows the conversation title (first user message, truncated to
@@ -161,6 +152,17 @@
     <h2>Input bar</h2>
     <p>
       Pinned to the bottom. A textarea plus a send/stop button.
+    </p>
+
+    <h3>Agent picker</h3>
+    <p>
+      A compact control with a bot icon, sitting just above the text box so you
+      always see who you are writing to. It appears whenever at least one agent
+      exists and lists <em>Default agent</em> (the agent with role
+      <code>assistant</code>) followed by every agent by name. The selected agent
+      id is sent with each message. The picker is disabled while a reply is
+      streaming. If the label reads <em>Unavailable agent</em>, the agent this
+      conversation used has been deleted or disabled — pick another to continue.
     </p>
 
     <h3>Submission</h3>

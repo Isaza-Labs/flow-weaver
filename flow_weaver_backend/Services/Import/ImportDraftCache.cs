@@ -35,6 +35,17 @@ public sealed class ImportDraftCache
         return draft;
     }
 
+    // Owner-scoped delete for the HTTP surface. Same rule as Get: a token
+    // that belongs to someone else behaves exactly like an unknown one, so a
+    // caller can neither cancel another user's import nor probe for tokens.
+    public bool Delete(Guid token, Guid userId)
+    {
+        if (!_drafts.TryGetValue(token, out var draft)) return false;
+        if (draft.UserId != userId) return false;
+        Delete(token);
+        return true;
+    }
+
     public void Delete(Guid token)
     {
         if (_drafts.TryGetValue(token, out var draft))

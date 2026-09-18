@@ -39,10 +39,12 @@
         boundary.
       </dd>
     </dl>
-    <Callout tone="warning" title="One role per user">
-      A user has exactly one role — no composite roles or per-resource ACLs
-      today. If you need finer-grained access, create multiple accounts or
-      use the <a href="/docs/policies">Policies</a> surface to add blocks.
+    <Callout tone="warning" title="One base role per user">
+      A user has exactly one base role. Finer-grained access is layered on top
+      rather than expressed as extra roles: capability grants (optionally
+      limited to an environment, device or resource) and per-workflow /
+      per-integration access — see <a href="/docs/permissions">Permissions</a>.
+      <a href="/docs/policies">Policies</a> add blocks that apply to everyone.
     </Callout>
   </section>
 

@@ -27,6 +27,7 @@ public class WorkflowTriggerWriteTests
             new WorkflowTriggerRepository(Db),
             new RepositoryBase<WorkflowModel>(Db),
             new FakeUser(),
+            new AllowAllEffectivePermissions(),
             new FakeCrypto(),
             new FakeAudit(), NullLogger<WorkflowTriggerService>.Instance);
 

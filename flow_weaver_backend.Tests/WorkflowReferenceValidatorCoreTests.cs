@@ -35,6 +35,7 @@ public class WorkflowReferenceValidatorCoreTests
             new RepositoryBase<McpServer>(Db),
             new AllowAll(),
             new FakeAppSettings(),
+            new FakeUser(),
             NullLogger<WorkflowReferenceValidator>.Instance);
 
         public Guid SeedSnippet(string type = "ssh", bool active = true)

@@ -64,7 +64,7 @@
   };
 </script>
 
-<svelte:head><title>SLOs · Admin · Flow Weaver</title></svelte:head>
+<svelte:head><title>SLOs · Admin · FlowWeaver</title></svelte:head>
 
 <div class="p-6 max-w-6xl mx-auto space-y-5">
   <PageHeader
@@ -123,13 +123,12 @@
         </div>
         <ul class="list-disc list-inside text-surface-700-300 space-y-1">
           <li><span class="font-mono text-xs">run_latency_p95_seconds</span> — 95th percentile of <span class="font-mono">CompletedAt − StartedAt</span> across runs in the window.</li>
-          <li><span class="font-mono text-xs">error_rate</span> — fraction of runs whose status is <span class="font-mono">failed</span> or <span class="font-mono">failure</span>.</li>
-          <li><span class="font-mono text-xs">throughput_jobs_per_hour</span> — succeeded jobs in the window divided by hours elapsed.</li>
-          <li><span class="font-mono text-xs">promotion_latency_seconds</span> — median elapsed time between a workflow's first row and its qa/production version.</li>
+          <li><span class="font-mono text-xs">error_rate</span> — fraction of runs whose status is <span class="font-mono">failed</span>; cancelled runs are left out of both sides.</li>
+          <li><span class="font-mono text-xs">throughput_jobs_per_hour</span> — completed jobs in the window divided by the window length in hours (days × 24).</li>
+          <li><span class="font-mono text-xs">promotion_latency_seconds</span> — median time between the creation of the version a promotion was made from and the promoted qa/production version.</li>
         </ul>
         <p class="text-xs text-surface-500">
-          Targets are platform-wide defaults. To negotiate custom SLOs, override
-          via <span class="font-mono">Slo:Targets</span> in the deployment config (open follow-up).
+          Targets are fixed platform-wide defaults; they cannot be configured yet.
         </p>
       </div>
     </Card>

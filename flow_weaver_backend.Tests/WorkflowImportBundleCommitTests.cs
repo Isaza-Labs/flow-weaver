@@ -79,6 +79,7 @@ public class WorkflowImportBundleCommitTests
             new AllowAll(),
             new DefaultSettings(),
             importer,
+            new FakePolicyEvaluator(),
             NullLogger<WorkflowImportController>.Instance);
         controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
         return (controller, draft, importer);

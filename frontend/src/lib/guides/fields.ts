@@ -134,9 +134,9 @@ export const FIELD_HINTS: Record<string, FieldHint> = {
 
   // --------------------------------------------------------- Other raw controls
   'settings.granular_toggle': {
-    label: 'Granular permissions',
-    help: 'Turns on the capability-grant overlay. Without it, the flat admin / operator / viewer tiers decide everything.',
-    detail: 'Confirm the grants under Permissions already cover what your operators do before enabling — otherwise the switch locks people out of yesterday work.',
+    label: 'Per-resource grants',
+    help: 'Makes workflow and integration writes also require an Editor or Owner grant on that row. Capability grants are a separate setting (RBAC mode).',
+    detail: 'Grant your operators Editor or Owner on each resource’s Permissions tab before enabling — otherwise their writes start failing with missing_editor_grant / missing_owner_grant.',
   },
   'users.is_active': {
     label: 'Active',
@@ -160,7 +160,7 @@ export const FIELD_HINTS: Record<string, FieldHint> = {
   },
   'workflows.import_file': {
     label: 'Workflow file',
-    help: 'The definition to translate — FlowWeaver v1, n8n, Itential or a generic DAG, as YAML or JSON.',
+    help: 'A FlowWeaver bundle (JSON), a FlowWeaver YAML/JSON export, or a foreign definition (n8n, Itential, generic DAG) to translate. Max 5 MiB.',
     detail: 'Choosing a file only parses it. Nothing is written until you commit the import at the end.',
   },
   'snippets.search': {
@@ -360,8 +360,8 @@ export const FIELD_HINTS: Record<string, FieldHint> = {
   },
   'resource_perm.role': {
     label: 'Level',
-    help: 'owner can delete and re-grant; editor can change it; runner can only execute it; viewer is read-only.',
-    detail: 'Per-resource grants only raise privileges — they cannot take away what a global role already allows. Admins pass regardless.',
+    help: 'With per-resource grants enabled, editing needs editor or owner and deleting needs owner. Runner and viewer are recorded but not checked today.',
+    detail: 'Only consulted while per-resource grants are enabled in Application settings; then an operator without a grant on this row cannot change it. Admins pass regardless.',
   },
   'permissions.add_user': {
     label: 'Add user',
@@ -1040,7 +1040,7 @@ export const FIELD_HINTS: Record<string, FieldHint> = {
   'import.conflict_resolution': {
     label: 'Resolution',
     help: 'What to do when a workflow of the same name already exists: rename this import, take a timestamped fresh copy, replace the existing one, or cancel.',
-    detail: 'Replace overwrites a workflow other people may be running and needs an editor grant on it. Rename is the reversible choice.',
+    detail: 'Replace deactivates a workflow other people may be running and needs an owner grant on it, the same as a delete. Rename is the reversible choice.',
   },
   'import.new_name': {
     label: 'New name',
@@ -1060,11 +1060,6 @@ export const FIELD_HINTS: Record<string, FieldHint> = {
     label: 'Target integration',
     help: 'Which existing integration this imported reference maps onto. Candidates are ranked by name similarity, shown as a percentage.',
     detail: 'A low similarity score is worth checking by hand — the matcher compares names, not endpoints, so two unrelated APIs can score well.',
-  },
-  'import.target_environment': {
-    label: 'Target environment',
-    help: 'Which environment the imported workflow lands in. Draft is the default and the only one that lets you edit the graph afterwards.',
-    detail: 'Importing straight to production skips the qa evidence a normal promotion requires. Prefer draft and promote through the usual gate.',
   },
   'import.agent_instructions': {
     label: 'Instructions for the agent',

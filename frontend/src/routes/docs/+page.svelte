@@ -4,7 +4,8 @@
   import {
     Workflow, Activity, Server, Network, KeyRound, FlaskConical,
     Bot, Shield, Settings2, Cable, CalendarClock, Users,
-    LayoutDashboard, BookOpen,
+    LayoutDashboard, BookOpen, Layers, GitBranch, Terminal, KeySquare,
+    Package, Webhook, Upload, LifeBuoy, BookA, Table2,
   } from 'lucide-svelte';
 
   const tiles: Array<{
@@ -16,7 +17,11 @@
     { href: '/docs/getting-started', label: 'Getting started', description: 'Sign in, understand the shell, navigate by role.', icon: BookOpen },
     { href: '/docs/dashboard', label: 'Dashboard', description: 'Fleet stats, job queue, recent run activity.', icon: LayoutDashboard },
     { href: '/docs/workflows', label: 'Workflows', description: 'DAG designer, drafts, promotion, rollback, export.', icon: Workflow },
+    { href: '/docs/workflows/import', label: 'Importing workflows', description: 'Bring exports back in, within or across instances.', icon: Upload },
+    { href: '/docs/workflows/triggers', label: 'Triggers and webhooks', description: 'Start runs from signed HTTP calls.', icon: Webhook },
+    { href: '/docs/subflows', label: 'Subflows', description: 'Call one workflow from another.', icon: Layers },
     { href: '/docs/snippets', label: 'Snippets', description: 'Reusable building blocks: Python, Ansible, REST, transforms.', icon: Settings2 },
+    { href: '/docs/git-repos', label: 'Git repositories', description: 'Register repos and read, write, commit and push from workflows.', icon: GitBranch },
     { href: '/docs/integrations', label: 'Integrations', description: 'External systems and their discoverable actions.', icon: Cable },
     { href: '/docs/runs', label: 'Runs', description: 'Execution history, live monitor, step timelines.', icon: Activity },
     { href: '/docs/schedules', label: 'Schedules', description: 'Cron triggers, timezones, calendar view.', icon: CalendarClock },
@@ -25,8 +30,14 @@
     { href: '/docs/credentials', label: 'Credentials', description: 'SSH/NETCONF authentication material.', icon: KeyRound },
     { href: '/docs/qa-lab', label: 'QA lab', description: 'Promotion readiness and QA-scoped runs.', icon: FlaskConical },
     { href: '/docs/ai', label: 'AI', description: 'Chat, providers, agents, skills, API specs.', icon: Bot },
+    { href: '/docs/vendor-commands', label: 'Vendor commands', description: 'The CLI catalogue that validates SSH commands (admin).', icon: Terminal },
     { href: '/docs/policies', label: 'Policies', description: 'Guardrails and approval gates (admin).', icon: Shield },
-    { href: '/docs/admin', label: 'Administration', description: 'Users, audit, traces, reports (admin).', icon: Users },
+    { href: '/docs/permissions', label: 'Permissions', description: 'Capability grants and per-resource access (admin).', icon: KeySquare },
+    { href: '/docs/admin/python-packages', label: 'Python packages', description: 'Extra imports for Python snippets (admin).', icon: Package },
+    { href: '/docs/admin', label: 'Administration', description: 'Users, audit, traces, artifacts, secrets, SLOs, settings (admin).', icon: Users },
+    { href: '/docs/reference', label: 'Screens and roles', description: 'Every screen with its route, minimum role and chapter.', icon: Table2 },
+    { href: '/docs/troubleshooting', label: 'Troubleshooting', description: 'Find the fix by symptom.', icon: LifeBuoy },
+    { href: '/docs/glossary', label: 'Glossary', description: 'One meaning per term.', icon: BookA },
   ];
 </script>
 
@@ -58,12 +69,14 @@
       Sections in the left nav mirror the app's own sidebar:
     </p>
     <ul>
-      <li><strong>Build</strong> — the pieces you author: workflows, snippets, integrations.</li>
+      <li><strong>Build</strong> — the pieces you author: workflows (and importing them, triggers, subflows), snippets, Git repositories.</li>
+      <li><strong>Integrate</strong> — connections to outside systems: integrations, vendor commands, MCP servers, messaging channels, email.</li>
       <li><strong>Operate</strong> — what you run and against what: runs, schedules, devices, pools, credentials, QA lab.</li>
-      <li><strong>Govern</strong> — admin-only guardrails: policies.</li>
+      <li><strong>Govern</strong> — admin-only guardrails: policies, permissions, Python packages.</li>
       <li><strong>Intelligence</strong> — the AI assistant and its configuration.</li>
       <li><strong>Administration</strong> — admin-only system management.</li>
-      <li><strong>Account</strong> — password and session.</li>
+      <li><strong>Account</strong> — password, session and themes.</li>
+      <li><strong>Reference</strong> — screens and roles, troubleshooting, glossary.</li>
     </ul>
     <p>
       Each page describes, in order: what the screen is for, where it lives in the

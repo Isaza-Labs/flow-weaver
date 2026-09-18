@@ -130,7 +130,7 @@
   }
 </script>
 
-<svelte:head><title>Python packages · Flow Weaver</title></svelte:head>
+<svelte:head><title>Python packages · FlowWeaver</title></svelte:head>
 
 <div class="p-6 space-y-6">
   <PageHeader
