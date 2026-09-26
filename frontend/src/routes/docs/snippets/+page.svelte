@@ -140,7 +140,7 @@
   <section>
     <h2>The list page</h2>
     <p>
-      Route: <code>/snippets</code>. Header with a <em>New snippet</em> button,
+      Route: <code>/snippets</code>. Header with <em>Import</em>, <em>Export</em> and <em>New snippet</em> buttons,
       then a search input and a small counter ("N of M"), then a table.
     </p>
 
@@ -155,6 +155,7 @@
     <table>
       <thead><tr><th>Column</th><th>Meaning</th></tr></thead>
       <tbody>
+        <tr><td>☐</td><td>Row selection for <em>Export</em>. The header checkbox selects every row the filter shows.</td></tr>
         <tr><td>—</td><td>Chevron toggle. Only present when the snippet has an input schema. Click to expand the row and see the raw <code>input_schema</code> JSON inline.</td></tr>
         <tr><td>Name</td><td>Display name and (if present) the description on a second line. Click the name to open the editor. A dashed <em>unproven</em> chip appears when no step using this snippet has ever completed — those sit in the collapsed <em>Unproven</em> section of the workflow editor palette, so the chip is how you spot the drafts worth finishing or deleting.</td></tr>
         <tr><td>Type</td><td>Neutral badge with the snippet <code>type</code>.</td></tr>
@@ -170,6 +171,37 @@
       Deletion requires confirmation and cannot be undone. If any workflow
       references the snippet by id, its nodes will fail to resolve until the
       reference is fixed.
+    </p>
+
+    <h3>Export</h3>
+    <p>
+      <em>Export</em> in the header downloads a JSON bundle
+      (<code>{'{'} "format": "flowweaver.snippets", "version": 1, "snippets": [ … ] {'}'}</code>).
+      Tick rows to export just those (the button reads <em>Export selected (N)</em>);
+      with nothing ticked it exports every snippet the current filter shows.
+      Only the fields an author defines travel — name, type, description, code,
+      schemas, target mode, parallelism, timeout, retry policy, logic diagram,
+      rollback override, <code>changes_state</code> and <code>network_enabled</code>.
+      Ids, timestamps, the author, run counters and <code>verified</code> belong to
+      this instance and are left out.
+    </p>
+
+    <h3>Import</h3>
+    <p>
+      <em>Import</em> opens a dialog where you choose, drop or paste a bundle. A bare
+      array of snippets or a single snippet object is accepted too. The dialog
+      previews what will be imported and lists any entries it will ignore (missing
+      <code>name</code> or <code>type</code>). When a name already exists you pick
+      what happens: import it as a new snippet named <em>… (imported)</em>
+      (default), skip it, or overwrite the existing snippet.
+    </p>
+    <p>
+      Each entry goes through the normal create/update endpoints, so it gets the
+      same validation as a snippet made by hand and needs the
+      <code>snippet.manage</code> permission. A <code>network_enabled</code> snippet
+      imported by a non-admin lands with the flag off, and a warning says so. If some
+      entries fail, the ones that succeeded stay saved and the dialog lists the reasons
+      for the rest.
     </p>
   </section>
 
@@ -296,9 +328,19 @@
 
     <h4>Retry policy</h4>
     <p>
-      JSON describing how the engine should retry transient failures. Typical
-      keys: <code>max_retries</code>, <code>backoff</code>. An empty object means
+      JSON describing how the engine should retry transient failures. Keys:
+      <code>max_retries</code>, <code>initial_delay_seconds</code>,
+      <code>backoff</code> (<code>exponential</code>, <code>linear</code> or
+      <code>fixed</code>) and <code>max_delay_seconds</code>. An empty object means
       no retries.
+    </p>
+    <p>
+      Only failures that are safe to repeat are retried: a connection that could
+      not be opened (SSH, HTTP), a timeout or 5xx on a read request, and a
+      <code>429</code> or <code>503</code> on any request. A write that may have
+      reached the server, an authentication error or a failure in your own code is
+      never retried. All attempts run in the same step, and its log lists every
+      failed attempt.
     </p>
 
     <Callout tone="warning" title="JSON syntax matters">
@@ -456,6 +498,16 @@
       <code>integration("netbox")</code>. The runtime hands the script that
       integration's base URL and auth headers.
     </p>
+    <Callout tone="warning" title="The snippet must be network-enabled">
+      <code>integration()</code> makes its HTTP call from inside the sandbox, and a
+      snippet that is not <a href="#network-enabled">network-enabled</a> runs with no
+      network at all. On a deployed worker (bubblewrap sandbox) such a step fails
+      before the script starts, with a message naming the integrations it declared.
+      Either an admin ticks <strong>Network enabled</strong> on the snippet, or the
+      HTTP call moves to an <code>integration_action</code> node whose output the
+      snippet reads. Local development runs without the sandbox, so the call works
+      there either way. Don't take that as proof it will work once deployed.
+    </Callout>
     <Callout tone="warning" title="The id must be written in the node">
       Because the script can read those headers, only the workflow's author picks
       the integration: the value must be a literal in the node's own config. An id

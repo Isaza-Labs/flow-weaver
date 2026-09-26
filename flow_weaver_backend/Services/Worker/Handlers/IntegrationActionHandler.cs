@@ -151,7 +151,17 @@ public sealed class IntegrationActionHandler : ISnippetHandler
                 ex,
                 "worker.integration_action.failed step_run_id={StepRunId} integration_id={IntegrationId} action_id={ActionId} action_name={ActionName} url_host={UrlHost}",
                 request.StepRunId, integrationId, actionId, action.Name, urlHost);
-            return Fail($"integration request failed: {ex.Message}");
+            return Fail($"integration request failed: {ex.Message}",
+                HttpVerbs.RetryableTransportFailure(method.Method, ex));
+        }
+        catch (TaskCanceledException) when (!ct.IsCancellationRequested)
+        {
+            // HttpClient reports its own timeout as a cancellation. Caught here so it is a
+            // step failure the retry gate can judge, not a handler crash.
+            _logger.LogError(
+                "worker.integration_action.timeout step_run_id={StepRunId} integration_id={IntegrationId} action_id={ActionId} action_name={ActionName} url_host={UrlHost}",
+                request.StepRunId, integrationId, actionId, action.Name, urlHost);
+            return Fail("integration request timed out", HttpVerbs.RetryableTimeout(method.Method));
         }
 
         // The using ensures the underlying socket goes back to the pool
@@ -227,6 +237,7 @@ public sealed class IntegrationActionHandler : ISnippetHandler
                 ? StepChange.Changed : StepChange.Unchanged,
             Logs = $"{method} {url} → {(int)response.StatusCode}",
             Error = ok ? string.Empty : $"HTTP {(int)response.StatusCode}",
+            Retryable = !ok && HttpVerbs.RetryableStatus(method.Method, (int)response.StatusCode),
         };
     }
 
@@ -268,7 +279,7 @@ public sealed class IntegrationActionHandler : ISnippetHandler
         return true;
     }
 
-    private static SnippetResult Fail(string error) =>
+    private static SnippetResult Fail(string error, bool retryable = false) =>
         new() { // A step that failed before its action did anything changed nothing.
-        Change = StepChange.Unchanged, Success = false, Error = error };
+        Change = StepChange.Unchanged, Success = false, Error = error, Retryable = retryable };
 }

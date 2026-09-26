@@ -14,7 +14,9 @@ only when the step needs logic the declarative node can't express
 (multi-call orchestration, loops, diffs, conditional output, vendor parsing).
 And even then, the script calls the system through `integration("<name>")`
 (the sandbox blocks `requests`/`urllib`), so it still routes through the
-registered integration's auth + SSRF guard + audit.
+registered integration's auth + SSRF guard + audit. `integration()` only
+works in a **network-enabled** snippet, and only an admin can set that flag in
+the UI (see `python_snippets.md` → *Calling a registered Integration*).
 
 Why prefer `integration_action`:
 
@@ -90,7 +92,7 @@ references, never plaintext (see `python_snippets.md` § secrets).
 |---|---|
 | Persist a call **inside a workflow** | `integration_action` node |
 | Ask a **one-shot** question against any catalog API right now | `execute_operation` (see `discovery.md`) |
-| Multi-step logic across several calls / transforms / conditionals | `python_snippet` calling `integration("<name>")` |
+| Multi-step logic across several calls / transforms / conditionals | `integration_action` node(s) + a plain `python_snippet` over their output. Only if it must call in a loop: `python_snippet` calling `integration("<name>")`, which needs an admin to tick *Network enabled* |
 | Generic HTTP to an arbitrary URL with **no** product behind it | `rest_call` |
 
 ## Health

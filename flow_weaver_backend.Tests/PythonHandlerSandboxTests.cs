@@ -279,6 +279,54 @@ public class PythonHandlerSandboxTests
     }
 
     [Fact]
+    public void Integrations_in_an_isolated_bwrap_sandbox_fail_fast_with_the_fix()
+    {
+        // Reproduced in the worker image: integration() from a snippet without
+        // network_enabled died with "Temporary failure in name resolution".
+        var error = PythonHandler.IntegrationsWithoutNetworkError("bwrap", false, new[] { "netbox" });
+
+        Assert.NotNull(error);
+        Assert.Contains("'netbox'", error);
+        Assert.Contains("Network enabled", error);
+        Assert.Contains("integration_action", error);
+    }
+
+    [Theory]
+    [InlineData("bwrap", true)]    // network-enabled: the sandbox shares the host net
+    [InlineData("none", false)]    // Development: bare python3, host network
+    [InlineData("nsjail", false)]  // operator-configured, may grant network
+    [InlineData("custom", false)]
+    public void Integrations_are_left_alone_where_the_sandbox_may_have_network(string mode, bool networkEnabled)
+    {
+        Assert.Null(PythonHandler.IntegrationsWithoutNetworkError(mode, networkEnabled, new[] { "netbox" }));
+    }
+
+    [Fact]
+    public void A_snippet_without_integrations_is_not_affected()
+    {
+        Assert.Null(PythonHandler.IntegrationsWithoutNetworkError("bwrap", false, Array.Empty<string>()));
+    }
+
+    [Fact]
+    public void Bwrap_network_enabled_binds_the_public_ca_store_only()
+    {
+        // Debian's OpenSSL default paths are symlinks into /etc/ssl. Without
+        // the certs bound, HTTPS from a network-enabled snippet failed with
+        // CERTIFICATE_VERIFY_FAILED (reproduced in the worker image).
+        var m = typeof(PythonHandler)
+            .GetMethod("BuildBwrap", BindingFlags.Static | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException("BuildBwrap not found");
+
+        var (_, networked) = ((string, List<string>))m.Invoke(null, new object?[] { "/tmp/fw-test.py", true, null })!;
+        Assert.Contains("/etc/ssl/certs", networked);
+        Assert.DoesNotContain(networked, a => a.StartsWith("/etc/ssl/private", StringComparison.Ordinal));
+        Assert.DoesNotContain("/etc/ssl", networked);   // the whole dir would include private/
+
+        var (_, isolated) = ((string, List<string>))m.Invoke(null, new object?[] { "/tmp/fw-test.py", false, null })!;
+        Assert.DoesNotContain("/etc/ssl/certs", isolated);
+    }
+
+    [Fact]
     public void Bwrap_binds_package_dir_and_sets_pythonpath_when_provided()
     {
         var m = typeof(PythonHandler)

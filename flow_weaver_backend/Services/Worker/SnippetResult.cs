@@ -64,4 +64,18 @@ public sealed class SnippetResult
     /// A tier says whether an action COULD be undone. This says whether anything WAS done.
     /// </remarks>
     public required StepChange Change { get; init; }
+
+    /// <summary>
+    /// Whether this failure may clear on its own, so running the step again could succeed.
+    /// </summary>
+    /// <remarks>
+    /// The gate of execution/SPEC.md §3: a snippet's <c>retry_policy</c> is honoured only for a
+    /// failure its handler marked retryable. Default false, because a retry is only safe when the
+    /// handler KNOWS the failed attempt did nothing — a refused connection, a timeout on a read,
+    /// a 503 the server answered without processing. A handler that cannot tell leaves it false:
+    /// re-running a write that may already have landed is worse than surfacing the failure.
+    ///
+    /// Ignored on success.
+    /// </remarks>
+    public bool Retryable { get; init; }
 }

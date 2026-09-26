@@ -35,16 +35,15 @@ namespace flow_weaver_backend.Services.Engine;
 //   - Join semantics: a node activates on the FIRST predecessor that
 //     completes with a matching edge. Full all-predecessor gating arrives
 //     with the condition evaluator in Sprint 2.7.
-//   - Retry policy: wired and delay-calculated, but the re-enqueue loop
-//     lives in the worker handler dispatch (Sprint 2.5); the executor
-//     records the retry count on step_runs for visibility.
+//   - Retry policy: applied by the worker, not here. A step's attempts all
+//     run inside its one `step` job (RetryPolicyExecutor.RunAsync), so the
+//     orchestrator only ever sees the step's final status.
 public sealed class WorkflowExecutor : IWorkflowExecutor
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly DagParser _parser;
     private readonly IVariableResolver _resolver;
     private readonly IConditionEvaluator _conditions;
-    private readonly RetryPolicyExecutor _retryCalc;
     private readonly WorkflowExecutorOptions _options;
     private readonly ILogger<WorkflowExecutor> _logger;
     private readonly SemaphoreSlim _gate;
@@ -56,7 +55,6 @@ public sealed class WorkflowExecutor : IWorkflowExecutor
         DagParser parser,
         IVariableResolver resolver,
         IConditionEvaluator conditions,
-        RetryPolicyExecutor retryCalc,
         IOptions<WorkflowExecutorOptions> options,
         ILogger<WorkflowExecutor> logger)
     {
@@ -64,7 +62,6 @@ public sealed class WorkflowExecutor : IWorkflowExecutor
         _parser = parser;
         _resolver = resolver;
         _conditions = conditions;
-        _retryCalc = retryCalc;
         _options = options.Value;
         _logger = logger;
         _gate = new SemaphoreSlim(_options.MaxConcurrentWorkflows, _options.MaxConcurrentWorkflows);
@@ -89,20 +86,24 @@ public sealed class WorkflowExecutor : IWorkflowExecutor
                                       && w.IsActive, ct)
             ?? throw new WorkflowExecutorException($"workflow {workflowId} not found");
 
-        // Sprint 3.4: environment guard. Draft workflows can only run on
-        // dev-sandbox workers. QA on qa-lab. Production on production.
-        // This is enforced at enqueue time so the user gets immediate
-        // feedback rather than a deferred failure in the worker.
-        var allowedEnv = workflow.Environment switch
-        {
-            "production" => "production",
-            "qa" => "qa-lab",
-            _ => "dev-sandbox",
-        };
+        // Sprint 3.4: environment guard, enforced at enqueue time so the
+        // user gets immediate feedback rather than a deferred failure in
+        // the worker. Worker environments form a ladder: dev-sandbox runs
+        // drafts only, qa-lab runs drafts + qa, production runs everything.
+        // A production box is the most trusted tier, so refusing qa there
+        // only forced operators to stand up a second deployment; the
+        // per-device AllowQa/AllowProduction flags still keep a qa run
+        // from touching devices not opened to qa (FR-021).
         var workerEnv = _options.WorkerEnvironment ?? "dev-sandbox";
-        if (workflow.Environment != "draft" && workerEnv != allowedEnv)
+        var allowedEnvs = workflow.Environment switch
+        {
+            "production" => new[] { "production" },
+            "qa" => new[] { "qa-lab", "production" },
+            _ => null, // draft runs on any worker
+        };
+        if (allowedEnvs is not null && !allowedEnvs.Contains(workerEnv))
             throw new WorkflowExecutorException(
-                $"workflow environment '{workflow.Environment}' requires worker environment '{allowedEnv}', but current is '{workerEnv}'");
+                $"workflow environment '{workflow.Environment}' requires worker environment '{string.Join("' or '", allowedEnvs)}', but current is '{workerEnv}'");
 
         // FR-021: resolve the requested targets against the workflow's
         // environment before the run row exists. The same selection that

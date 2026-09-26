@@ -701,8 +701,8 @@
     {/if}
 
     <div class="border-t border-surface-200-800 bg-surface-100-900/40 p-3">
-      <!-- Junto a la caja de texto, no en la barra lateral: quien escribe tiene
-           que ver a quien le esta escribiendo sin apartar la vista. -->
+      <!-- Next to the text box, not in the sidebar: whoever is typing needs
+           to see who they are writing to without looking away. -->
       {#if agents.length > 0}
         <div class="mb-2 flex items-center">
           <AgentPicker {agents} bind:value={agentId} disabled={streaming} />

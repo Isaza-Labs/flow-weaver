@@ -797,7 +797,8 @@ builder.Services.AddSingleton<IConditionEvaluator, ConditionEvaluator>();
 
 // Sprint 2.4: Workflow executor — the orchestration brain. Singleton
 // because it holds the concurrency SemaphoreSlim and creates scopes
-// internally (one per run). RetryPolicyExecutor is stateless.
+// internally (one per run). RetryPolicyExecutor is stateless; the worker
+// uses it to run a step's retry_policy attempts.
 builder.Services.Configure<WorkflowExecutorOptions>(
     builder.Configuration.GetSection(WorkflowExecutorOptions.SectionName));
 builder.Services.AddSingleton<RetryPolicyExecutor>();
@@ -1201,11 +1202,12 @@ if (app.Environment.IsDevelopment())
 }
 
 // Sprint 7 (revised): boot-time UPSERT of /Skills and /Specs into the
-// catalog rows. Disk wins on every restart — shipped catalog
-// entries get refreshed without admins having to click "Reseed from
-// disk". Custom rows (filenames not present on disk) are left alone.
-// The runtime reseed buttons stay for hot-edits inside the running
-// container.
+// catalog rows. Shipped entries that are still the shipped version get
+// refreshed without admins having to click "Reseed from disk"; rows an
+// admin edited or deactivated are kept as they are (see
+// ShippedCatalog). Custom rows (filenames not present on disk) are left
+// alone. The runtime reseed buttons stay for taking the shipped version
+// explicitly and for hot-edits inside the running container.
 {
     var scopeFactory = app.Services.GetRequiredService<IServiceScopeFactory>();
     var catalogLogger = app.Services.GetRequiredService<ILogger<Program>>();

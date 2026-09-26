@@ -61,12 +61,13 @@ paths:
                 network_enabled:
                   type: boolean
                   description: >
-                    python_snippet ONLY. Set true to run the script in the
-                    relaxed (network-enabled) sandbox with netmiko/paramiko +
-                    host network — for INTERACTIVE SSH the fixed `ssh` step
-                    can't handle (e.g. a password change that prompts for
-                    confirmation, commit confirms). Requires the admin role;
-                    rejected otherwise. See Skills/netmiko_snippets.md.
+                    python_snippet ONLY. True runs the script in the relaxed
+                    (network-enabled) sandbox with netmiko/paramiko + host
+                    network. HUMAN-ONLY for the agent: a call that sets it is
+                    always refused, admin or not. Omit it. Reuse the seeded
+                    `SSH primitive (paramiko)` snippet, or create the snippet
+                    without the flag and ask an admin to enable it in the
+                    Snippets UI. See Skills/netmiko_snippets.md.
       responses: { "201": { description: Created } }
   /snippet/{id}:
     get:
@@ -103,8 +104,10 @@ paths:
                 network_enabled:
                   type: boolean
                   description: >
-                    python_snippet only; admin-only. Enables the relaxed
-                    sandbox for interactive netmiko/paramiko SSH. See
+                    python_snippet only. HUMAN-ONLY for the agent: setting
+                    it is always refused. An admin toggles it in the Snippets
+                    UI. Editing a snippet that is already network-enabled
+                    (code included) requires the admin role. See
                     Skills/netmiko_snippets.md.
       responses: { "200": { description: Updated } }
     delete:

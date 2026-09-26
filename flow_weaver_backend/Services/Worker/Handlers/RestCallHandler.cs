@@ -138,14 +138,14 @@ public sealed class RestCallHandler : ISnippetHandler
                 ex,
                 "worker.rest.failed step_run_id={StepRunId} method={Method} url_host={UrlHost} reason={Reason}",
                 request.StepRunId, method, urlHost, "request_exception");
-            return Fail($"request failed: {ex.Message}");
+            return Fail($"request failed: {ex.Message}", HttpVerbs.RetryableTransportFailure(method, ex));
         }
         catch (TaskCanceledException) when (!ct.IsCancellationRequested)
         {
             _logger.LogError(
                 "worker.rest.failed step_run_id={StepRunId} method={Method} url_host={UrlHost} reason={Reason}",
                 request.StepRunId, method, urlHost, "timeout");
-            return Fail("request timed out");
+            return Fail("request timed out", HttpVerbs.RetryableTimeout(method));
         }
 
         var responseBody = await response.Content.ReadAsStringAsync(ct);
@@ -177,6 +177,7 @@ public sealed class RestCallHandler : ISnippetHandler
             Change = success && HttpVerbs.Mutating(method) ? StepChange.Changed : StepChange.Unchanged,
             Logs = $"{method} {declaredUrl} → {(int)response.StatusCode}",
             Error = success ? string.Empty : $"HTTP {(int)response.StatusCode}",
+            Retryable = !success && HttpVerbs.RetryableStatus(method, (int)response.StatusCode),
         };
     }
 
@@ -187,7 +188,7 @@ public sealed class RestCallHandler : ISnippetHandler
             ? value
             : await _secrets.SubstituteAsync(value, ct);
 
-    private static SnippetResult Fail(string error) =>
+    private static SnippetResult Fail(string error, bool retryable = false) =>
         new() { // A step that failed before its action did anything changed nothing.
-        Change = StepChange.Unchanged, Success = false, Error = error };
+        Change = StepChange.Unchanged, Success = false, Error = error, Retryable = retryable };
 }

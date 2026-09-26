@@ -248,7 +248,6 @@ public sealed partial class FlowWeaverAdapter
                 new DagParser(NullLogger<DagParser>.Instance),
                 new VariableResolver(NullLogger<VariableResolver>.Instance),
                 new ConditionEvaluator(NullLogger<ConditionEvaluator>.Instance),
-                new RetryPolicyExecutor(NullLogger<RetryPolicyExecutor>.Instance),
                 Microsoft.Extensions.Options.Options.Create(_options),
                 NullLogger<WorkflowExecutor>.Instance);
 

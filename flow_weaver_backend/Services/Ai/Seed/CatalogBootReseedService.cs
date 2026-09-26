@@ -7,19 +7,20 @@ using ApiSpecModel = flow_weaver_backend.Models.AiApiSpec;
 
 namespace flow_weaver_backend.Services.Ai.Seed;
 
-// Boot-time skill + spec sync. Replaces the old "insert-only on first
-// boot" CatalogSeedService with an upsert that runs every time the
-// backend starts: the disk is treated as the source of truth for
-// shipped catalog entries, the same way appsettings.json is the source
-// of truth for shipped configuration.
+// Boot-time skill + spec sync. Runs every time the backend starts, so a
+// new release's shipped /Skills/*.md and /Specs/*.yaml reach the catalog
+// without anyone clicking "Reseed from disk".
 //
-// Tradeoff (deliberate): an admin who edited a SHIPPED skill / spec
-// row through the UI WILL lose those edits on next boot — the skill
-// file in /Skills wins. To keep custom edits across deploys, the admin
-// should rename the row (e.g. base.md → base.local.md) so it doesn't
-// collide with a shipped filename. Files no longer present on disk
-// are NOT deleted from the DB — that keeps custom rows that were
-// never shipped from disk in the first place.
+// A shipped update replaces a row only while the row still holds the
+// shipped content the sync last gave it (ShippedCatalog.Decide). An admin
+// who edits a shipped skill keeps the edit across restarts and upgrades;
+// the boot logs that the row differs from the shipped file, and "Reseed
+// from disk" is the explicit way to take the shipped version. The boot
+// also never re-activates a row an admin deactivated — only a brand-new
+// row is created active.
+//
+// Files no longer present on disk are NOT deleted from the DB — that
+// keeps custom rows that were never shipped from disk in the first place.
 //
 // The runtime "Reseed from disk" button on /ai/skills + /ai/specs
 // stays as the way to pick up changes inside a running container
@@ -55,8 +56,8 @@ public static class CatalogBootReseedService
         var totalSpecsImported = 0;
         var totalSpecsUpdated = 0;
 
-        (int sImp, int sUpd) = await UpsertSkillsAsync(db, skillFiles, ct);
-        (int apiImp, int apiUpd) = await UpsertSpecsAsync(db, specFiles, ct);
+        (int sImp, int sUpd) = await UpsertSkillsAsync(db, skillFiles, logger, ct);
+        (int apiImp, int apiUpd) = await UpsertSpecsAsync(db, specFiles, logger, ct);
         totalSkillsImported += sImp;
         totalSkillsUpdated += sUpd;
         totalSpecsImported += apiImp;
@@ -77,7 +78,7 @@ public static class CatalogBootReseedService
     }
 
     private static async Task<(int imported, int updated)> UpsertSkillsAsync(
-        AppDbContext db, IReadOnlyList<DiskFile> files, CancellationToken ct)
+        AppDbContext db, IReadOnlyList<DiskFile> files, ILogger logger, CancellationToken ct)
     {
         if (files.Count == 0) return (0, 0);
 
@@ -87,16 +88,30 @@ public static class CatalogBootReseedService
         var now = DateTime.UtcNow;
         var imported = 0;
         var updated = 0;
+        var hashesRecorded = false;
         foreach (var file in files)
         {
             var name = file.Name;
             if (existing.TryGetValue(name, out var row))
             {
-                if (row.Content == file.Content && row.IsActive) continue;
-                row.Content = file.Content;
-                row.IsActive = true;
-                row.UpdatedAt = now;
-                updated++;
+                switch (ShippedCatalog.Decide(row.Content, row.ShippedContentHash, row.CreatedBy, file.Content))
+                {
+                    case ShippedCatalog.Decision.RecordHash:
+                        row.ShippedContentHash = ShippedCatalog.Hash(file.Content);
+                        hashesRecorded = true;
+                        break;
+                    case ShippedCatalog.Decision.Update:
+                        row.Content = file.Content;
+                        row.ShippedContentHash = ShippedCatalog.Hash(file.Content);
+                        row.UpdatedAt = now;
+                        updated++;
+                        break;
+                    case ShippedCatalog.Decision.KeepEdited:
+                        logger.LogInformation(
+                            "catalog.boot.kept_edit kind=skill name={Name} — differs from the shipped file and was kept; Reseed from disk takes the shipped version",
+                            name);
+                        break;
+                }
             }
             else
             {
@@ -105,6 +120,7 @@ public static class CatalogBootReseedService
                     AiPromptSkillId = Guid.NewGuid(),
                     Name = name,
                     Content = file.Content,
+                    ShippedContentHash = ShippedCatalog.Hash(file.Content),
                     SortOrder = name.Equals("base.md", StringComparison.OrdinalIgnoreCase) ? 0 : 100,
                     IsActive = true,
                     CreatedAt = now,
@@ -113,7 +129,7 @@ public static class CatalogBootReseedService
                 imported++;
             }
         }
-        if (imported + updated > 0)
+        if (imported + updated > 0 || hashesRecorded)
         {
             try { await db.SaveChangesAsync(ct); }
             catch (DbUpdateException ex) when (IsUniqueViolation(ex))
@@ -131,7 +147,7 @@ public static class CatalogBootReseedService
     }
 
     private static async Task<(int imported, int updated)> UpsertSpecsAsync(
-        AppDbContext db, IReadOnlyList<DiskFile> files, CancellationToken ct)
+        AppDbContext db, IReadOnlyList<DiskFile> files, ILogger logger, CancellationToken ct)
     {
         if (files.Count == 0) return (0, 0);
 
@@ -141,19 +157,32 @@ public static class CatalogBootReseedService
         var now = DateTime.UtcNow;
         var imported = 0;
         var updated = 0;
+        var hashesRecorded = false;
         foreach (var file in files)
         {
             var api = Path.GetFileNameWithoutExtension(file.Name).ToLowerInvariant();
-            var opCount = SafeCountOps(file.Content);
 
             if (existing.TryGetValue(api, out var row))
             {
-                if (row.Content == file.Content && row.IsActive) continue;
-                row.Content = file.Content;
-                row.OperationCount = opCount;
-                row.IsActive = true;
-                row.UpdatedAt = now;
-                updated++;
+                switch (ShippedCatalog.Decide(row.Content, row.ShippedContentHash, row.CreatedBy, file.Content))
+                {
+                    case ShippedCatalog.Decision.RecordHash:
+                        row.ShippedContentHash = ShippedCatalog.Hash(file.Content);
+                        hashesRecorded = true;
+                        break;
+                    case ShippedCatalog.Decision.Update:
+                        row.Content = file.Content;
+                        row.OperationCount = SafeCountOps(file.Content);
+                        row.ShippedContentHash = ShippedCatalog.Hash(file.Content);
+                        row.UpdatedAt = now;
+                        updated++;
+                        break;
+                    case ShippedCatalog.Decision.KeepEdited:
+                        logger.LogInformation(
+                            "catalog.boot.kept_edit kind=spec name={Name} — differs from the shipped file and was kept; Reseed from disk takes the shipped version",
+                            api);
+                        break;
+                }
             }
             else
             {
@@ -162,7 +191,8 @@ public static class CatalogBootReseedService
                     AiApiSpecId = Guid.NewGuid(),
                     Api = api,
                     Content = file.Content,
-                    OperationCount = opCount,
+                    ShippedContentHash = ShippedCatalog.Hash(file.Content),
+                    OperationCount = SafeCountOps(file.Content),
                     IsActive = true,
                     CreatedAt = now,
                     UpdatedAt = now,
@@ -170,7 +200,7 @@ public static class CatalogBootReseedService
                 imported++;
             }
         }
-        if (imported + updated > 0)
+        if (imported + updated > 0 || hashesRecorded)
         {
             try { await db.SaveChangesAsync(ct); }
             catch (DbUpdateException ex) when (IsUniqueViolation(ex))

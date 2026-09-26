@@ -145,6 +145,14 @@ set_output({"echo": get_input()})  # module-level
 module level → the module-level call wins; `run` is skipped (auto-invoke
 short-circuits once `set_output` ran).
 
+**An exception inside `run(ctx)` fails the step** (non-zero exit, the
+traceback in the step's Logs), the same as from module-level code. So
+`{"raw": ""}` on a *successful* python step means exactly one thing: the
+script exited without ever calling `set_output()`. Read the step's Logs —
+if a traceback is there, the step also failed and the message names the
+line. Do not paper over it with `.get(key, [])`: fix the key, the
+`<name>_integration_id`, or the upstream shape the script assumed.
+
 ## Mermaid diagram — MANDATORY on every create/update
 
 `python_snippet` create/update payloads MUST include
@@ -178,12 +186,22 @@ fail with `Blocked: script imports disallowed module '<name>'`:
 | `csv`, `io`, `base64` | build CSV bytes + encode for email attachments |
 | `string`, `collections`, `itertools` | tabular transforms, `Counter`, `groupby`, `chain` |
 | `hashlib` | content-hash dedup / idempotency keys |
+| `time` | `time.monotonic()` deadlines, short `time.sleep()` |
 
 Also blocked: `exec(`, `eval(`, `__import__`, `open(`,
-`requests`, `urllib`, `urllib.parse`, `socket`, `subprocess`, `os`.
+`requests`, `urllib`, `urllib.parse`, `socket`, `subprocess`, `os`,
+`typing`, `__future__`, `logging` (the last one is allowed only in network-enabled snippets).
 
-The only network egress is `integration(name)` (below) — credentials,
-URL guards, and audit logs are applied there.
+The AST guard also blocks some **names** wherever they appear, not only when
+they are called: `input`, `open`, `compile` (so `re.compile` is out), `eval`,
+`exec`, `getattr`, `setattr`, `vars`, `locals`, `globals`. A variable called
+`input` is refused, so call it `inp`. If you are adapting a script the user
+pasted, work through the porting checklist in `Skills/netmiko_snippets.md`
+first; it applies to every python_snippet, not only network-enabled ones.
+
+A plain python_snippet has **no network at all**, and that includes
+`integration(name)`. See *Calling a registered Integration* below for what
+that means and what to do instead.
 
 **Extra modules (admin-managed).** Beyond the table above, an admin can allow
 more imports at `/admin/python-packages` (a stdlib module, or a PyPI
@@ -308,6 +326,25 @@ Read this rule once, apply forever — every NetBox write that touches a
 related field needs the dict (or id) form.
 
 ## Calling a registered Integration
+
+**`integration()` needs a network-enabled snippet.** The HTTP call is made
+from inside the sandbox, and a snippet without `network_enabled` has no
+network. On a deployed worker, a step that declares any `<name>_integration_id`
+in a snippet without the flag fails before the script starts, with
+`this snippet declares integration(s) 'netbox' but is not network-enabled`.
+It works in local Development only because that runs without the sandbox.
+
+You cannot set the flag yourself (it is human_only), so pick one of these:
+
+1. **Default: keep the HTTP out of python.** Put the call in an
+   `integration_action` node and let a plain python_snippet read
+   `inp['steps']['<node>']['output']`. That covers most flows: one call per
+   node, then logic over the result.
+2. **When the logic really must call the API in a loop** (paginate, look up
+   each row, patch back), write the snippet as below, create it without the
+   flag, and ask the user to have an admin tick *Network enabled* on it in
+   `/snippets/<id>`. Say this in the plan, before the first run fails. Do not
+   discover it from the error.
 
 Never hardcode base URLs or tokens. Declare integrations in
 `config_overrides` using the `<name>_integration_id` convention.
@@ -459,13 +496,95 @@ gate allows it.
   - **Exception — INTERACTIVE SSH** (a prompt you must answer mid-session,
     e.g. a password change that asks to confirm, commit-confirm, `[y/n]`):
     the `ssh` step can't do prompt/response. Use a **network-enabled
-    python_snippet** with netmiko/paramiko — see `Skills/netmiko_snippets.md`
-    (admin-only; set `network_enabled: true`).
+    python_snippet** with netmiko/paramiko — see `Skills/netmiko_snippets.md`.
+    You cannot set `network_enabled` yourself (human_only). Reuse the seeded
+    `SSH primitive (paramiko)`, which also covers Windows/PowerShell over SSH,
+    or draft the snippet and have an admin tick the flag in the UI.
+  - **Public HTTP API with no Integration** (NVD, a vendor advisory feed):
+    a `rest_call` node does the request and a python_snippet parses its
+    `body`. See *Recipe: NVD CVE lookup* below. Do not use `httpx`/`requests`.
 - **Don't hardcode URLs or tokens** — route through `integration(name)`.
 - **Don't swallow exceptions** — surface them. The worker tags the step
   failed when `run()` raises; bare `try/except: pass` hides bugs.
 - **Don't loop unbounded over paginated APIs** — respect `limit=500`
   and follow `next` cursors.
+
+## Recipe: NVD CVE lookup by CPE
+
+The NVD 2.0 API is public HTTPS, and a `rest_call` node reaches it with no
+python networking. Split the work in two: the HTTP call, then the parsing.
+
+**`nvd-cves`**: a `rest_call` snippet. The seeded `rest_call` is
+`target_mode: once`. To look up one CPE per device (for example after
+`parse-windows-audit` in `Skills/netmiko_snippets.md`), create your own with
+`type: "rest_call", target_mode: "per_device"`. Node `config_overrides`:
+
+```json
+{
+  "method": "GET",
+  "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?cpeName={{ steps.parse-windows-audit.output.cpe }}&isVulnerable",
+  "headers": { "apiKey": "${secret:secret:nvd_api_key:value}" }
+}
+```
+
+Three details about NVD. Each one causes a 404 or a 403 that looks like a bug
+in your code:
+
+- `isVulnerable` is a **bare flag**. `isVulnerable=true` returns 404.
+- `cpeName` needs part, vendor, product and version, with no `*` in those four.
+  Some products were renamed: Windows 10 is split per release
+  (`windows_10_22h2`), not `windows_10:<release>`. The NVD CPE dictionary is
+  authoritative.
+- Without an API key the limit is 5 requests per 30 s, and going over returns
+  **403**. Set the node's `max_parallel: 1`. If the user has no key, leave the
+  `headers` out and tell them the fan-out will be slow. Do not add `time.sleep`
+  to a python step to compensate.
+
+`rest_call` fails the step on a non-2xx response. For a device whose `cpe` came
+back `null`, the URL has an empty `cpeName`, so that device fails here with a
+404 instead of silently reporting zero CVEs.
+
+**`nvd-cves-parse`**: python_snippet, same `target_mode` as `nvd-cves`,
+`changes_state: false`:
+
+<!-- guard-check: base -->
+```python
+import json
+from flowweaver_runtime import get_input, set_output
+
+inp = get_input()
+resp = inp["steps"]["nvd-cves"]["output"]
+if "body" not in resp:
+    raise ValueError(f"expected a rest_call output with 'body', got keys: {sorted(resp)}")
+
+data = json.loads(resp["body"])
+cves = []
+for item in data.get("vulnerabilities", []):
+    cve = item["cve"]
+    descriptions = cve.get("descriptions", [])
+    detail = next((d["value"] for d in descriptions if d.get("lang") == "en"),
+                  descriptions[0]["value"] if descriptions else "")
+    metrics = cve.get("metrics", {})
+    score = None
+    for key in ("cvssMetricV31", "cvssMetricV30", "cvssMetricV2"):
+        if metrics.get(key):
+            score = metrics[key][0]["cvssData"].get("baseScore")
+            break
+    cves.append({"id": cve["id"], "score": score, "detail": detail})
+
+cves.sort(key=lambda c: c["score"] or 0, reverse=True)
+set_output({
+    "total": data.get("totalResults", len(cves)),
+    "returned": len(cves),
+    "cves": cves,
+})
+```
+
+Diagram: `flowchart TD\n in([steps.nvd-cves.output.body]) --> j[json.loads] --> l[per vulnerability: id, English description, best CVSS score] --> s[sort by score desc] --> out([total, returned, cves])`
+
+NVD pages at 2000 results (`resultsPerPage` / `startIndex`). One OS build
+usually stays under that. If `total > returned`, say so in the report rather
+than presenting the list as complete.
 
 ## Editing an existing snippet
 

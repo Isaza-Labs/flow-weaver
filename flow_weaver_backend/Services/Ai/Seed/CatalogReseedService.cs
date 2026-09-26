@@ -22,6 +22,11 @@ namespace flow_weaver_backend.Services.Ai.Seed;
 //
 // Custom rows (filenames not present on disk) are left alone — reseed
 // is additive/upsert, never destructive.
+//
+// Unlike the boot sync, this DOES overwrite an edited shipped row: an admin
+// pressing the button is asking for the shipped version. It records the
+// shipped hash (ShippedCatalog) so later boots treat the row as unedited
+// and keep it moving with new releases.
 public sealed class CatalogReseedService
 {
     private static readonly HashSet<string> HttpMethods = new(StringComparer.OrdinalIgnoreCase)
@@ -74,10 +79,16 @@ public sealed class CatalogReseedService
             var name = Path.GetFileName(file);
             var content = await File.ReadAllTextAsync(file, ct);
 
+            var hash = ShippedCatalog.Hash(content);
             if (existing.TryGetValue(name, out var row))
             {
-                if (row.Content == content) continue;
+                if (row.Content == content)
+                {
+                    row.ShippedContentHash = hash;
+                    continue;
+                }
                 row.Content = content;
+                row.ShippedContentHash = hash;
                 row.UpdatedAt = now;
                 row.IsActive = true;
                 updated++;
@@ -89,6 +100,7 @@ public sealed class CatalogReseedService
                     AiPromptSkillId = Guid.NewGuid(),
                     Name = name,
                     Content = content,
+                    ShippedContentHash = hash,
                     SortOrder = name.Equals("base.md", StringComparison.OrdinalIgnoreCase) ? 0 : 100,
                     IsActive = true,
                     CreatedAt = now,
@@ -98,9 +110,11 @@ public sealed class CatalogReseedService
             }
         }
 
+        // Always saved: a row whose content already matched may still have
+        // needed its hash recorded.
+        await _db.SaveChangesAsync(ct);
         if (imported > 0 || updated > 0)
         {
-            await _db.SaveChangesAsync(ct);
             _skills.Invalidate();
             _logger.LogInformation(
                 "catalog.reseed.skills imported={Imported} updated={Updated}",
@@ -135,10 +149,16 @@ public sealed class CatalogReseedService
             var content = await File.ReadAllTextAsync(file, ct);
             var opCount = SafeCountOps(content);
 
+            var hash = ShippedCatalog.Hash(content);
             if (existing.TryGetValue(api, out var row))
             {
-                if (row.Content == content) continue;
+                if (row.Content == content)
+                {
+                    row.ShippedContentHash = hash;
+                    continue;
+                }
                 row.Content = content;
+                row.ShippedContentHash = hash;
                 row.OperationCount = opCount;
                 row.UpdatedAt = now;
                 row.IsActive = true;
@@ -151,6 +171,7 @@ public sealed class CatalogReseedService
                     AiApiSpecId = Guid.NewGuid(),
                     Api = api,
                     Content = content,
+                    ShippedContentHash = hash,
                     OperationCount = opCount,
                     IsActive = true,
                     CreatedAt = now,
@@ -160,9 +181,9 @@ public sealed class CatalogReseedService
             }
         }
 
+        await _db.SaveChangesAsync(ct);
         if (imported > 0 || updated > 0)
         {
-            await _db.SaveChangesAsync(ct);
             await _specs.ReloadAsync(ct);
             _logger.LogInformation(
                 "catalog.reseed.specs imported={Imported} updated={Updated}",

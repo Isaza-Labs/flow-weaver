@@ -92,7 +92,9 @@ the **last resort**, not the default.
    loops, diffs, conditional output, vendor parsing → `python_snippet`.
    Even here, external calls go through `integration("<name>")` (the sandbox
    blocks `requests`/`urllib`), so you still consume the registered
-   integration — you never hand-roll HTTP.
+   integration — you never hand-roll HTTP. `integration()` needs the snippet to
+   be **network-enabled** (admin, from the UI). Prefer an `integration_action`
+   node that feeds the python step.
 
 **No Integration registered for the system the step needs?** Do NOT silently
 fall back to `python_snippet`. Tell the user and offer

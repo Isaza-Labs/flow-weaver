@@ -67,7 +67,6 @@ public class WorkflowExecutorOrchestrationTests
             new DagParser(NullLogger<DagParser>.Instance),
             new VariableResolver(NullLogger<VariableResolver>.Instance),
             new ConditionEvaluator(NullLogger<ConditionEvaluator>.Instance),
-            new RetryPolicyExecutor(NullLogger<RetryPolicyExecutor>.Instance),
             Microsoft.Extensions.Options.Options.Create(Options),
             NullLogger<WorkflowExecutor>.Instance);
 
@@ -268,7 +267,6 @@ public class WorkflowExecutorOrchestrationTests
     [InlineData("production", "dev-sandbox")]
     [InlineData("production", "qa-lab")]
     [InlineData("qa", "dev-sandbox")]
-    [InlineData("qa", "production")]
     public async Task Enqueue_RefusesAWorkerInTheWrongEnvironment(string workflowEnv, string workerEnv)
     {
         using var f = new Fixture(o => o.WorkerEnvironment = workerEnv);
@@ -283,9 +281,13 @@ public class WorkflowExecutorOrchestrationTests
         Assert.Empty(db.WorkflowRuns);
     }
 
+    // Worker environments are a ladder: a production box is the most
+    // trusted tier and may also run qa workflows, so a single deployment
+    // can exercise draft → qa → production without a second worker.
     [Theory]
     [InlineData("production", "production")]
     [InlineData("qa", "qa-lab")]
+    [InlineData("qa", "production")]
     public async Task Enqueue_AcceptsTheMatchingWorkerEnvironment(string workflowEnv, string workerEnv)
     {
         using var f = new Fixture(o => o.WorkerEnvironment = workerEnv);

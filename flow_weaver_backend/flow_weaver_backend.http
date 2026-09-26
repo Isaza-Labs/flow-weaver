@@ -1,9 +1,9 @@
 @flow_weaver_backend_HostAddress = http://localhost:5228
 @contentType = application/json
 
-### Ejemplos listos para REST Client / JetBrains HTTP Client.
-### Pega el id que devuelve cada POST en la variable correspondiente para
-### encadenar las llamadas (create → update → delete).
+### Ready-to-run examples for REST Client / JetBrains HTTP Client.
+### Paste the id returned by each POST into the matching variable to
+### chain the calls (create → update → delete).
 
 @deviceId = 00000000-0000-0000-0000-000000000001
 @credentialId = 00000000-0000-0000-0000-000000000001
@@ -20,7 +20,7 @@
 @aiAgentId = 00000000-0000-0000-0000-000000000001
 
 ### ═══════════════════════════════════════════════════════════════
-###  OpenAPI — documentación generada
+###  OpenAPI — generated documentation
 ### ═══════════════════════════════════════════════════════════════
 
 GET {{flow_weaver_backend_HostAddress}}/openapi/v1.json
@@ -64,7 +64,7 @@ Content-Type: {{contentType}}
 DELETE {{flow_weaver_backend_HostAddress}}/api/device/{{deviceId}}
 
 ### ═══════════════════════════════════════════════════════════════
-###  Credential  /api/credential  (password/private_key se cifran)
+###  Credential  /api/credential  (password/private_key are encrypted)
 ### ═══════════════════════════════════════════════════════════════
 
 GET {{flow_weaver_backend_HostAddress}}/api/credential
@@ -240,7 +240,7 @@ GET {{flow_weaver_backend_HostAddress}}/api/workflowtrigger
 ###
 GET {{flow_weaver_backend_HostAddress}}/api/workflowtrigger/{{workflowTriggerId}}
 
-### Creación plana — rechazada a propósito (usa /api/workflow/{id}/triggers)
+### Flat creation — rejected on purpose (use /api/workflow/{id}/triggers)
 POST {{flow_weaver_backend_HostAddress}}/api/workflowtrigger
 Content-Type: {{contentType}}
 
@@ -298,7 +298,7 @@ Content-Type: {{contentType}}
   "reason": "Targets production without a maintenance window"
 }
 
-### Governance — approved → built  (stub hasta Fase 3)
+### Governance — approved → built  (stub until Phase 3)
 POST {{flow_weaver_backend_HostAddress}}/api/workflowplan/{{workflowPlanId}}/build
 
 ###
@@ -403,7 +403,7 @@ GET {{flow_weaver_backend_HostAddress}}/api/integrationaction
 ###
 GET {{flow_weaver_backend_HostAddress}}/api/integrationaction/{{integrationActionId}}
 
-### Creación plana — rechazada (usa /api/integration/{id}/actions)
+### Flat creation — rejected (use /api/integration/{id}/actions)
 POST {{flow_weaver_backend_HostAddress}}/api/integrationaction
 Content-Type: {{contentType}}
 
@@ -422,7 +422,7 @@ DELETE {{flow_weaver_backend_HostAddress}}/api/integrationaction/{{integrationAc
 GET {{flow_weaver_backend_HostAddress}}/api/integrationaction/actions/all
 
 ### ═══════════════════════════════════════════════════════════════
-###  AIProvider  /api/aiprovider  (api_key se cifra)
+###  AIProvider  /api/aiprovider  (api_key is encrypted)
 ### ═══════════════════════════════════════════════════════════════
 
 GET {{flow_weaver_backend_HostAddress}}/api/aiprovider

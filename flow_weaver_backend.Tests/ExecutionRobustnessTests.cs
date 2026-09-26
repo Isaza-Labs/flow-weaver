@@ -52,7 +52,6 @@ public class ExecutionRobustnessTests
     // are never reached on this path.
     private static WorkflowExecutor NewExecutor() =>
         new(scopeFactory: null!, parser: null!, resolver: null!, conditions: null!,
-            retryCalc: null!,
             options: Options.Create(new WorkflowExecutorOptions()),
             logger: NullLogger<WorkflowExecutor>.Instance);
 

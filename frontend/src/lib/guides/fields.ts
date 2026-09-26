@@ -268,7 +268,7 @@ export const FIELD_HINTS: Record<string, FieldHint> = {
   'snippets.retry_policy': {
     label: 'Retry policy',
     help: 'How many times a failed step retries and how long it waits between attempts, as JSON.',
-    detail: 'Retrying a step that is not idempotent repeats its side effects. Set the rollback policy honestly before adding retries.',
+    detail: 'Only failures that are safe to repeat are retried: an SSH or HTTP connection that could not be opened, a timeout or 5xx on a read, a 429 or 503. A write that may have reached the server is never repeated.',
   },
   'snippets.logic_diagram': {
     label: 'Logic diagram',
@@ -1009,7 +1009,7 @@ export const FIELD_HINTS: Record<string, FieldHint> = {
   'node.retry_policy': {
     label: 'Retry policy',
     help: 'Raw JSON describing how many times to retry this step and how long to wait between attempts. Leave empty for no retries.',
-    detail: 'Retrying a step that is not idempotent repeats its side effects. Set the rollback policy honestly before adding retries here.',
+    detail: 'Only failures that are safe to repeat are retried: an SSH or HTTP connection that could not be opened, a timeout or 5xx on a read, a 429 or 503. A write that may have reached the server is never repeated.',
   },
   'node.subflow': {
     label: 'Subflow',

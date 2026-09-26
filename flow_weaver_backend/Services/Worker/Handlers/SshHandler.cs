@@ -447,7 +447,7 @@ public sealed class SshHandler : ISnippetHandler
             _logger.LogWarning(
                 "worker.ssh.runner_fatal step_run_id={StepRunId} device_id={DeviceId} host={Host} error={Error}",
                 request.StepRunId, request.DeviceId, host, runnerResult.FatalError);
-            return Fail(runnerResult.FatalError);
+            return Fail(runnerResult.FatalError, runnerResult.Retryable);
         }
 
         // Merge policy denials with runner results in the original command order.
@@ -799,7 +799,12 @@ public sealed class SshHandler : ISnippetHandler
         if (proc.ExitCode != 0)
         {
             var msg = string.IsNullOrWhiteSpace(stderr) ? $"runner exited {proc.ExitCode}" : stderr.Trim();
-            return new RunnerResult(new(), null, null, msg);
+            // flow_weaver_ssh_runner.py exit codes: 3 = connect timeout, 5 = connect failure.
+            // Both are raised before the session exists, so no command ran and the step can
+            // be retried. Auth (2), host key (4) and parse (1) failures will not clear by
+            // themselves and stay final.
+            return new RunnerResult(new(), null, null, msg,
+                Retryable: IsRetryableRunnerExit(proc.ExitCode));
         }
 
         if (string.IsNullOrWhiteSpace(stdout))
@@ -850,9 +855,15 @@ public sealed class SshHandler : ISnippetHandler
 
     private static string Truncate(string s, int max) => s.Length <= max ? s : s[..max] + "…";
 
-    private static SnippetResult Fail(string error) =>
+    private const int ConnectTimeoutExit = 3;
+    private const int ConnectFailureExit = 5;
+
+    internal static bool IsRetryableRunnerExit(int exitCode) =>
+        exitCode is ConnectTimeoutExit or ConnectFailureExit;
+
+    private static SnippetResult Fail(string error, bool retryable = false) =>
         new() { // A step that failed before its action did anything changed nothing.
-        Change = StepChange.Unchanged, Success = false, Error = error };
+        Change = StepChange.Unchanged, Success = false, Error = error, Retryable = retryable };
 
     private sealed record PlannedCommand(string Command, bool Denied, string? PolicyName, string? PolicyReason)
     {
@@ -866,7 +877,8 @@ public sealed class SshHandler : ISnippetHandler
         string? DeviceType,
         string? HostKeyFingerprint,
         string? FatalError,
-        string? DeviceTypeFallback = null);
+        string? DeviceTypeFallback = null,
+        bool Retryable = false);
 
     private sealed record RunnerCommandResult(
         string Command,

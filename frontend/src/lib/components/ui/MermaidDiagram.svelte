@@ -36,6 +36,11 @@
       startOnLoad: false,
       securityLevel: 'strict',
       theme: 'dark',
+      // Without this, a parse failure makes mermaid draw its own
+      // "Syntax error in text" bomb into a temp div appended to
+      // <body> — and never remove it, so they pile up at the bottom
+      // of the page. We surface the error in-place instead.
+      suppressErrorRendering: true,
       flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' },
       sequence: { useMaxWidth: true },
     });
@@ -49,17 +54,18 @@
     renderToken++;
   });
 
-  // React to source changes. Debounce with a microtask so rapid typing
-  // in the textarea doesn't kick off a render per keystroke — we let
-  // Svelte batch and then render once with the final value.
+  // React to source changes. Debounce with a short timer so rapid typing
+  // in the textarea doesn't kick off a render (and a transient syntax
+  // error) per keystroke — we render once the author pauses.
   $effect(() => {
     void source; // dep
     if (!mermaidApi || !el) return;
     const token = ++renderToken;
-    queueMicrotask(() => {
+    const timer = setTimeout(() => {
       if (token !== renderToken) return;
       render();
-    });
+    }, 250);
+    return () => clearTimeout(timer);
   });
 
   async function render() {
@@ -78,6 +84,8 @@
       errorMessage = null;
       if (el) el.innerHTML = svg;
     } catch (e) {
+      // Belt and braces: drop any temp container mermaid left in <body>.
+      document.getElementById(`d${id}`)?.remove();
       if (thisToken !== renderToken) return;
       errorMessage = (e as Error).message ?? String(e);
       // Render-level errors leave a partial SVG behind sometimes;

@@ -46,7 +46,6 @@ public class SubflowOutcomeTests
         new DagParser(NullLogger<DagParser>.Instance),
         new VariableResolver(NullLogger<VariableResolver>.Instance),
         new ConditionEvaluator(NullLogger<ConditionEvaluator>.Instance),
-        new RetryPolicyExecutor(NullLogger<RetryPolicyExecutor>.Instance),
         Microsoft.Extensions.Options.Options.Create(new WorkflowExecutorOptions
         {
             PollIntervalMs = 1,

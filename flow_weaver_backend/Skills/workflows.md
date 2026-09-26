@@ -289,7 +289,7 @@ explaining or editing — it returns the exact shape used by
 ## Environments
 
 - **draft** — free edit, no approval.
-- **qa** — edits allowed, qa-lab workers only.
+- **qa** — edits allowed, runs on qa-lab or production workers.
 - **production** — **immutable via API**. `409 production_immutable` on
   any write. To change: `clone_workflow → draft`, edit, promote
   draft→qa→production. `draft → production` direct is forbidden.
@@ -596,7 +596,9 @@ fans over the **run's targets**, never an upstream step's output.
 Canonical shape — **the iteration runs in a `python_snippet`** because
 `integration_action` runs once per node, `report` is a document builder,
 and `python_snippet` can call `integration(name).get/post/patch(...)`
-in a loop and assemble both the rows and a pre-encoded CSV in one pass:
+in a loop and assemble both the rows and a pre-encoded CSV in one pass.
+That snippet has to be **network-enabled**, or `integration()` has no network.
+Only an admin can set the flag, from the UI, so put it in the plan:
 
 ```
 __start__

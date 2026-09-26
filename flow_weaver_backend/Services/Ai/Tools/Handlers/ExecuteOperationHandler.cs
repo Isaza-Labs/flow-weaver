@@ -1,4 +1,5 @@
 using System.Text.Json;
+using flow_weaver_backend.Services.Ai.Permissions;
 using flow_weaver_backend.Services.Ai.RestExecutor;
 
 namespace flow_weaver_backend.Services.Ai.Tools.Handlers;
@@ -7,9 +8,55 @@ namespace flow_weaver_backend.Services.Ai.Tools.Handlers;
 // lives in IRestOperationExecutor; this handler just adapts the
 // tool-call contract (JsonElement args in/out) onto the executor's
 // structured signature.
-public sealed class ExecuteOperationHandler : IToolHandler
+public sealed class ExecuteOperationHandler : IToolHandler, IArgumentSensitiveTier
 {
     public string Name => "execute_operation";
+
+    // The self-API operations that can set network_enabled on a snippet. The
+    // native create_snippet tool already escalates that flag to human_only, but
+    // the same request through here reached SnippetService with the session's
+    // bearer, so an admin chat could grant it anyway (on update too, which
+    // create_snippet never covered). Same flag, same gate, whatever the route.
+    private static readonly HashSet<string> SnippetWriteOperations = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "fw_snippets:create_snippet",
+        "fw_snippets:update_snippet",
+    };
+
+    public string? EscalatedTier(JsonElement args)
+    {
+        if (!args.TryGetProperty("operation_id", out var op)
+            || op.ValueKind != JsonValueKind.String
+            || !SnippetWriteOperations.Contains(op.GetString()!))
+            return null;
+
+        if (!args.TryGetProperty("body", out var body)) return null;
+
+        // A model sometimes sends the body as a JSON-encoded string. Look inside
+        // it rather than letting the string form slip past the check.
+        if (body.ValueKind == JsonValueKind.String)
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(body.GetString()!);
+                return WantsNetwork(doc.RootElement) ? PermissionClassifier.TierHumanOnly : null;
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
+        }
+
+        return WantsNetwork(body) ? PermissionClassifier.TierHumanOnly : null;
+    }
+
+    // Only a JSON `true` — the API's System.Text.Json binding rejects "true" or
+    // 1 for a bool, so those never set the flag and escalating them would
+    // refuse a call that could not grant anything (same rule as create_snippet).
+    private static bool WantsNetwork(JsonElement body)
+        => body.ValueKind == JsonValueKind.Object
+           && body.TryGetProperty("network_enabled", out var v)
+           && v.ValueKind == JsonValueKind.True;
     public string Description =>
         "Tier: single_confirm (autonomous for GET operations — fire freely). " +
         "Calls a REST operation on the live API. Always call `operation_detail` " +

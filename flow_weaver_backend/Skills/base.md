@@ -212,7 +212,8 @@ The following are **forbidden**:
   (see `Skills/email.md`).
   `python_snippet` is the LAST resort — only for custom logic the others
   can't express (loops, diffs, multi-call orchestration), and even then
-  external calls go through `integration("<name>")`. If no Integration is
+  external calls go through `integration("<name>")`, which only works once an
+  admin marks the snippet network-enabled. If no Integration is
   registered for the target system, offer `create_integration_bundle` —
   don't default to python. Full decision ladder in `Skills/snippets.md`.
 - ❌ Writing `python_snippet` code that returns a hardcoded

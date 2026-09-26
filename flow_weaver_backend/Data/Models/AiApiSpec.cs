@@ -30,4 +30,13 @@ public class AiApiSpec : BaseModel
     // and should resolve credentials from its AuthConfig. Null = global
     // spec (reusable across integrations, no automatic credential pairing).
     public Guid? IntegrationId { get; set; }
+
+    // SHA-256 (hex) of the shipped file content the boot sync last wrote into this row.
+    //
+    // It is how the sync tells "still the shipped version" from "edited by an admin": while
+    // the hash of Content equals this, the row is untouched and the next shipped version may
+    // replace it; once they differ, somebody edited it and the boot keeps their edit. Null on
+    // rows the sync never wrote — created through the UI or an integration, or written before
+    // this column existed. See Services/Ai/Seed/ShippedCatalog.
+    public string? ShippedContentHash { get; set; }
 }

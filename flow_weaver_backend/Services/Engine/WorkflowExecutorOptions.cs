@@ -27,9 +27,9 @@ public class WorkflowExecutorOptions
     public int OrchestrationTimeoutSeconds { get; set; } = 7200; // 2 h
 
     // Sprint 3.4: which environment this process is allowed to run
-    // workflows for. "dev-sandbox" accepts draft workflows, "qa-lab"
-    // accepts QA, "production" accepts production. Default allows all
-    // drafts to run in dev without extra config.
+    // workflows for. A ladder: "dev-sandbox" accepts drafts only, "qa-lab"
+    // accepts drafts + qa, "production" accepts drafts + qa + production.
+    // Default allows all drafts to run in dev without extra config.
     public string? WorkerEnvironment { get; set; } = "dev-sandbox";
 
     // Frontend origin used to render `{{ run.url }}` as an absolute link

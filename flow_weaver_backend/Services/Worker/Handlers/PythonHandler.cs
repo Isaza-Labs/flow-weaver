@@ -199,6 +199,12 @@ public sealed class PythonHandler : ISnippetHandler
         // NetworkEnabled (admin-gated, e.g. interactive netmiko SSH): bind the
         // resolver config read-only so DNS works. `--ro-bind-try` doesn't fail
         // if a file is absent (e.g. no nsswitch on a minimal image).
+        //
+        // The CA store too: on Debian, OpenSSL's default paths
+        // (/usr/lib/ssl/cert.pem, /usr/lib/ssl/certs) are symlinks INTO
+        // /etc/ssl, so with only /usr bound every HTTPS call — integration()
+        // included — failed with CERTIFICATE_VERIFY_FAILED. Only the public
+        // certs and openssl.cnf; /etc/ssl/private stays out.
         if (networkEnabled)
         {
             args.AddRange(new[]
@@ -206,6 +212,8 @@ public sealed class PythonHandler : ISnippetHandler
                 "--ro-bind-try", "/etc/resolv.conf", "/etc/resolv.conf",
                 "--ro-bind-try", "/etc/hosts", "/etc/hosts",
                 "--ro-bind-try", "/etc/nsswitch.conf", "/etc/nsswitch.conf",
+                "--ro-bind-try", "/etc/ssl/certs", "/etc/ssl/certs",
+                "--ro-bind-try", "/etc/ssl/openssl.cnf", "/etc/ssl/openssl.cnf",
             });
         }
 
@@ -626,6 +634,21 @@ public sealed class PythonHandler : ISnippetHandler
         };
     }
 
+    // True when python exited 0 with nothing on stdout but stderr carries
+    // CPython's "Exception ignored in atexit callback" report. That is the
+    // signature of flowweaver_runtime's auto-invoked run(ctx) raising while
+    // the interpreter keeps exit status 0: the script did no useful work and
+    // must not be recorded as a success. The empty-stdout guard keeps a
+    // script that wrote its output and then merely had a noisy atexit hook
+    // out of this path.
+    internal static bool IsIgnoredAtexitException(int exitCode, string? stdout, string? stderr)
+    {
+        if (exitCode != 0) return false;
+        if (!string.IsNullOrWhiteSpace(stdout)) return false;
+        if (string.IsNullOrEmpty(stderr)) return false;
+        return stderr.Contains("Exception ignored in atexit callback", StringComparison.Ordinal);
+    }
+
     private static string Tail(string? s, int max)
     {
         if (string.IsNullOrEmpty(s)) return string.Empty;
@@ -810,6 +833,15 @@ public sealed class PythonHandler : ISnippetHandler
             var pkgDir = ResolvePackagesDir();
             var (mode, fileName, argv) = ResolvePythonInvocation(tmpFile, timeoutSec, request.NetworkEnabled, pkgDir);
 
+            var integrationNetworkError = IntegrationsWithoutNetworkError(mode, request.NetworkEnabled, integrations.Keys);
+            if (integrationNetworkError is not null)
+            {
+                _logger.LogWarning(
+                    "worker.python.integrations_without_network step_run_id={StepRunId} snippet_id={SnippetId} integrations={Integrations}",
+                    request.StepRunId, request.SnippetId, string.Join(",", integrations.Keys));
+                return Fail(integrationNetworkError);
+            }
+
             // Only namespace-creating sandboxes are subject to the launch
             // throttle + transient-setup retry. Bare python3 ("none",
             // Development only) creates no namespaces, so it needs neither.
@@ -914,6 +946,29 @@ public sealed class PythonHandler : ISnippetHandler
                     timeoutSec, oomBefore, oomAfter, fileName, string.Join(' ', argv));
 
                 return Fail(SignalDeathError(signal, sw.Elapsed, timeoutSec, oomKilled, oomAfter is not null));
+            }
+
+            // Safety net under flowweaver_runtime's own handling: CPython
+            // reports an exception that escapes an atexit callback as
+            // "ignored" and still exits 0. The runtime now converts a raising
+            // run(ctx) into a real non-zero exit itself, so this only fires if
+            // that path is bypassed (an older runtime in the image, a script
+            // registering its own atexit hook). Without it the step was
+            // recorded as a SUCCESS with output {"raw": ""}.
+            if (IsIgnoredAtexitException(exitCode, stdout, stderr))
+            {
+                sw.Stop();
+                var (_, atexitStderr) = ExtractStructuredLogs(stderr);
+                _logger.LogError(
+                    "worker.python.failed step_run_id={StepRunId} device_id={DeviceId} reason={Reason} duration_ms={DurationMs}",
+                    request.StepRunId, request.DeviceId, "atexit_exception", sw.ElapsedMilliseconds);
+                return new SnippetResult
+                {
+                    Success = false,
+                    Change = StepChange.AuthorDecides,
+                    Logs = $"exit={exitCode}\n--- stdout ---\n{stdout}\n--- stderr ---\n{atexitStderr}",
+                    Error = "run(ctx) raised and the script produced no output: " + Tail(atexitStderr, 600),
+                };
             }
 
             // Try parsing stdout as JSON for structured output; fall back
@@ -1240,6 +1295,29 @@ public sealed class PythonHandler : ISnippetHandler
         if (allowed.Contains(top)) return null;
         if (extra is not null && extra.Contains(top)) return null;
         return $"Blocked: script imports disallowed module '{top}'";
+    }
+
+    // integration() makes its HTTP call from INSIDE the sandbox, and the bwrap
+    // sandbox of a snippet that is not network-enabled has no network at all
+    // (--unshare-all, no resolv.conf). Every call would die mid-script with
+    // "Temporary failure in name resolution" / "Network is unreachable", which
+    // names neither the cause nor the checkbox that fixes it. Development
+    // (mode "none") runs bare python3 with the host network, which is why this
+    // only ever showed up once deployed. nsjail/custom are operator-configured
+    // and may well grant network, so they are left alone.
+    // internal for unit tests (InternalsVisibleTo).
+    internal static string? IntegrationsWithoutNetworkError(
+        string sandboxMode, bool networkEnabled, IEnumerable<string> integrationNames)
+    {
+        if (networkEnabled || sandboxMode != "bwrap") return null;
+        var names = integrationNames.ToList();
+        if (names.Count == 0) return null;
+
+        return
+            $"this snippet declares integration(s) {string.Join(", ", names.Select(n => $"'{n}'"))} but is not "
+            + "network-enabled, and its sandbox has no network: integration() calls cannot reach anything. "
+            + "An admin can tick 'Network enabled' on the snippet (/snippets/<id>), or move the HTTP call "
+            + "to an integration_action node and pass its output to this snippet.";
     }
 
     private static SnippetResult Fail(string error) =>

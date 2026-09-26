@@ -1,5 +1,6 @@
 using flow_weaver_backend.Services.Identity;
 using flow_weaver_backend.Data.Db;
+using flow_weaver_backend.Dtos;
 using flow_weaver_backend.Services.Engine;
 using flow_weaver_backend.Services.Observability;
 using flow_weaver_backend.Services.Worker;
@@ -30,6 +31,7 @@ public sealed class WorkerHostedService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IWorkflowExecutor _executor;
+    private readonly RetryPolicyExecutor _retry;
     private readonly WorkerOptions _options;
     private readonly ILogger<WorkerHostedService> _logger;
     private readonly SemaphoreSlim _semaphore;
@@ -38,11 +40,13 @@ public sealed class WorkerHostedService : BackgroundService
     public WorkerHostedService(
         IServiceScopeFactory scopeFactory,
         IWorkflowExecutor executor,
+        RetryPolicyExecutor retry,
         IOptions<WorkerOptions> options,
         ILogger<WorkerHostedService> logger)
     {
         _scopeFactory = scopeFactory;
         _executor = executor;
+        _retry = retry;
         _options = options.Value;
         _logger = logger;
         _semaphore = new SemaphoreSlim(_options.MaxConcurrency, _options.MaxConcurrency);
@@ -315,6 +319,7 @@ public sealed class WorkerHostedService : BackgroundService
         var snippetTimeoutSeconds = 0;
         string? targetMode = null;
         var networkEnabled = false;
+        var retryPolicy = new RetryPolicy();
         if (step.SnippetId.HasValue)
         {
             var snippet = await db.Snippets
@@ -331,6 +336,7 @@ public sealed class WorkerHostedService : BackgroundService
                 snippetTimeoutSeconds = snippet.TimeoutSeconds;
                 targetMode = snippet.TargetMode;
                 networkEnabled = snippet.NetworkEnabled;
+                retryPolicy = RetryPolicyExecutor.Parse(snippet.RetryPolicy);
             }
         }
 
@@ -366,25 +372,54 @@ public sealed class WorkerHostedService : BackgroundService
             NetworkEnabled = networkEnabled,
         };
 
-        SnippetResult result;
-        try
-        {
-            result = await handler.ExecuteAsync(request, ct);
-        }
-        catch (Exception ex)
-        {
-            result = new SnippetResult
+        // Every attempt the snippet's retry_policy allows runs inside this job
+        // (execution/SPEC.md §3). Between attempts the job lease is pushed past the
+        // backoff so JobReclaim does not hand the step to a second worker while this one
+        // waits, and the step is re-read: if the orchestrator already failed it for
+        // timing out, or the run was cancelled, retrying would only race that decision.
+        var outcome = await _retry.RunAsync(
+            retryPolicy,
+            async attemptCt =>
             {
-                // A handler that throws is a bug in the handler, not a workflow failure the
-                // author can act on. Recorded as unchanged for the same reason Nashira's
-                // `SnippetResult.Fail` is: a handler that mutated something and THEN threw
-                // has to catch its own exception and say so, because nobody out here can.
-                Change = StepChange.Unchanged,
-                Success = false,
-                Error = ex.Message,
-                Logs = ex.ToString(),
-            };
+                try
+                {
+                    return await handler.ExecuteAsync(request, attemptCt);
+                }
+                catch (Exception ex)
+                {
+                    return new SnippetResult
+                    {
+                        // A handler that throws is a bug in the handler, not a workflow failure the
+                        // author can act on. Recorded as unchanged for the same reason Nashira's
+                        // `SnippetResult.Fail` is: a handler that mutated something and THEN threw
+                        // has to catch its own exception and say so, because nobody out here can.
+                        // Never retryable: a bug does not fix itself on the next attempt.
+                        Change = StepChange.Unchanged,
+                        Success = false,
+                        Error = ex.Message,
+                        Logs = ex.ToString(),
+                    };
+                }
+            },
+            (delay, retryCt) => BeforeRetryAsync(job, step, delay, retryCt),
+            ct);
+
+        if (outcome.Abandoned)
+        {
+            // Someone else has already decided this step's fate. Recording our last attempt
+            // would overwrite that decision, so only the job is closed.
+            _logger.LogWarning(
+                "worker.step.retry_abandoned step_run_id={StepRunId} attempts={Attempts}",
+                step.StepRunId, outcome.Attempts);
+            await FailJobAsync(job.JobId, "retry abandoned: step no longer running", ct);
+            return;
         }
+
+        var result = outcome.Result;
+        if (outcome.RetryLog.Length > 0)
+            step.Logs = string.IsNullOrEmpty(step.Logs)
+                ? outcome.RetryLog.TrimEnd()
+                : step.Logs + "\n" + outcome.RetryLog.TrimEnd();
 
         // Did it change anything? The handler answers where it can see the action; where it
         // cannot, the author does — on the node, or on the snippet. Nobody answering is a
@@ -428,6 +463,45 @@ public sealed class WorkerHostedService : BackgroundService
         else
             await FailJobAsync(job.JobId, result.Error, ct);
     }
+
+    // Called before each retry: extend the claim past the wait, wait, then confirm the step
+    // is still this worker's to run. False abandons the retry loop.
+    private async Task<bool> BeforeRetryAsync(
+        JobModel job, StepRunModel step, TimeSpan delay, CancellationToken ct)
+    {
+        using (var scope = _scopeFactory.CreateScope())
+        {
+            var queue = scope.ServiceProvider.GetRequiredService<IQueueRepository>();
+            var leaseSeconds = (int)Math.Ceiling(delay.TotalSeconds) + RetryLeaseMarginSeconds;
+            if (!await queue.RenewLeaseAsync(job.JobId, _workerId, leaseSeconds, ct))
+                return false;
+        }
+
+        await Task.Delay(delay, ct);
+
+        using (var scope = _scopeFactory.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var current = await db.StepRuns
+                .AsNoTracking()
+                .Where(s => s.StepRunId == step.StepRunId)
+                .Select(s => new { s.Status, s.WorkflowRunId })
+                .FirstOrDefaultAsync(ct);
+            if (current is null || current.Status != StepStatus.Running)
+                return false;
+
+            var runStatus = await db.WorkflowRuns
+                .AsNoTracking()
+                .Where(r => r.WorkflowRunId == current.WorkflowRunId)
+                .Select(r => r.Status)
+                .FirstOrDefaultAsync(ct);
+            return runStatus != RunStatus.Cancelled;
+        }
+    }
+
+    // Lease time granted beyond the backoff itself: the next attempt has to run inside the
+    // claim too. Matches the queue's default lease.
+    private const int RetryLeaseMarginSeconds = 300;
 
     // ───────────────────────────────────────────────────────────────────
     //  Helpers
