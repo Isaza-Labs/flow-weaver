@@ -1,6 +1,6 @@
 # Third-party notices
 
-This file is the release-level control for third-party attribution in FlowWeaver.
+This file preserves a dependency inventory and tracks the work needed for a release-specific third-party notice. It is not a notice for a released artifact.
 
 **Source inventory:** CycloneDX 1.6 SBOM `flowweaver-sbom_2e0cc0b_2026-09-10.cdx.json`, produced on 10 September 2026 from the internal tree (commit `2e0cc0b`, branch `repository_pattern`) and validated against the official CycloneDX schema with no errors.
 
@@ -8,14 +8,14 @@ This file is the release-level control for third-party attribution in FlowWeaver
 
 - **NuGet** — `dotnet restore` followed by `dotnet list package --include-transitive`. Each licence was read from the package's own `.nuspec`, not from a third-party table.
 - **npm** — `frontend/package-lock.json` (lockfileVersion 3), with the licence resolved per package and exact version.
-- **PyPI** — resolution of the ranges `deploy/Dockerfile` used to install, now pinned in `deploy/requirements.txt`.
+- **PyPI** — resolution of the ranges used by the internal source tree at the date below. The current public checkout does not include `deploy/requirements.txt`.
 - **Operating-system packages and base images** — declared from `deploy/Dockerfile` and `deploy/docker-compose.yml`.
 
-> This inventory describes the internal tree on one date. **It is not yet the notice of a published release.** Before publishing, regenerate it from the lockfiles and images of that release and complete the items in section 4.
+> This inventory describes the internal tree on one date, not the current public checkout. Its NuGet and npm version lists and container inputs must be reconciled with the exact source and images of any release. Section 4 distinguishes resolved classifications from remaining release work.
 
 ## 1. Summary
 
-**517 components.** 466 reach the artifact that runs, 39 take part only in tests and 12 only in compilation. Only the first group is redistributed; the others are recorded because they belong to the supply chain and to any vulnerability analysis, not because their notice has to be reproduced.
+**Historical snapshot: 517 components.** The source SBOM classifies 466 as runtime, 39 as test, and 12 as build components. These counts have not been regenerated for the current checkout. Which components are redistributed must be determined from the built release artifacts.
 
 | Origin | Components |
 |---|---:|
@@ -30,10 +30,10 @@ This file is the release-level control for third-party attribution in FlowWeaver
 
 | Licence | Components |
 |---|---:|
-| MIT | 384 |
+| MIT | 385 |
 | Apache-2.0 | 46 |
 | ISC | 36 |
-| NOASSERTION | 13 |
+| NOASSERTION | 12 |
 | MPL-2.0 | 12 |
 | BSD-3-Clause | 10 |
 | MIT with Open Source Maintenance Fee (json-everything) | 3 |
@@ -49,37 +49,34 @@ This file is the release-level control for third-party attribution in FlowWeaver
 | LGPL-2.1-or-later | 1 |
 | MIT-0 | 1 |
 
-`NOASSERTION` covers the operating-system packages and base images, whose exact versions and licences exist only inside a built image, plus one npm package whose registry metadata carries no licence field. All three cases are listed in section 4.
+The counts above include one correction made after the source SBOM: `khroma` 2.1.0 is MIT, as confirmed in the [upstream license at the matching tag](https://github.com/fabiospampinato/khroma/blob/v2.1.0/license). A [verbatim copy](./legal/khroma-2.1.0.license.txt) is included here. The SBOM still records it as `NOASSERTION`. The remaining `NOASSERTION` entries are operating-system packages and base images whose exact release versions and notices must be collected from built artifacts.
 
 ## 2. Components with specific obligations
 
-These are the ones that a licence identifier does not settle. Each was verified by opening the licence file shipped inside the package itself, or the licence URL it declares.
+These components have obligations or terms beyond a simple SPDX identifier. Their classification was reviewed against package files or upstream licensing material; release-specific obligations remain in section 4.
 
 | Component | Version | Declared licence | Stage |
 |---|---|---|---|
 | `Json.More.Net` | 3.0.1 | MIT with Open Source Maintenance Fee (json-everything) | runtime |
 | `JsonPointer.Net` | 7.0.1 | MIT with Open Source Maintenance Fee (json-everything) | runtime |
 | `JsonSchema.Net` | 9.2.0 | MIT with Open Source Maintenance Fee (json-everything) | runtime |
-| `khroma` | 2.1.0 | NOASSERTION | runtime |
 | `LibGit2Sharp.NativeBinaries` | 2.0.323 | GPL-2.0-only WITH linking exception (libgit2) | runtime |
 | `paramiko` | 4.0.0 | LGPL-2.1 | runtime |
 | `QuestPDF` | 2025.1.5 | MIT (Community) or commercial QuestPDF Professional/Enterprise licence | runtime |
 
-**Json.More.Net 3.0.1** — The source is MIT, but the binary published on NuGet is offered under an Open Source Maintenance Fee agreement. Review the terms before redistributing the published binary.
+**Json.More.Net 3.0.1** — The source is MIT, but the binary published on NuGet is offered under an [Open Source Maintenance Fee agreement](./legal/json-everything-OSMFEULA.license.txt). The three package versions below contain the same agreement text. The fee does not apply under the revenue facts recorded in the 28 September 2026 internal decision. Reassess before a release if those facts or the package version change.
 
-**JsonPointer.Net 7.0.1** — The source is MIT, but the binary published on NuGet is offered under an Open Source Maintenance Fee agreement. Review the terms before redistributing the published binary.
+**JsonPointer.Net 7.0.1** — The source is MIT; its package contains the same [Open Source Maintenance Fee agreement](./legal/json-everything-OSMFEULA.license.txt).
 
-**JsonSchema.Net 9.2.0** — The source is MIT, but the binary published on NuGet is offered under an Open Source Maintenance Fee agreement. Review the terms before redistributing the published binary.
+**JsonSchema.Net 9.2.0** — The source is MIT; its package contains the same [Open Source Maintenance Fee agreement](./legal/json-everything-OSMFEULA.license.txt).
 
-**khroma 2.1.0** — The npm registry publishes no licence field for this version. Verify the licence in the upstream repository and record it here before a release.
-
-**LibGit2Sharp.NativeBinaries 2.0.323** — Copyleft with a linking exception. Distributable alongside Apache-2.0 work precisely because of that exception, which must be reproduced verbatim next to the libgit2 copyright notice.
+**LibGit2Sharp.NativeBinaries 2.0.323** — The package's complete [libgit2 licence and linking exception](./legal/LibGit2Sharp.NativeBinaries-2.0.323.license.txt) are included verbatim in this repository. Include that file with any release that distributes the native binary.
 
 **paramiko 4.0.0** — Weak copyleft used at runtime inside the container. Installed unmodified as a separate package, so it does not affect the licence of FlowWeaver's own code, but it must remain declared.
 
-**QuestPDF 2025.1.5** — Dual licence with a revenue threshold: MIT for the Community tier, paid Professional or Enterprise above it. Confirm which tier applies to Isaza Labs LLC before distributing, and record the answer.
+**QuestPDF 2025.1.5** — The [licence file from this exact package version](./legal/QuestPDF-2025.1.5.license.txt) describes Community MIT and paid Professional or Enterprise terms, including a revenue threshold. FlowWeaver references QuestPDF directly. The 28 September 2026 internal decision records Community MIT as the applicable tier under the current revenue facts. Reassess eligibility before a release if those facts or the package version change; do not substitute licensing text for a later QuestPDF version.
 
-None of the seven prevents distributing FlowWeaver under Apache 2.0. Four of them — QuestPDF and the three json-everything libraries — are **commercial** questions rather than licence-compatibility ones: the source is open and the fee attaches to commercial use or to the published binary. `LibGit2Sharp.NativeBinaries` is the only copyleft component, and it is distributable solely because of the libgit2 linking exception.
+These six components do not change the Apache-2.0 license of FlowWeaver's own code. Redistribution of a particular build still depends on satisfying their notices and applicable terms. The commercial terms for QuestPDF and the three json-everything libraries were assessed for the stated versions and current revenue facts on 28 September 2026; that decision is kept outside the public repository. The libgit2 licence text and linking exception are now present in this repository; the release artifact must carry them too.
 
 ## 3. Full inventory
 
@@ -501,7 +498,7 @@ Stage: `runtime` is redistributed; `test` and `build` never leave the build proc
 | `is-reference` | 3.0.3 | MIT | runtime |
 | `jiti` | 2.6.1 | MIT | runtime |
 | `katex` | 0.16.45 | MIT | runtime |
-| `khroma` | 2.1.0 | NOASSERTION ⚠️ | runtime |
+| `khroma` | 2.1.0 | MIT (verified after source SBOM) | runtime |
 | `kleur` | 4.1.5 | MIT | runtime |
 | `langium` | 4.2.2 | MIT | runtime |
 | `layout-base` | 2.0.1 | MIT | runtime |
@@ -621,7 +618,7 @@ Installed with `apt-get` on top of the base image. **Deliberately unpinned:** pi
 
 ### Base images
 
-Pinned by `sha256` digest as of 10 September 2026. Base images are not redistributed as source, but they are part of the deployed artifact: their own notices travel inside the image and must be collected from it for a release.
+The source inventory records these image tags. The current public Dockerfiles and Compose file use tags without digest pins. The exact image digests, installed packages, and applicable notices must be captured from the images built for a release.
 
 | Image | Tag | Why it is present | Stage |
 |---|---|---|---|
@@ -630,18 +627,3 @@ Pinned by `sha256` digest as of 10 September 2026. Base images are not redistrib
 | `mcr.microsoft.com/dotnet/sdk` | `10.0` | backend compilation | build |
 | `node` | `22-alpine` | frontend deps, build and runtime | build |
 | `postgres` | `17-alpine` | database for the compose deployment | runtime |
-
-## 4. What is still missing before this is a release notice
-
-An inventory of components and licences is not yet a complete notice. A published release must add:
-
-1. **The licence texts that must accompany the distribution.** Apache 2.0 requires shipping the licence text and preserving the `NOTICE` of every Apache dependency that carries one; MIT and BSD require reproducing their copyright lines. Those texts are extracted from the artifacts themselves at release time.
-2. **The libgit2 linking exception**, reproduced verbatim next to the `LibGit2Sharp.NativeBinaries` notice.
-3. **Resolution of the undeclared licences:** `khroma`, and the exact versions and licences of the operating-system packages, read from the built image.
-4. **The commercial decision on QuestPDF and json-everything**, recorded in writing, including which tier applies to Isaza Labs LLC and any licence purchased.
-5. **Non-software assets:** fonts, icons, logos and screenshots included in the distribution. The SBOM covers code dependencies; graphical assets are reviewed separately against `assets/ASSET_MANIFEST.csv`.
-6. **A statement of modified material.** No component in this list is recorded as modified. If a release carries a local patch over a dependency, it must be declared here.
-
-## 5. Regenerating this file
-
-Since `deploy/requirements.txt`, the `packages.lock.json` files and the image digests are pinned, regeneration is reproducible: the same commit yields the same inventory. The procedure is the one described at the top of this file, and its output is the CycloneDX SBOM from which this document is derived.

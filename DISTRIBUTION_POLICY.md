@@ -7,7 +7,7 @@ This file protects the expected public structure of FlowWeaver. A release or rep
 ## Required root files
 
 - `README.md`
-- `QUICKSTART.md`
+- `QUICK_START_GUIDE.md`
 - `LICENSE`
 - `NOTICE`
 - `THIRD-PARTY-NOTICES.md`

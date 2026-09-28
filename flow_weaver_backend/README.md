@@ -1,6 +1,6 @@
-# Flow Weaver Backend
+# FlowWeaver Backend
 
-ASP.NET Core 10 backend for Flow Weaver — a network-automation platform. It manages device inventory, credentials (encrypted at rest), reusable snippets, DAG workflows and their runs, and a tool-calling AI assistant. The assistant is reachable both from the web app and from **bilateral messaging channels** (Slack / Telegram / WhatsApp / Teams), with role-based access control enforced identically across every transport.
+ASP.NET Core 10 backend for FlowWeaver — a network-automation platform. It manages device inventory, credentials (encrypted at rest), reusable snippets, DAG workflows and their runs, and a tool-calling AI assistant. The assistant is reachable both from the web app and from **messaging channels** (Slack / Telegram / WhatsApp / Teams), with role-based access control enforced across these transports.
 
 ---
 

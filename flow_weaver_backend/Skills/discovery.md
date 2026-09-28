@@ -68,7 +68,7 @@ calls, zero `operation_detail` needed.
 
 ## Rule 4 — `fw_*` APIs are stable: remember their common ops
 
-The internal Flow Weaver APIs change rarely. Common operations you'll
+The internal FlowWeaver APIs change rarely. Common operations you'll
 reach for:
 
 | Operation | Used for |

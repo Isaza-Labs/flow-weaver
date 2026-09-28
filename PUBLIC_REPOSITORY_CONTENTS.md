@@ -1,6 +1,6 @@
 # Public repository contents
 
-This file is the authoritative boundary for the public FlowWeaver repository package.
+This file describes the public FlowWeaver repository boundary.
 
 ## Included
 
@@ -11,7 +11,7 @@ This file is the authoritative boundary for the public FlowWeaver repository pac
 - Safe public assets and examples: `assets/`, `examples/`.
 - Developer and release tools: `tools/`.
 - Public legal and licensing material: `LICENSE`, `NOTICE`, `LICENSES/`, `LEGAL.md`, `legal/`, `TRADEMARK.md`.
-- Public project governance: `README.md`, `QUICKSTART.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `GOVERNANCE.md`, `SECURITY.md`, `SUPPORT.md`, `MAINTAINERS.md`, `CODEOWNERS`, `CHANGELOG.md`.
+- Public project governance: `README.md`, `QUICK_START_GUIDE.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `GOVERNANCE.md`, `SECURITY.md`, `SUPPORT.md`, `MAINTAINERS.md`, `CHANGELOG.md`.
 - Repository automation and metadata: `.github/`, `.gitignore`, `.env.example`, `REUSE.toml`.
 - Public compliance templates and generated release notices: `compliance/`, `THIRD-PARTY-NOTICES.md`.
 
@@ -26,4 +26,4 @@ This file is the authoritative boundary for the public FlowWeaver repository pac
 - Internal dependency analysis working papers.
 - GitLab-only templates and retired migration material.
 
-Only the contents of the `PUBLIC_REPOSITORY` package may be copied into the real public repository.
+These exclusions apply to commits, release archives, examples, and generated artifacts.

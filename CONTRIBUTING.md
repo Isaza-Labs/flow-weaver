@@ -44,7 +44,7 @@ The resulting `Signed-off-by` line certifies that you may submit the work under 
 
 ## Development setup
 
-Follow [QUICKSTART.md](./QUICKSTART.md). Exact build and test commands must be verified against the executable source before publication.
+Follow the [quick start](./QUICK_START_GUIDE.md) for setup and the [frontend guide](./frontend/README.md) for UI commands. Use the test commands in the quick start and report which checks you ran in the pull request.
 
 ## Security
 

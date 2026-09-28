@@ -1,9 +1,9 @@
-# Flow Weaver — Quick start
+# FlowWeaver — Quick start
 
 From a clean checkout to a workflow that ran, on one page. Everything deeper
 links out; nothing here is repeated from `deploy/README.md`.
 
-Flow Weaver is a network-automation platform: a workflow is a directed graph of
+FlowWeaver is a network-automation platform: a workflow is a directed graph of
 **snippets** (Python, Ansible, REST, transforms) executed against **devices** or
 **device pools**, with runs tracked end to end and an AI assistant that can author
 and repair them.
@@ -14,7 +14,7 @@ and repair them.
 
 | Path | Requirements |
 |---|---|
-| **Docker** (recommended) | Docker Engine + Compose v2. Nothing else. |
+| **Docker** (recommended) | Docker Engine + Compose v2; Bash and curl for the Linux/macOS wizard, or PowerShell on Windows. |
 | **Native** | .NET 10 SDK, Node 20+, PostgreSQL 17 reachable and writable. `python_snippet` steps additionally need Linux with `bwrap`. |
 
 You also need a JWT signing key. Generate one with `openssl rand -base64 48` —
@@ -31,7 +31,7 @@ key.
 
 ```bash
 cd deploy
-chmod +x setup.sh          # first time only
+chmod +x setup.sh run.sh   # first time only
 ./setup.sh
 ```
 
@@ -73,7 +73,7 @@ When it finishes:
 cd deploy
 cp .env.example .env
 #   -> set JWT_KEY (required) and POSTGRES_PASSWORD
-./run.sh -y                 # .\run.ps1 -Yes on Windows
+bash ./run.sh -y            # .\run.ps1 -Yes on Windows
 ```
 
 Then create the first admin — this endpoint answers on a fresh install in any
@@ -96,30 +96,47 @@ next `run.sh` reuses it. Ports, external databases, subnets and the
 
 ## 4. Your first workflow
 
-Sign in at <http://localhost:3000>, then follow the in-app manual — it is written
-against the running UI and stays current with it:
+Sign in at <http://localhost:3000>. The in-app [getting-started manual](./frontend/src/routes/docs/getting-started/+page.svelte) is available at `/docs/getting-started`; `/docs` lists every chapter.
 
-- **`/docs/getting-started`** — the app shell, the role model, and the fastest
-  path from login to a run.
-- `/docs` — the full manual, one chapter per screen.
+For a safe first run, register a lab device you are authorized to manage at
+`/devices`. Give it a name and IP address and enable its **draft** environment
+flag. The built-in `ping` snippet needs no credential. For an SSH workflow,
+configure a credential and platform as described in the in-app manual.
 
-The short version, once you are signed in:
+### Describe it to the assistant
 
-1. **Credential** → `/credentials`. How devices are reached.
-2. **Device** → `/devices`. Name, IP, platform, and that credential.
-3. **Workflow** → `/workflows` → *New workflow*. The DAG editor opens with
-   `__start__` and `__end__`; drag a snippet in between and connect them.
-   Save with <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>S</kbd>.
-4. **Simulate** → walks the graph without touching a device and reports ordering
-   problems and unresolved templates.
-5. **Run** → collects the runtime input (from the workflow's input schema) and
-   the target devices, scoped to the workflow's environment.
-6. **Watch** → `/runs/{id}/monitor`. Live node status, per-step logs, input and
-   output. A failed node offers *Fix with AI*.
+Open `/ai/chat` and ask for a **draft** workflow. For example:
 
-New workflows start in `draft` and can never fan out to production hardware:
-promotion is `draft → qa → production`, and each device carries its own
-`allow_draft` / `allow_qa` / `allow_production` flags.
+> Create a draft workflow named lab-reachability-check that uses the built-in
+> ping snippet for my registered lab device. Ask me which device to use if the
+> target is unclear. Do not run or promote it.
+
+The assistant may ask for a target or other missing details. Review the
+resulting workflow in `/workflows`: confirm the device, node, connections,
+environment and inputs. If the assistant cannot create it, check that the AI
+provider and default agent are configured and that your account can create
+workflows. You can also use the visual editor below.
+
+### Build it in the visual editor
+
+At `/workflows`, choose **New workflow**, give it a name and open it from the
+Draft list. Drag the built-in `ping` snippet between `__start__` and
+`__end__`, connect the nodes, then save. Search for `ping` if it is under
+the collapsed **Unproven** section.
+
+### Validate and run
+
+1. Select **Simulate** in the editor. It checks graph structure and configuration
+   without touching a device; it is not a live network test.
+2. Review any reported issues and the chosen draft target.
+3. Select **Run** only when ready. The run dialog scopes available devices to the
+   workflow's environment.
+4. Inspect status, logs, input and output in the run monitor. A failed step
+   offers **Fix with AI**.
+
+Draft, QA and production targets are controlled by each device's environment
+flags. Promotion to production has additional QA evidence and approval gates;
+see the [QA lab chapter](./frontend/src/routes/docs/qa-lab/+page.svelte).
 
 ---
 
@@ -157,18 +174,17 @@ vendor commands and the built-in API specs. Production deployments go through
 ## 6. Tests
 
 ```bash
-dotnet test                              # backend unit tests
-./coverage.sh                            # tests + HTML report + headline %
-./coverage.sh --no-html                  # faster, text summary only
+dotnet test flow_weaver_backend.Tests/flow_weaver_backend.Tests.csproj
 
 cd frontend
 npm run check                            # svelte-check (types + a11y)
 npm run check:hints                      # field-hint coverage
+npm run check:labels                     # labels audit
 npx playwright test                      # e2e, needs the stack running
 ```
 
-`conformance/` holds the cross-implementation `workflow.v1` suite — the same
-bundle format Nashira reads and writes. `qa/` holds the authz and sweep scripts.
+`conformance/` holds the cross-implementation `workflow.v1` suite.
+The Playwright config and end-to-end tests live under `frontend/`.
 
 ---
 
@@ -177,18 +193,18 @@ bundle format Nashira reads and writes. `qa/` holds the authz and sweep scripts.
 | Symptom | Cause |
 |---|---|
 | Backend exits at boot | `JWT_KEY` missing, too short, or a known default. |
-| `bwrap: setting up uid map: Permission denied` | The Linux host restricts unprivileged user namespaces. Run `sudo ./deploy/setup-host.sh` once, then `./run.sh restart`. See `docs/ops/python-sandbox-host-requirements.md`. |
+| `bwrap: setting up uid map: Permission denied` | The Linux host restricts unprivileged user namespaces. From `deploy/`, run `sudo bash ./setup-host.sh` once, then `bash ./run.sh restart`. See [host requirements](./docs/ops/python-sandbox-host-requirements.md). |
 | POSTs rejected by SvelteKit | `FRONTEND_ORIGIN` does not match the URL the browser actually uses. Fix it in `deploy/.env`. |
 | Every request shows one IP in the audit trail | `TRUSTED_PROXIES` does not match `COMPOSE_SUBNET`. The scripts write them together — do not edit only one. |
 | `RemoveMultiTenancy: <table> has N duplicate group(s)` | The database came from a multi-tenant install. See `deploy/ops/consolidate-to-single-tenant.sql`. |
 
-Everyday diagnostics — `run.sh`/`run.ps1` wrap these, or use compose directly
-from `deploy/`:
+Run these everyday diagnostics from `deploy/`. The `run.sh`/`run.ps1`
+scripts wrap Compose, or you can use Compose directly:
 
 ```bash
-./run.sh logs backend | grep -i "migrations applied"   # confirm a healthy start
-./run.sh logs backend                                  # follow the backend
-./run.sh down                                          # stop
+bash ./run.sh logs backend | grep -i "migrations applied"   # confirm a healthy start
+bash ./run.sh logs backend                                  # follow the backend
+bash ./run.sh down                                          # stop
 
 docker compose ps                                      # what is up, and healthy
 docker compose exec db psql -U flowweaver -d flowweaver

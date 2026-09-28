@@ -11,7 +11,7 @@ rely on, and the default idempotency.
 
 Rules that apply to every type:
 
-1. **Flow Weaver is the oracle for payload keys.** Where the two products used
+1. **FlowWeaver is the oracle for payload keys.** Where the two products used
    different keys for the same thing, the FW key is canonical and the Nashira key
    is an accepted alias. Handlers MUST accept both; exporters MUST write the
    canonical key.
@@ -45,7 +45,7 @@ non-conformant, so this is a SHOULD.)
 | `port` | extension (TCP prober); default 22 |
 
 Portable output: `{ "success": bool, "rtt_avg_ms": number, "packets_sent": number,
-"packets_received": number, "raw_output": string }` — Flow Weaver's field set.
+"packets_received": number, "raw_output": string }` — FlowWeaver's field set.
 `packet_loss` (number, `(sent - received) / sent`) is derived from that pair and
 SHOULD be emitted beside it.
 
@@ -65,7 +65,7 @@ result. `success` carries reachability in both.
 > `{ "reachable": bool, "latency_ms": number|null, "method": "icmp"|"tcp",
 > "host": string }`. That shape was invented in this document — the oracle never
 > emitted it, and no implementation but Nashira ever did, and Nashira only because
-> the contract asked. Rule 1 makes Flow Weaver canonical, so the portable set is
+> the contract asked. Rule 1 makes FlowWeaver canonical, so the portable set is
 > corrected to the oracle's field names and the invented quartet is demoted to a
 > Nashira extension (kept, not removed, because templates already read it). This
 > paragraph exists so the correction is not "fixed" back into the invented shape

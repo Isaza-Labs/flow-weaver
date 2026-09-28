@@ -6,7 +6,7 @@ Isaza Labs LLC owns and stewards the official FlowWeaver project, repositories, 
 
 FlowWeaver is published and supported under the NetworkingDev brand, which is why the project's contact addresses use the `networkingdev.com` domain. Ownership, licensing and trademark rights sit with Isaza Labs LLC regardless of the brand a page or a mailbox carries. The routes are listed in [SUPPORT.md](./SUPPORT.md).
 
-Who holds each role is recorded in [MAINTAINERS.md](./MAINTAINERS.md), and `CODEOWNERS` is the machine-readable form of the same information.
+The current public maintainer and release-authority information is in [MAINTAINERS.md](./MAINTAINERS.md). This repository does not currently publish a `CODEOWNERS` file.
 
 ## Decision records
 
@@ -22,7 +22,7 @@ Material decisions affecting licensing, security posture, compatibility, public 
 - Security and incident response.
 - License and third-party compliance.
 
-Named maintainers and `CODEOWNERS` entries must resolve to real GitHub accounts or teams in the published repository before branch protection is enabled. A `CODEOWNERS` rule that names a team which does not exist is ignored without any warning, so the rule must be verified after the first push, not assumed.
+If named maintainers or `CODEOWNERS` rules are added, their accounts or teams must be verified in GitHub before rules that require their review are enabled.
 
 ## Changes
 

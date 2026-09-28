@@ -1,0 +1,2 @@
+# Preserve upstream licence files byte for byte, including their line endings.
+legal/*.license.txt -text

@@ -1,6 +1,6 @@
 # FlowWeaver Trademark Policy
 
-FlowWeaver™ is a project and product mark owned and stewarded by **Isaza Labs LLC**. It is currently treated as an unregistered mark; do not use the registered symbol (`®`) unless registration is confirmed.
+FlowWeaver is a project and product name owned and stewarded by **Isaza Labs LLC**. Use the name without a trademark symbol. Do not use the registered symbol (`®`) unless registration is confirmed.
 
 ## Software license and trademark
 
@@ -22,9 +22,9 @@ FlowWeaver software is licensed under Apache License 2.0. That license does not 
 ## Correct use
 
 - Spell the name `FlowWeaver`, with capital F and W.
-- Use `FlowWeaver™` on the first prominent mention when practical.
+- Use `FlowWeaver` without a trademark symbol.
 - Technical package names may use lowercase where required.
 - Do not imply that third-party vendor names belong to or endorse Isaza Labs LLC.
 
-The final permissions contact and official logo location must be published before launch.
+For permission requests, use the trademark contact in [SUPPORT.md](./SUPPORT.md). The public logo assets are in [`assets/brand/`](./assets/brand/).
 

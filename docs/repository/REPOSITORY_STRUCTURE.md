@@ -7,7 +7,10 @@
 - Keep internal legal evidence and historical repository bundles outside the public repository.
 - Give each durable directory a README that states purpose, accepted contents and validation.
 
-## Target tree
+## Illustrative target tree
+
+This tree is a planning reference, not an inventory of the current checkout.
+For paths that exist today, see the [root README](../../README.md).
 
 ```text
 flowweaver/
@@ -47,7 +50,7 @@ flowweaver/
 ├── LEGAL.md
 ├── LICENSE
 ├── NOTICE
-├── QUICKSTART.md
+├── QUICK_START_GUIDE.md
 ├── README.md
 ├── REUSE.toml
 ├── SECURITY.md
@@ -77,7 +80,7 @@ flowweaver/
 
 The following remain outside the public Git tree: original repository bundle and hash, executed PI assignments, LLC documents, founder records, private dependency decisions, vulnerability details, raw QA traces, release approvals and secret-scan evidence.
 
-## Migration order
+## Future repository hardening
 
 1. Preserve the internal repository and hashes.
 2. Build a clean allowlisted candidate.

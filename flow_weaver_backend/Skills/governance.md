@@ -1,6 +1,6 @@
 # Skill: governance — plans, approvals, audit
 
-Flow Weaver has a `WorkflowPlan` governance layer for cases where a
+FlowWeaver has a `WorkflowPlan` governance layer for cases where a
 change **needs human review before it becomes a real workflow**. Most
 day-to-day asks don't need it — and the backend now enforces this.
 

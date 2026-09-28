@@ -40,7 +40,7 @@ No other properties. `name`, `label`, `service_type` belong on the
 { "source": "node-1", "target": "node-2", "type": "success", "condition": "<only when type=conditional>" }
 ```
 
-Flow Weaver supports **four** edge types — pick the one that matches
+FlowWeaver supports **four** edge types — pick the one that matches
 the routing intent, not the user's wording. All four are first-class.
 
 | Route based on… | `type` | `condition` |

@@ -1,42 +1,32 @@
-# sv
+# FlowWeaver frontend
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+The frontend is the SvelteKit application for the visual workflow builder, inventory, run monitoring, AI chat, administration, and the in-app manual. For a full local instance, start with the [quick start](../QUICK_START_GUIDE.md); the frontend alone still needs a running backend.
 
-## Creating a project
+## Local development
 
-If you're seeing this, you've probably already done this step. Congrats!
+Prerequisites: Node.js 20+ and a backend listening on `http://localhost:8080`.
 
-```sh
-# create a new project
-npx sv create my-app
-```
-
-To recreate this project with the same configuration:
-
-```sh
-# recreate this project
-npx sv@0.12.8 create --template minimal --types ts --no-install fw-frontend
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
+```bash
+cd frontend
+npm ci
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
-## Building
+Open `http://localhost:5173`. The Vite development server proxies `/api`, `/openapi`, and `/scalar` to the backend on port 8080, so use the backend command and port shown in the [local development guide](../QUICK_START_GUIDE.md#5-local-development-no-docker).
 
-To create a production version of your app:
+## Checks and build
 
-```sh
+```bash
+npm run check
+npm run check:hints
+npm run check:labels
 npm run build
 ```
 
-You can preview the production build with `npm run preview`.
+End-to-end tests use Playwright and require the application stack to be running:
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+```bash
+npx playwright test
+```
+
+The in-app manual lives in [`src/routes/docs/`](./src/routes/docs/). Update its relevant chapter when changing a user-facing workflow.

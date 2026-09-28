@@ -2,7 +2,7 @@
 
 Use the channel that matches the request:
 
-- **Setup and usage:** start with the [quick start](./QUICKSTART.md) and the [documentation index](./docs/README.md).
+- **Setup and usage:** start with the [quick start](./QUICK_START_GUIDE.md) and the [documentation index](./docs/README.md).
 - **Reproducible product defect:** open a bug report using the repository issue template. Include version or commit, deployment mode, and the minimal steps that reproduce it.
 - **Feature or documentation proposal:** open a feature request, or a discussion where discussions are enabled.
 - **Security vulnerability, exposed secret or active incident:** follow [SECURITY.md](./SECURITY.md). Never use a public issue, pull request or discussion for this.
