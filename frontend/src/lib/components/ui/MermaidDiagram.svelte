@@ -79,6 +79,11 @@
     const thisToken = renderToken;
     const id = `mermaid-${++renderCounter}-${Math.floor(Math.random() * 1e6)}`;
     try {
+      // Validate first: parse() never touches the DOM, so invalid
+      // syntax is rejected before render() appends its temp container
+      // to <body>. It throws with the same rich message render() would.
+      await mermaidApi.parse(src);
+      if (thisToken !== renderToken) return; // superseded
       const { svg } = await mermaidApi.render(id, src);
       if (thisToken !== renderToken) return; // superseded
       errorMessage = null;
