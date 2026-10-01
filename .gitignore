@@ -6,7 +6,7 @@
 *.key
 *.pfx
 *.p12
-secrets/
+
 
 # .NET
 bin/
@@ -44,4 +44,3 @@ Thumbs.db
 internal-compliance/
 release-evidence/
 *.bundle
-
