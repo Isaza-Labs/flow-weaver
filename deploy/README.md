@@ -67,13 +67,13 @@ frontend come up.
 
 ```bash
 ./run.sh -y --db external \
-  --db-host 10.0.0.5 --db-port 5432 \
-  --db-name flowweaver --db-user fw --db-password 's3cr3t'
+  --db-host db.example.internal --db-port 5432 \
+  --db-name flowweaver --db-user fw --db-password '<db-password>'
 ```
 
 ```powershell
 .\run.ps1 -Yes -DbMode external `
-  -DbHost 10.0.0.5 -DbName flowweaver -DbUser fw -DbPassword 's3cr3t'
+  -DbHost db.example.internal -DbName flowweaver -DbUser fw -DbPassword '<db-password>'
 ```
 
 If the database lives **on the same machine** as Docker, use
@@ -119,12 +119,9 @@ To force one: `--subnet 172.20.0.0/16`.
 | `--tunnel` / `-Tunnel` | Also start `cloudflared` (public ingress for webhooks) |
 | `--build` / `-Build` | Force a rebuild (by default it only builds when the image is missing) |
 | `--pull` / `-Pull` | Pull base images before building |
-| `--no-dev-overrides` / `-NoDevOverrides` | Ignore `docker-compose.override.yml` |
+| `--dev-overrides` / `-DevOverrides` | Include a local `docker-compose.override.yml` |
+| `--no-dev-overrides` / `-NoDevOverrides` | Never include `docker-compose.override.yml` |
 
-`docker-compose.override.yml` attaches backend and worker to the external
-`shared-net` network (NetBox, netora-agent, the dev environment's SR Linux
-nodes). It is included automatically **only when that network exists** on
-the host, so it stays out of the way on a clean machine.
 
 ## Python sandbox on Linux hosts: `setup-host.sh`
 
@@ -137,10 +134,11 @@ else works.
 
 `run.sh` verifies the sandbox automatically after every `up` (it runs bwrap
 inside the worker, as the worker's user) and tells you if the host needs
-fixing. The fix is one command, run once per host:
+fixing. The fix is one command, run once per host from the `deploy/`
+directory (like the other commands in this guide):
 
 ```bash
-sudo ./deploy/setup-host.sh   # detects the distro's restriction, applies the
+sudo bash ./setup-host.sh     # detects the distro's restriction, applies the
                               # narrowest fix (AppArmor profile for bwrap
                               # alone when possible), verifies it
 ./run.sh restart
@@ -149,7 +147,7 @@ sudo ./deploy/setup-host.sh   # detects the distro's restriction, applies the
 If the host cannot be changed, or the deployment simply doesn't use python
 snippets, there are alternatives (including turning the feature off) — the
 options and their security trade-offs are in
-`docs/ops/python-sandbox-host-requirements.md`.
+[`docs/ops/python-sandbox-host-requirements.md`](../docs/ops/python-sandbox-host-requirements.md).
 
 ## Verifying it came up
 
@@ -157,16 +155,23 @@ options and their security trade-offs are in
 ./run.sh logs backend | grep -i "migrations applied"
 ```
 
-The backend applies the EF migrations at startup with retries. If you see
-`RemoveMultiTenancy: <table> has N duplicate group(s)` instead, the
-database comes from a multi-tenant install and must be consolidated first —
-see `ops/consolidate-to-single-tenant.sql` and `../company_remove.md`.
+The backend applies the EF migrations at startup with retries.
 
 ## Operations scripts
 
 | Script | When |
 |---|---|
-| `ops/precheck-single-tenant.sql` | Before migrating: checks for duplicates that would block `RemoveMultiTenancy` |
-| `ops/consolidate-to-single-tenant.sql` | If the precheck fails: collapses to a single company (destructive) |
-| `ops/migrate-pyenv-to-site.sh` | Moves pip packages from `/app/pyenv/<companyId>` to `/app/pyenv/site` |
-| `ops/pg_basebackup.sh`, `ops/dr-drill.sh` | Backup and disaster-recovery drill |
+| `ops/pg_basebackup.sh`, `ops/dr-drill.sh` | Backup and disaster-recovery drill (see [`docs/ops/dr.md`](../docs/ops/dr.md)) |
+
+### Upgrading an older multi-tenant database
+
+Only relevant when the database was created by an older multi-tenant build;
+new installs can skip this. If the backend log shows
+`RemoveMultiTenancy: <table> has N duplicate group(s)` instead of
+"migrations applied", consolidate the data first:
+
+| Script | When |
+|---|---|
+| `ops/precheck-single-tenant.sql` | Before upgrading: lists duplicates that would block the `RemoveMultiTenancy` migration |
+| `ops/consolidate-to-single-tenant.sql` | If the precheck finds duplicates: collapses the data to a single company (destructive; back up first) |
+| `ops/migrate-pyenv-to-site.sh` | Once, in the worker: moves admin-approved pip packages to `/app/pyenv/site` |
