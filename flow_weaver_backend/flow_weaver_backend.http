@@ -287,14 +287,14 @@ POST {{flow_weaver_backend_HostAddress}}/api/workflowplan/{{workflowPlanId}}/sub
 POST {{flow_weaver_backend_HostAddress}}/api/workflowplan/{{workflowPlanId}}/approve
 Content-Type: {{contentType}}
 
-{ "approved_by": "roberto@example.com" }
+{ "approved_by": "example@example.com" }
 
 ### Governance — awaiting_approval → rejected
 POST {{flow_weaver_backend_HostAddress}}/api/workflowplan/{{workflowPlanId}}/reject
 Content-Type: {{contentType}}
 
 {
-  "approved_by": "roberto@example.com",
+  "approved_by": "example@example.com",
   "reason": "Targets production without a maintenance window"
 }
 

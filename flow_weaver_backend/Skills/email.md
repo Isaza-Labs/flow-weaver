@@ -135,7 +135,7 @@ email per format, and do NOT force the user to pick one:
 
 ```json
 {
-  "to": "rlozada@net.co",
+  "to": "example@net.co",
   "subject": "Inventory sync — 2026-07-16",
   "body": "Attached in PDF, Excel and CSV.",
   "attachments": [
@@ -226,16 +226,16 @@ User: notify ops@example.com that the sync finished
 
 **Report delivery (the pairing flow)**
 ```
-User: generate a PDF with the workflows and send it to rlozada@net.co
+User: generate a PDF with the workflows and send it to example@net.co
 → generate_report({ format: "pdf", document: { title: "Workflow list — ...", sections: [...] } })
 → tool_result: { report_artifact_id: "2f5b1c8e-...", filename: "workflow-list-20260421153000.pdf", ... }
 → execute_operation(fw_email:send_with_attachment, {
-    to: "rlozada@net.co",
+    to: "example@net.co",
     subject: "Workflow list",
     body: "PDF attached with the current workflows.",
     attachments: [{ filename: "<filename>", content_base64: "${report:2f5b1c8e-...}" }]
   })
-→ "Done — sent the PDF (workflow-list-20260421153000.pdf) to rlozada@net.co."
+→ "Done — sent the PDF (workflow-list-20260421153000.pdf) to example@net.co."
 ```
 
 ## What NOT to do

@@ -667,14 +667,14 @@ public class AuthServiceFlowTests
         var svc = NewAuth(db);
 
         var body = OkBootstrap(await svc.BootstrapAsync(
-            new BootstrapRequest { Username = "roberto", Password = "S3cure-pass!" },
+            new BootstrapRequest { Username = "example", Password = "S3cure-pass!" },
             Ip, Agent, default));
 
-        Assert.Equal("roberto", body.Username);
+        Assert.Equal("example", body.Username);
         Assert.Equal("S3cure-pass!", body.InitialPassword);
 
         var login = await svc.LoginAsync(
-            new LoginRequest { Username = "roberto", Password = "S3cure-pass!" },
+            new LoginRequest { Username = "example", Password = "S3cure-pass!" },
             Ip, Agent, default);
         Assert.IsType<OkObjectResult>(login.Result);
     }

@@ -12,14 +12,18 @@ servers:
   # here is just a sensible placeholder for the spec index — the real
   # call goes through a registered Integration (`integration_action`)
   # so base URL + auth live in the integration config, not in the spec.
-  - url: http://192.168.193.22:8092
+  - url:
 components:
   schemas:
     AttachmentRequest:
       type: object
       required: [filename, content_base64]
       properties:
-        filename:       { type: string, description: "File name including extension, e.g. 'report.pdf'" }
+        filename:
+          {
+            type: string,
+            description: "File name including extension, e.g. 'report.pdf'",
+          }
         content_base64:
           type: string
           description: >
@@ -35,16 +39,24 @@ components:
       type: object
       required: [filename, content]
       properties:
-        filename: { type: string, description: "File name including extension, e.g. 'report.csv'" }
-        content:  { type: string, description: "Plain text body of the attachment (CSV, TXT, JSON). Not base64-encoded." }
+        filename:
+          {
+            type: string,
+            description: "File name including extension, e.g. 'report.csv'",
+          }
+        content:
+          {
+            type: string,
+            description: "Plain text body of the attachment (CSV, TXT, JSON). Not base64-encoded.",
+          }
 
     EmailRequest:
       type: object
       required: [to, subject, body]
       properties:
-        to:      { type: string, format: email }
+        to: { type: string, format: email }
         subject: { type: string }
-        body:    { type: string }
+        body: { type: string }
       example:
         to: user@example.com
         subject: Hello from FlowWeaver
@@ -54,9 +66,13 @@ components:
       type: object
       required: [to, subject, html]
       properties:
-        to:      { type: string, format: email }
+        to: { type: string, format: email }
         subject: { type: string }
-        html:    { type: string, description: "Full HTML document or snippet. Use for branded messages." }
+        html:
+          {
+            type: string,
+            description: "Full HTML document or snippet. Use for branded messages.",
+          }
       example:
         to: user@example.com
         subject: Device report
@@ -71,7 +87,7 @@ components:
           items: { type: string, format: email }
           description: "List of recipient emails. Each gets an individual copy (no Bcc leak)."
         subject: { type: string }
-        body:    { type: string, description: "Plain text body." }
+        body: { type: string, description: "Plain text body." }
         html:
           type: string
           nullable: true
@@ -85,9 +101,9 @@ components:
       type: object
       required: [to, subject, body]
       properties:
-        to:      { type: string, format: email }
+        to: { type: string, format: email }
         subject: { type: string }
-        body:    { type: string }
+        body: { type: string }
         html:
           type: string
           nullable: true
@@ -108,9 +124,9 @@ components:
       type: object
       required: [to, subject, body]
       properties:
-        to:      { type: string, format: email }
+        to: { type: string, format: email }
         subject: { type: string }
-        body:    { type: string }
+        body: { type: string }
         html:
           type: string
           nullable: true
@@ -138,8 +154,8 @@ components:
       type: object
       required: [status, message, recipients]
       properties:
-        status:     { type: string, description: "ok | error" }
-        message:    { type: string }
+        status: { type: string, description: "ok | error" }
+        message: { type: string }
         recipients:
           type: array
           items: { type: string }
@@ -223,7 +239,8 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/EmailWithTextAttachmentRequest" }
+            schema:
+              { $ref: "#/components/schemas/EmailWithTextAttachmentRequest" }
       responses:
         "200":
           description: Queued / delivered
