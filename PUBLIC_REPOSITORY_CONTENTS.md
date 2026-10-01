@@ -7,7 +7,7 @@ This file describes the public FlowWeaver repository boundary.
 - Application source: `flow_weaver_backend/`, `flow_weaver_backend.Tests/`, `frontend/`.
 - Deployment and operations: `deploy/`.
 - Public documentation: `docs/`.
-- Ecosystem content: `skills/`, `specs/`, `workflows/`, `contracts/`.
+- Ecosystem content: `skills/`, `specs/`, `workflows/`, `contracts/`, `conformance/`.
 - Safe public assets and examples: `assets/`, `examples/`.
 - Developer and release tools: `tools/`.
 - Public legal and licensing material: `LICENSE`, `NOTICE`, `LICENSES/`, `LEGAL.md`, `legal/`, `TRADEMARK.md`.
@@ -17,13 +17,9 @@ This file describes the public FlowWeaver repository boundary.
 
 ## Explicitly excluded
 
-- Signed or draft IP assignments and LLC records.
-- Founder, employee, contractor or identity documents.
-- Private repository bundles and original-history evidence.
-- Raw security findings, credentials and secret-scan evidence.
-- Raw QA traces containing internal infrastructure or customer data.
-- Superseded licensing and contribution-agreement materials.
-- Internal dependency analysis working papers.
-- GitLab-only templates and retired migration material.
+- Corporate, legal and personnel records.
+- Credentials, keys, secrets and security findings.
+- Test traces containing infrastructure or customer data.
+- Internal working papers.
 
 These exclusions apply to commits, release archives, examples, and generated artifacts.

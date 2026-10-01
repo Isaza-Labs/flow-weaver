@@ -16,7 +16,7 @@ The platform may run scripts authored by:
 2. An administrator hand-writing a snippet.
 
 Either way the script is **untrusted code running on your infrastructure**, and
-the sandbox is not optional. We do **not** assume the script is benign:
+the sandbox is not optional. The handler does **not** assume the script is benign:
 
 - The agent can be tricked into emitting a malicious snippet via prompt injection.
 - An administrator account can be compromised, and a snippet is a durable
@@ -63,11 +63,11 @@ tree:
 running it on a hostile script outside the sandbox is safe — and a rejected
 script costs no namespace setup.
 
-> **Why a real parser.** The check this replaced compared source text against
-> `"import "` and `"exec("`. Python's grammar does not respect that, so
-> `import<TAB>os`, `if 1: import os`, `import (os)`, `from  os  import system`
-> and `getattr(__builtins__, "ev" + "al")` all went through unexamined. Parsing
-> the grammar removes that entire class of bypass at once.
+> **Why a real parser.** Comparing source text against `"import "` and
+> `"exec("` does not follow Python's grammar, so `import<TAB>os`,
+> `if 1: import os`, `import (os)`, `from  os  import system` and
+> `getattr(__builtins__, "ev" + "al")` would all pass a substring check
+> unexamined. Parsing the grammar removes that entire class of bypass at once.
 
 **Fails closed.** If the guard is missing, times out, or answers something
 unparseable, the snippet is **refused** outside Development — "we couldn't
@@ -154,11 +154,11 @@ section on it below.
 seccomp/AppArmor is relaxed for bwrap should claim it — in the compose
 deploy that is the `worker` service alone; the API/backend container
 overrides `Worker__Tags` to `default` + `orchestrator` so it never picks
-up a python step it cannot sandbox. Before this routing existed, both
-containers claimed step jobs and python steps failed **intermittently**
-with `No permissions to create new namespace`, depending on which
-container won the claim race (the backend keeps Docker's default seccomp
-profile, which blocks user-namespace creation).
+up a python step it cannot sandbox. The backend keeps Docker's default
+seccomp profile, which blocks user-namespace creation, so if both
+containers claimed python steps they would fail **intermittently** with
+`No permissions to create new namespace`, depending on which container
+won the claim race.
 
 A single-process setup (dev, or a deploy without a separate worker) works
 unchanged: when no tags are configured, the effective claim list is all
@@ -201,11 +201,11 @@ namespace can be exited but the rlimit cannot).
   the C# `CancellationTokenSource` and triggers at the same threshold.
 - `RLIMIT_NPROC` (`--nproc`, `Python:MaxProcesses`) is **per Linux user**,
   not per process — it counts the worker's OWN threads (the .NET runtime
-  holds dozens) plus every concurrent sandbox. The old hard-coded 64 sat
-  below the worker's baseline thread count, so bwrap's `clone()` for
-  namespace setup intermittently failed with EAGAIN
+  holds dozens) plus every concurrent sandbox. A cap below the worker's
+  baseline thread count makes bwrap's `clone()` for namespace setup fail
+  intermittently with EAGAIN
   (`Creating new namespace failed: Resource temporarily unavailable`).
-  The default is now 1024; raise it on a busy worker, lower it only to
+  The default is 1024; raise it on a busy worker, lower it only to
   tighten the fork-bomb cap.
 
 ## Wall-clock timeout
@@ -268,9 +268,8 @@ sudo systemctl reload apparmor
 `sudo ./deploy/setup-host.sh` detects which of the three restrictions applies,
 applies the narrowest fix that works (the bwrap AppArmor profile in preference
 to relaxing the sysctl globally), and verifies with a bwrap smoke test. It is
-idempotent and reports "already ok" when there is nothing to do. That is the
-answer for "the end user shouldn't have to research this" — they still run one
-command, but they do not have to know which knob their distro uses.
+idempotent and reports "already ok" when there is nothing to do. The operator
+runs one command without having to know which knob their distro uses.
 
 They do not have to discover the problem on their own either: `deploy/run.sh`
 runs a bwrap smoke test **inside the worker container** after every `up`
@@ -408,21 +407,24 @@ Python__SandboxMode=none
 
 ## Tested attack patterns
 
-The unit suite (`PythonHandlerSandboxTests`) covers the static layer:
+The unit suite (`PythonHandlerSandboxTests`) exercises the pre-filter
+(`PythonHandler.CheckDangerousCode`). Each rejected script below is also refused
+by the authoritative AST guard, which bans the module or the name wherever it
+appears:
 
 | Script | Expected outcome |
 |---|---|
 | `import os; os.system("touch /tmp/owned")` | Rejected — `os` not in allow-list. |
-| `__import__("os").system("…")` | Rejected — `__import__(` substring match. |
-| `eval("__import__('os').system('…')")` | Rejected — `eval(` substring match. |
-| `with open("/etc/passwd") as f: ...` | Rejected — `open(` substring match. |
-| Fork bomb via `import os; os.fork()` | Rejected at static layer; would also be capped at nproc=64 by prlimit. |
-| Memory bomb `b = bytearray(1 << 40)` | Falls through static layer; killed by prlimit `--as=`. |
+| `__import__("os").system("…")` | Rejected — `__import__` is a banned name. |
+| `eval("__import__('os').system('…')")` | Rejected — `eval` is a banned name. |
+| `with open("/etc/passwd") as f: ...` | Rejected — `open` is a banned name. |
+| Fork bomb via `import os; os.fork()` | Rejected at the static layer; would also be capped by prlimit `--nproc` (`Python:MaxProcesses`, default 1024). |
+| Memory bomb `b = bytearray(1 << 40)` | Falls through the static layer; killed by prlimit `--as=`. |
 
-The runtime layer (bwrap behavior) is verified manually on the worker
-image — there is no Linux container in CI for the test suite, so we
-do not assert on the namespace properties. Track that under follow-up
-ticket "CI runner with linux container for sandbox e2e".
+The runtime layer (bwrap behaviour and namespace properties) is not covered by
+the automated tests. Verify it on the worker image: `deploy/run.sh` runs a bwrap
+smoke test inside the worker after every `up`, and the command under
+"Operator playbook" below reproduces it by hand.
 
 ## Operator playbook
 
@@ -451,10 +453,13 @@ ticket "CI runner with linux container for sandbox e2e".
   - **Fails in the container, host has `kernel.unprivileged_userns_clone=1`**
     → the **Docker default seccomp profile** is blocking the non-root
     worker from creating user namespaces (the most common containerized
-    case). Add `security_opt: [seccomp=unconfined, apparmor=unconfined]`
-    (or `cap_add: [SYS_ADMIN]`) to the worker service — e.g. in a
-    `docker-compose.override.yml` so prod stays strict. The snippet is
-    still isolated by bwrap itself.
+    case). The shipped `worker` service already sets
+    `security_opt: [seccomp=unconfined, apparmor=unconfined, systempaths=unconfined]`;
+    make sure the container that claims `sandbox` jobs has those options
+    (a customised compose file, or a backend that was given the `sandbox`
+    tag, will not). Adding `SYS_ADMIN` does not help: the worker runs as the
+    non-root `app` user, so the capability does not reach bwrap. The snippet
+    is still isolated by bwrap itself.
   - **Fails on the host too** → unprivileged user namespaces are off at
     the kernel: enable them (Debian/Ubuntu
     `sysctl kernel.unprivileged_userns_clone=1`; RHEL/derivatives

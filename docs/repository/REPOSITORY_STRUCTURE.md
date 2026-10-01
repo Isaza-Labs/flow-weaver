@@ -76,16 +76,7 @@ flowweaver/
 | `legal/` | Public licensing and contribution policies | Signed assignments, IDs, cap tables |
 | `compliance/` | Public templates and release metadata | Raw confidential audit evidence |
 
-## Internal-only companion storage
+## Kept outside the repository
 
-The following remain outside the public Git tree: original repository bundle and hash, executed PI assignments, LLC documents, founder records, private dependency decisions, vulnerability details, raw QA traces, release approvals and secret-scan evidence.
-
-## Future repository hardening
-
-1. Preserve the internal repository and hashes.
-2. Build a clean allowlisted candidate.
-3. Apply this structure without moving stable application paths unnecessarily.
-4. Add license metadata and third-party notices.
-5. Configure CI, CODEOWNERS and protected-branch rules.
-6. Validate on a clean machine and approve the release artifact.
+Corporate and legal records, vulnerability details, test traces with infrastructure data, release approvals and secret-scan evidence are kept by Isaza Labs LLC outside the public Git tree. See [PUBLIC_REPOSITORY_CONTENTS.md](../../PUBLIC_REPOSITORY_CONTENTS.md).
 

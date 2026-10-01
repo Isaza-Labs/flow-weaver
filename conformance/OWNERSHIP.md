@@ -1,74 +1,39 @@
 # Who owns this kit
 
-**This directory is a copy.** An identical one lives at
-`netora/workflow-v1-conformance/`. Neither is authoritative over the other, and that is a
-problem with a shelf life, not a design.
+FlowWeaver maintains the `workflow.v1` conformance kit in this repository, under
+`conformance/`. FlowWeaver is the contract's oracle; this directory is the authoritative copy.
 
-## Why there are two
+## Proposing a change
 
-The `workflow.v1` contract governs two products: FlowWeaver, which is its oracle, and
-Nashira, which implements it. The kit that defines the contract has to be readable and
-runnable by both.
+A contract change is a pull request against this repository. It must:
 
-Today it is stored inside one of them. That means the maintainers of one product hold the
-commit bit on the other product's contract — which is backwards even when the answer is
-obvious, and unworkable the first time the two disagree about what the contract says.
+1. Explain the change and the reasoning behind it in the pull request.
+2. Be reified from the **oracle**: read FlowWeaver's handler or engine code, not this kit's
+   prose. A vector or SPEC sentence written from the specification alone, without checking the
+   implementation, is how a wrong assertion survives review.
+3. Bump `contract_version` where the change requires it (see `README.md`, "Changing a vector =
+   changing the contract").
+4. Regenerate `PINNED` (digest and per-family counts) in the same change. The integrity check in
+   `flow_weaver_backend.Tests/Conformance/KitIntegrityTests.cs` fails when the vectors or the
+   schema do not match it.
 
-A copy in each repository is the interim arrangement:
+Do not edit files in this directory to make a build pass. The kit is what tells you the build is
+wrong.
 
-- Each build stays **hermetic**. Neither pipeline depends on another repository being
-  reachable, and neither pulls an entire product to obtain a directory.
-- `PINNED` records the `contract_version`, the `oracle_commit` the layers were reified
-  from, a content digest and per-family counts, so any green run is attributable to a
-  specific contract rather than to "the kit, whatever it said that day".
-- An unreviewed local edit fails the build, because the digest stops matching.
+## Using the kit from another implementation
 
-## What the copy cannot do
+Other implementations consume the kit; they do not maintain a fork of it.
 
-**A copy cannot notice that its twin moved.** The digest catches tampering here; it says
-nothing about a change made there. The two are kept together by review discipline and by
-nothing else, which is exactly the property this kit exists to remove from the products
-themselves.
+- **Vendor a pinned copy.** Copy `schema/`, `vectors/`, `VERSION`, `PINNED` and the SPEC
+  documents from a specific commit of this repository into your own build, unmodified.
+- **Check the copy.** Recompute the digest and per-family counts recorded in `PINNED` (SHA-256
+  over every vector and the schema, sorted by path; each file contributes its path relative to
+  `conformance/`, a NUL byte, its content and a NUL byte) so any local edit
+  fails your build, and so every green run is attributable to a specific contract version.
+- **Update deliberately.** Move to a newer kit by re-copying it and updating your pin in one
+  change, and treat any difference between your copy and the pinned commit as a defect.
+- **Write an adapter**, not a patch to the kit. See `adapters/README.md` and
+  `ci/run-conformance.md`.
 
-So treat divergence between the two copies as a defect, not as a fork in progress.
-
-## Editing it
-
-Do not edit files in this directory to make a local build pass. That inverts the whole
-arrangement: the kit is what tells you the build is wrong.
-
-A genuine contract change is:
-
-1. Made in **one** copy, with the reasoning in the change that carries it.
-2. Reified from the **oracle** — read the handler, do not read this document's prose. Three
-   assertions in this kit have been wrong precisely because they were written from the
-   specification rather than from the code, and each survived review before anyone opened
-   the implementation.
-3. Copied verbatim into the other repository, in the same change or the one immediately
-   after it.
-4. Accompanied by a regenerated `PINNED` in each.
-
-## Getting rid of the copies
-
-The kit should leave both repositories. When it does:
-
-1. **Create the repository.** `workflow-v1-conformance`, containing what this directory
-   contains: `schema/`, `vectors/`, `VERSION`, and the SPEC documents (`bundle/`,
-   `snippets/`, `templates/`, `execution/`, `canonicalization/`, `ci/`, `adapters/`).
-   Carry the git history from `netora/workflow-v1-conformance/` if it can be preserved —
-   the reasoning in those commits is most of the value.
-2. **Give it a release.** A tag per `contract_version`, and a published artifact each
-   consumer can pin: a NuGet package carrying the vectors as content is enough, and both
-   products are .NET.
-3. **Replace this directory with the dependency.** `PINNED` becomes the package version;
-   the integrity test becomes redundant and should be deleted rather than left asserting a
-   digest nobody regenerates.
-4. **Move the ownership rule.** Write into the new repository who reviews a contract change
-   and what "reified from the oracle" obliges them to check. That rule currently lives only
-   in this file, in duplicate.
-5. **Do steps 1-3 in both products in the same week.** Two consumers on different versions
-   of the contract is the thing the extraction is meant to end, and it is easy to create
-   accidentally by migrating one and getting distracted.
-
-Until then: two copies, one digest each, and the awareness that they agree because someone
-kept them agreeing.
+If you believe the contract is wrong, open an issue or a pull request here rather than changing
+your copy.

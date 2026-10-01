@@ -1,10 +1,10 @@
 # workflow.v1 — Template and condition profile
 
-Status: draft · Contract 1.1.0-draft · Oracle: flow-weaver `fw@1a11ea3`
+Status: draft · Contract 1.1.0-draft · Oracle: FlowWeaver (this repository)
 
 Templates appear in `config_overrides` values (any depth) and in edge `condition`
-strings. Both products already share the core; this document fixes the whole
-grammar so a workflow written against one engine resolves identically in the other.
+strings. This document fixes the whole grammar so a workflow written against one
+engine resolves identically in any other conforming engine.
 
 ## 1. Namespaces
 
@@ -45,8 +45,7 @@ filters; arguments are comma-separated, quotes stripped.
 Only `default` may recover an absent reference; every other filter on an absent
 value leaves the whole template unresolved. Unknown filters are ignored.
 
-"Absent" includes the empty string, for every filter — the oracle's rule, which
-both engines implement identically. It is what makes `{{ steps.x.output.error |
+"Absent" includes the empty string, for every filter — the oracle's rule. It is what makes `{{ steps.x.output.error |
 default('none') }}` read the same whether a handler reports "no error" as a
 missing key, as `null`, or as `""` — handlers are inconsistent about that and the
 author of a template cannot know which they will get. The consequence on the other
@@ -66,7 +65,7 @@ host-key fingerprints and sync timestamps are never exposed.
 ## 6. Per-device outputs — capability `per_device_scope`
 A `per_device` producer's stored output is the aggregate
 `{ "devices": [ { "device_id": "<guid>", "output": <that device's output> } ] }`.
-Products MAY add fields beside `devices` (Nashira adds `per_device, total, failed`)
+Implementations MAY add fields beside `devices` (for example `per_device, total, failed`)
 and inside each entry (`device, success, error, error_code, attempts, duration_ms`);
 templates may rely only on `devices[i].device_id` and `devices[i].output`.
 
@@ -118,5 +117,5 @@ serves a dry run and a real one.
 
 ## Conformance
 Family `templates` (vectors/templates/): `(outputs, input, device, run, template) →
-expected resolved value or "unresolved"`, and `(context, condition) → bool`. Both
-products run the same vectors through their resolver/evaluator.
+expected resolved value or "unresolved"`, and `(context, condition) → bool`. Every
+implementation runs the same vectors through its own resolver/evaluator.

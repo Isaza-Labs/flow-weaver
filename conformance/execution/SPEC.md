@@ -1,9 +1,9 @@
 # workflow.v1 — Execution semantics a portable workflow relies on
 
-Status: draft · Contract 1.1.0-draft · Oracle: flow-weaver `fw@1a11ea3`
+Status: draft · Contract 1.1.0-draft · Oracle: FlowWeaver (this repository)
 
 The graph says what runs after what. This document fixes the behaviour a workflow
-author may assume in either product: how a node's outcome is classified, when a
+author may assume in any conforming implementation: how a node's outcome is classified, when a
 failed step is retried, what a `subflow` node does, and what an importer does
 with triggers. Everything here is already the oracle's behaviour unless marked
 **profile** (a documented, declared difference).
@@ -33,7 +33,7 @@ is the reversible `changed` nodes in reverse execution order.
 key is an accepted *stricter-only* override — it can raise the tier, never lower
 it — and importers note it.
 
-## 3. Retry policy (canonical shape — FW is the oracle)
+## 3. Retry policy (canonical shape — FlowWeaver is the oracle)
 ```jsonc
 "retry_policy": {
   "max_retries": 0,              // extra attempts after the first; 0 = no retry
@@ -46,15 +46,16 @@ Delay before retry `k` (1-based): exponential `initial · 2^(k-1)`, linear
 `initial · k`, fixed `initial`; clamped to `max_delay_seconds`. A malformed policy
 means **no retry**.
 
-Legacy Nashira shape `{ max_attempts, delay_seconds, backoff }` is accepted on
+An older shape `{ max_attempts, delay_seconds, backoff }` is also accepted on
 read: `max_retries = max_attempts − 1`, `initial_delay_seconds = delay_seconds`,
 `max_delay_seconds = 30`. Exporters write the canonical shape.
 
 **Gates.** A retry happens only when the handler marked the failure `retryable`.
-**Profile (Nashira):** additionally, only `idempotent` snippets are retried — a
-`requires_compensation` step with a retry policy is surfaced, not retried — and
-attempts are capped at 5 / delay at 30 s. A bundle cannot change this; it is
-declared here so authors know.
+**Profile (permitted restriction):** an implementation may additionally retry
+only `idempotent` snippets — surfacing, not retrying, a `requires_compensation`
+step with a retry policy — and may cap attempts (for example at 5) and the delay
+(for example at 30 s). A bundle cannot change this; it is declared here so authors
+know that a retry policy is an upper bound, not a guarantee.
 
 ## 4. Fan-out
 `target_mode`: `once` (one execution) | `per_device` (one execution per target
@@ -107,7 +108,8 @@ result }`. `op` is the node's `snippet_id`. `tenant_id` is part of the schema ev
 where a product has no tenants (emitted as the nil GUID).
 
 ## Conformance
-Family `executor` (vectors/executor/): goldens captured from the oracle — for a
-given bundle + input + fake device set: the ordered list of `(node_id, result)`,
-the `rollback_plan`, `final_state`, and for subflow nodes the child's `(node_id,
-result)` list. Family `gate` already covers §6.
+Family `executor` (vectors/executor/): vectors written from this text (see
+`../vectors/README.md`), each giving a workflow and a scripted context — what each
+handler did, the outcome of each child run — and asserting the per-node results,
+the `rollback_plan`, `final_state`, the subflow outcomes and the `audit.v1` event
+shape. Family `gate` covers §6.

@@ -7,19 +7,19 @@ Isaza Labs LLC takes the security of FlowWeaver seriously.
 Report vulnerabilities privately. Do not open a public issue.
 
 1. Use GitHub private vulnerability reporting when it is enabled for the repository.
-2. If that channel is unavailable, use the private security contact published by Isaza Labs LLC for the release.
+2. If that channel is unavailable, write to `security@networkingdev.com`.
 
-The final security mailbox is not yet recorded in this staging package. A release must not be published until a monitored contact is inserted and tested.
+The security contact is `security@networkingdev.com` (see [SUPPORT.md](./SUPPORT.md)).
 
 Include affected versions, environment, reproduction steps, impact and a proof of concept when safe.
 
 ## Response target
 
-The project aims to acknowledge a valid report within three business days. This is an operational target and must be confirmed against the support capacity of the release.
+The project aims to acknowledge a valid report within three business days. This is an operating target, not a contractual commitment.
 
 ## Coordinated disclosure
 
-Please allow a reasonable opportunity to investigate and remediate before public disclosure. Any safe-harbor language must be reviewed for the applicable jurisdictions before it is presented as a legal commitment.
+Please allow a reasonable opportunity to investigate and remediate before public disclosure.
 
 ## Supported versions
 

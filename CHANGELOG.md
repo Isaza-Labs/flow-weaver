@@ -26,23 +26,32 @@ Each entry should distinguish verified behavior from known limitations and break
 
 ---
 
-## [released]
+## [Unreleased]
 
 ### Added
 
-- Public repository documentation package: project overview, quick start, governance, maintainers, contribution, support, security and incident-response policies; the Apache 2.0 scope notices for skills, specifications and workflows; and the legal set (licensing framework, DCO, trademark policy, third-party notices control).
+- Public repository documentation package: project overview, quick start, governance, maintainers, contribution, support and security policies; the Apache 2.0 scope notices for skills, specifications and workflows; and the legal set (licensing framework, DCO, trademark policy, third-party notices control).
 
 ### Changed
 
 - Updated the public entry points and quick start to describe the executable repository, AI-assisted draft creation, the visual editor, and current development checks.
 - Corrected the historical third-party inventory; included verbatim package licence and agreement files for `khroma` 2.1.0, `LibGit2Sharp.NativeBinaries` 2.0.323, QuestPDF 2025.1.5, and the listed json-everything versions; and separated completed classification from release-specific work.
 
+### Removed
+
+- A development ASP.NET Data Protection key file that had been committed under `flow_weaver_backend/keyring/`. The `keyring/` directory is now git-ignored. Any deployment that used that key should generate a new keyring and re-enter its stored credentials (see [keyring rotation](./docs/ops/keyring-rotation.md)).
+- The GitLab branch-protection guide and the internal QA-round issue template, which did not apply to this repository.
+
+### Fixed
+
+- Documentation cleanup across the repository, the in-app manual and the agent skills: removed internal references, corrected statements that contradicted the code, fixed broken links and replaced example data with documentation-reserved values.
+- `.gitignore` no longer matches source folders named `Secrets` on case-insensitive filesystems.
+
 ### Known limitations
 
 - **Pre-1.0 development state.** No stable release has been tagged; setup and interfaces may change. Verify a deployment in your own environment before using it for operational work.
 - **The third-party notice is a historical inventory, not yet a complete release notice.** The [release work](./THIRD-PARTY-NOTICES.md#4-resolved-classifications-and-remaining-release-work) includes packaging third-party licence texts with the built artifacts, recording commercial-term decisions, and regenerating the inventory from those artifacts. The current public checkout has no committed NuGet lockfiles or `deploy/requirements.txt`, and its container bases use tags rather than digest pins.
 - **No supported-version table exists** because no release has been tagged. Until then, fixes are applied to the current development line.
-- **The `workflow.v1` conformance kit is duplicated** between this repository and the Nashira repository by design, as an interim arrangement. Neither copy is authoritative over the other, and a copy cannot detect that its twin changed.
 
 ---
 

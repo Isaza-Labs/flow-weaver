@@ -1,9 +1,9 @@
 # Workflow import
 
 The import wizard at `/workflows/import` accepts workflow definitions
-from FlowWeaver v1 (our own export), n8n, Itential IAP / Operations
+from FlowWeaver v1 (FlowWeaver's own export), n8n, Itential IAP / Operations
 Manager, and any generic JSON/YAML DAG. The pipeline detects the
-format, translates to our v1 schema, surfaces missing dependencies and
+format, translates to the FlowWeaver v1 schema, surfaces missing dependencies and
 conflicts, and lets the user resolve each before commit.
 
 ## Architecture
@@ -25,7 +25,7 @@ POST /api/workflow/import/analyze
       │
       ▼ ──► ConflictDetector    (name collision + structural duplicate)
       │
-      ▼ ──► WorkflowRollbackAnalyzer (S13.6 — flag non-reversible nodes)
+      ▼ ──► WorkflowRollbackAnalyzer (flag non-reversible nodes)
       │
       ▼
 [ AnalysisReport stored on draft ]
@@ -164,9 +164,10 @@ Two choices:
 ### Vendor commands
 
 Reported as warnings only; the validator catches unknown `device_type`
-references post-import. Operator action: seed
-`Skills/vendors/<device_type>.yaml` or extend `vendor_commands` via the
-admin UI.
+references post-import. Operator action: add
+`flow_weaver_backend/Skills/vendors/<device_type>.yaml` (seeded on the next
+start, see [Vendors](./vendors.md)) or extend `vendor_commands` from
+`/vendor-commands`.
 
 ## Conflict resolution
 
@@ -192,11 +193,11 @@ When the fingerprint matches an existing workflow ≥ 95 %:
 |---|---|
 | `import_as_new` (default) | Imports anyway with a fresh GUID + (possibly suffixed) name. |
 | `skip` | Cancels the import. |
-| `update_existing` | Currently behaves like `replace`. |
+| `update_existing` | Updates the matching workflow in place (see below). |
 
 ## Rollback risk during import
 
-The wizard runs `WorkflowRollbackAnalyzer` (S13.6) on the proposed
+The wizard runs `WorkflowRollbackAnalyzer` on the proposed
 workflow and surfaces the report:
 
 - Red banner when the import contains non-reversible nodes (`ssh`,
@@ -230,45 +231,33 @@ Every step writes to `/admin/audit` (chip "Workflow imports",
 - **File size cap**: 5 MiB by request body limit.
 - **Rate limits**:
   - `/analyze` and `/commit` → `WriteNormal` (60/min/user).
-  - `/generate-snippet` → `AiChat` (30/hour/user).
-  - `/stream` is unrate-limited; one stream per token.
+  - `GET /{token}` → `ReadHeavy` (300/min/user).
+  - `/generate-snippet` → `AiChat` (60/min/user).
+  - `/stream` has no rate-limit policy; one stream per token.
 
 ## Known gaps
 
 - The agent translator's quality varies by model. Strongly typed
   formats (v1, n8n, Itential) hit specific translators first.
 
-## Closed follow-ups (FU-1 — FU-5)
+## Commit, run and update behaviour
 
-All entries below were S15 follow-ups; they shipped together in the
-same release cycle.
-
-- **FU-1 transaction wrap (commit)**: the commit endpoint now opens an
-  EF transaction covering both `SaveChangesAsync` calls. Schema-,
-  reference-, and final-save failures roll back, so a partial commit
-  never leaves orphan stubs or integrations behind. EF InMemory (used
-  in tests) doesn't support transactions; we detect the provider and
-  skip the wrap there.
-- **FU-2 executor pre-flight integration check**: `WorkflowExecutor.
-  EnqueueRunAsync` now refuses runs whose graph references any
-  integration in `needs_config` status. The user sees the failure at
-  enqueue time, not after the first step dispatches.
-- **FU-3 `analyze_foreign_workflow` chat tool**: the import pipeline
-  is now exposed as an AI tool. A user in `/ai/chat` can paste a
-  foreign workflow (≤ 16 KiB) and get back format detection +
-  translation summary + missing dependencies. Read-only — for the full
-  commit flow, the wizard at `/workflows/import` is still the surface.
-- **FU-4 `AgentResponseParser` unit tests**: parsing logic for the
-  agent translator's response (markdown-fence stripping, wrapped vs
-  bare JSON shape, non-JSON fallback) is now a public static class
-  covered by 12 tests. The LLM call itself is still untested; that
-  remains a manual smoke check.
-- **FU-5 `update_existing` deep merge**: `duplicate_action=update_existing`
-  now mutates the structural-duplicate row in place instead of
-  soft-deleting and re-inserting. `WorkflowId`, `CreatedBy`,
-  `CreatedAt`, and `Environment` are preserved; `Nodes`, `Edges`,
-  `InputSchema`, `Description`, `Name` come from the import; `Version`
-  bumps by 1; `Metadata` is shallow-merged with imported keys winning.
-  The current state is snapshotted into a `WorkflowVersion` so the
-  rollback gate still has somewhere to revert. Per-resource `editor`
-  grant is enforced (same as `replace`).
+- **Atomic commit**: the commit endpoint wraps its writes in one database
+  transaction. Schema-, reference- and final-save failures roll back, so a
+  failed commit never leaves orphan stubs or integrations behind.
+- **Pre-flight integration check**: `WorkflowExecutor.EnqueueRunAsync`
+  refuses runs whose graph references any integration in `needs_config`
+  status, so the failure shows at enqueue time rather than after the first
+  step dispatches.
+- **`analyze_foreign_workflow` chat tool**: the import pipeline is also
+  exposed as an AI tool. A user in `/ai/chat` can paste a foreign workflow
+  (≤ 16 KiB) and get back format detection, a translation summary and
+  missing dependencies. It is read-only; committing goes through the wizard
+  at `/workflows/import`.
+- **`duplicate_action=update_existing`** updates the structural-duplicate row
+  in place. `WorkflowId`, `CreatedBy`, `CreatedAt` and `Environment` are
+  preserved; `Nodes`, `Edges`, `InputSchema`, `Description` and `Name` come
+  from the import; `Version` increases by 1; `Metadata` is shallow-merged with
+  imported keys winning. The previous state is saved as a `WorkflowVersion` so
+  it can be rolled back. A per-resource `editor` grant is required (same as
+  `replace`), and a `production` workflow cannot be updated this way.

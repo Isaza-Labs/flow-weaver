@@ -1,8 +1,10 @@
 # schema/
 
 `workflow.v1.schema.json` — the structural JSON Schema for a `workflow.v1` document, reified from
-flow-weaver's workflow model at the frozen `oracle_commit`. It is normative for the `schema`
-vector family (structural validity) and is consumed by both products' adapters.
+FlowWeaver's workflow model. It is normative for the `schema` vector family (structural validity)
+and is available to every implementation's adapter.
 
-Pending reification from FW (see the parent `README.md` bootstrap). Until then this folder holds
-only this placeholder.
+FlowWeaver's own validator (`flow_weaver_backend/Services/Validation/WorkflowSchemaValidator.cs`)
+loads the copy embedded in the backend, `flow_weaver_backend/Data/Schemas/workflow.v1.schema.json`.
+Its conformance adapter answers the `schema` family through that production validator, so the
+vectors check the path real workflows take rather than this file in isolation.

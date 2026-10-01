@@ -6,7 +6,12 @@
 *.key
 *.pfx
 *.p12
+# Root-level secrets folder only. Anchored so it never matches source folders
+# such as flow_weaver_backend/Services/Ai/Secrets on case-insensitive filesystems.
+/secrets/
 
+# ASP.NET Data Protection keyring (encryption keys). Never commit it.
+keyring/
 
 # .NET
 bin/
@@ -44,3 +49,4 @@ Thumbs.db
 internal-compliance/
 release-evidence/
 *.bundle
+

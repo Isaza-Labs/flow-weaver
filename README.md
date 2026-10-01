@@ -32,9 +32,9 @@ The `examples/` and `workflows/` directories currently contain guidance rather t
 
 ## How the workflow lifecycle works
 
-The first workflow in the quick start starts in **draft**. You can simulate the graph without contacting devices, then run it against targets allowed for that environment. Promotion to **QA** and **production** is governed by environment and approval checks. Production promotion requires recent successful QA evidence and a separate approver. See the [in-app workflow manual](./frontend/src/routes/docs/workflows/+page.svelte) and [QA lab guide](./frontend/src/routes/docs/qa-lab/+page.svelte) for the current UI behavior.
+The first workflow in the quick start starts in **draft**. You can simulate the graph without contacting devices, then run it against targets allowed for that environment. Promotion to **QA** and **production** is governed by environment and approval checks. Production promotion requires a recent successful QA run and an approval step. See the [in-app workflow manual](./frontend/src/routes/docs/workflows/+page.svelte) and [QA lab guide](./frontend/src/routes/docs/qa-lab/+page.svelte) for the current UI behavior.
 
-Permissions include the default Admin, Operator, and Viewer roles. Granular capability grants are available through an opt-in rollout setting and are not the default. See [permissions](./docs/permissions.md) for enforcement scope and known follow-ups.
+Permissions include the default Admin, Operator, and Viewer roles. Granular capability grants are available through an opt-in rollout setting and are not the default. See [permissions](./docs/permissions.md) for enforcement scope and current limitations.
 
 ## Community and project policies
 

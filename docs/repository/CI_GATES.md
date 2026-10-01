@@ -1,4 +1,6 @@
-# Required CI and release gates
+# CI and release gates
+
+The public repository does not include CI configuration. The checks below are the gates a maintainer CI and branch policy should enforce. Until they are configured, contributors run the build and test commands in the [quick start](../../QUICK_START_GUIDE.md#6-tests) and report the results in the pull request.
 
 ## Pull-request checks
 

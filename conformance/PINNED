@@ -1,14 +1,13 @@
 # Pinned conformance kit
 
-This directory is a COPY. See OWNERSHIP.md before editing anything in it.
+# Read by flow_weaver_backend.Tests/Conformance (KitIntegrityTests, ConformanceGateTests).
+# See OWNERSHIP.md before editing anything in this directory.
 
 contract_version: 1.1.0-draft
 oracle:           flow-weaver
 oracle_commit:    fw@fe07550
 copied_from:      netora/workflow-v1-conformance
-copied_on:        2026-08-29     # re-synced after two vector corrections; see the notes on
-                                 # executor.conditional.blank_condition_is_refused and
-                                 # executor.subflow.output_shape
+copied_on:        2026-08-29
 
 # SHA-256 over every vector and the schema, each preceded by its path, sorted by path.
 # The path is hashed too: a vector RENAMED into another family would otherwise not move it.

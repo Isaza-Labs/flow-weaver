@@ -11,7 +11,7 @@
 
 ## File-level controls
 
-Use SPDX headers for new source and documentation when practical. `REUSE.toml` covers formats that cannot safely carry comments or existing large directories during the initial conversion.
+Use SPDX headers for new source and documentation when practical. `REUSE.toml` covers formats that cannot safely carry comments and existing directories without per-file headers.
 
 Third-party files must override the blanket rule through their own headers, an adjacent `.license` file or a closer `REUSE.toml`. Never delete upstream notices.
 

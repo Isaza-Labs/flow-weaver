@@ -15,16 +15,9 @@ its snippet and integration by **GUID**. GUIDs are per-instance. On any other
 installation they resolve to nothing, every dependency reads as missing, and the
 import has nothing to bind to.
 
-That is not hypothetical — it is what shipped. The importer matched integrations
-by GUID, its name-similarity fallback ended up scoring integration names against
-a *GUID string* (which can never match), and with no candidates the only remedy
-it could offer for a missing snippet was a fabricated `python_snippet` stub. A
-workflow that used a NetBox integration present on both sides came out the other
-end as placeholder python.
-
 ```
-GET /workflow/{id}/export?format=bundle    →  <name>.bundle.json
-POST /workflow/import?format=json          ←  detected automatically
+GET  /api/workflow/{id}/export?format=bundle    →  <name>.bundle.json
+POST /api/workflow/import?format=json          ←  detected automatically
 ```
 
 In the UI: **Export → Bundle (share / portable)**.
@@ -63,8 +56,10 @@ Nodes travel with the portable NAME **in place of** the local id, so a node
 means something on an instance that has never seen those GUIDs — and so the
 node hash is the same wherever the workflow was exported from. A GUID is
 meaningful only on the instance that minted it; carrying one would make the
-fingerprint instance-specific and a bundle that crossed products could never
-come back equal to itself. Importers still accept the legacy id keys (v2
+fingerprint instance-specific and a bundle that crossed instances could never
+come back equal to itself. `snippet_id` and `subflow_workflow_id` stay GUIDs:
+they are structural and are always remapped against definitions the bundle
+carries. Importers still accept the legacy id keys (v2
 bundles and hand-authored files carry them) and the canonical key wins when
 both are present. `dependencies` gives each reference a definition or an
 identity; the importer resolves both locally and rewrites the graph. Identity
@@ -93,21 +88,30 @@ real device. So the bundle declares what it needs, and the declaration is
 | `python_network` | a python snippet had `network_enabled` at the source |
 | `triggers` | the bundle carries triggers |
 
-This installation implements all of them. A capability name **outside** that
-closed list is refused (`bundle_capability_unsupported`): a build that does not
-know what a name means cannot decide it is harmless.
+This installation implements every capability in the table. The vocabulary
+also defines `rest_catalog` (a `rest_call` step in the catalogued
+`source` / `operation_id` form), which this installation does not implement.
+A bundle that requires `rest_catalog`, or any name outside the vocabulary, is
+refused (`bundle_capability_unsupported`): a build that does not know what a
+name means cannot decide it is harmless. For a v2 bundle the requirement is
+inferred from the nodes, so a catalogued `rest_call` step is refused the same
+way.
 
 `requires.secrets` lists every `${secret:<source>:<name>:<field>}` marker found
 in the graph or in a carried snippet — the reference, never a value. Markers are
 copied through untouched (they are not templates; the resolver never touches
 them) and the import notes each one so the secret can be created before the
-first run. This engine resolves them inside `python_snippet` payloads; other
-step types receive the marker literally.
+first run. At run time the markers are resolved in `python_snippet` payloads,
+in `ssh` inline credentials (`username`, `password`, `private_key`,
+`key_passphrase`) and `enable_secret`, and in `rest_call` `url` and `headers`.
+A marker anywhere else reaches the handler as literal text. Plain-text values
+in `ssh` inline credential fields are stripped on export and refused on
+import; only a `${secret:…}` reference is accepted there.
 
 ### Portable reference keys
 
 A GUID is meaningless on another installation, so every reference that leaves
-the graph is written by NAME as well:
+the graph is written by NAME:
 
 | referenced | portable key | value |
 |---|---|---|
@@ -117,7 +121,9 @@ the graph is written by NAME as well:
 | credential | `credential` | the credential's name |
 | git repository | `repository` | the repository's name |
 
-Export writes both; import uses the name, rewrites it to this instance's id, and
+Export writes the name key in place of the local id key (`integration_id`,
+`action_id`, `mcp_server_id`, `credential_id`, `repository_id`); import uses the
+name, rewrites it to this instance's id, and
 **drops the name**, so the stored graph keeps exactly one source of truth and a
 later export re-derives the name from what the node points at *now* rather than
 from a label that has since gone stale. A name that matches nothing here is
@@ -127,9 +133,8 @@ refused (`bundle_reference_untranslatable`) naming the node and the key.
 
 Every workflow reachable through `subflow` nodes travels, transitively, once
 each, in `dependencies.workflows` — with its snippets and references merged into
-the same `dependencies` and `requires`. Before this, a bundle silently dropped
-them: the parent imported, the subflow node pointed at a GUID that does not
-exist here, and the step failed with `subflow_missing` on the first run.
+the same `dependencies` and `requires`, so the subflow nodes resolve on the
+receiving instance.
 
 On import they are created **first**, callees before callers (so each caller's
 `subflow_workflow_id` can be rewritten to a row that already exists), as drafts
@@ -199,8 +204,7 @@ A missing **action** on an integration that does exist almost always means the
 target's OpenAPI spec is older — re-upload it on the integration and retry.
 
 Snippets are the exception, and not an inconsistency: their **full definition
-travels**, so recreating one is lossless. That is categorically different from
-the old stub, which was invented.
+travels**, so recreating one is lossless; nothing is invented.
 
 ## Idempotency
 
@@ -229,32 +233,36 @@ A bundle that references a snippet whose definition it does not carry is refused
 for the same reason — completing it by guessing is the behaviour this format
 exists to remove.
 
-## The other product
+## Other format identifiers and key aliases
 
-The wire format is shared with **Nashira**, which adopted it rather than forking
-it, so `kind` is accepted as `flow_weaver.workflow_bundle`,
-`nashira.workflow_bundle` or `netora.workflow_bundle`. `exported_by` says which
-product wrote the file and is informational only — nothing dispatches on it; the
-`schema_version` and the declared `requires` are what decide.
+Besides `flow_weaver.workflow_bundle`, older format identifiers are also
+accepted in `kind`. `exported_by` says which product wrote the file and is
+informational only — nothing dispatches on it; the `schema_version` and the
+declared `requires` are what decide.
 
-Where the two products spelled the same payload key differently, **this
-product's key is canonical and the other spelling is an accepted alias**
-(`Services/Worker/PayloadAliases.cs`), so a workflow authored there runs here:
+Some payload keys have an accepted alternative spelling. The canonical key is
+the one this product's handlers read; the alias is rewritten to it before the
+handler runs (`Services/Worker/PayloadAliases.cs`, plus a few handlers that
+resolve inventory names themselves):
 
 | type | canonical | alias |
 |---|---|---|
 | `transform` | `expression` | `mapping` (an object; it *is* a JMESPath multiselect hash) |
 | `integration_action` | `params`, `query` | `path_params`, `query_params` |
-| `mcp_call` | `tool_name` | `tool` |
+| `mcp_call` | `tool` | `tool_name` |
 | `ssh` | `use_structured`, `enable_secret` | `structured`, `enable` |
-| `ansible_playbook` | `hosts` | `device`, `targets` |
+| `ssh` | `commands` | `command` (dropped when `commands` is present) |
+| `ansible_playbook` | `hosts` | `device`, `targets`, `host` |
 | `report` | `document` | `content` (markdown) |
-| `slack_message` | — | `via` (ignored: this product posts with the deployment token) |
-| `ssh`, `ping` | `device` | an inventory device **name**, resolved here to its address and credential |
+| `ping` | `host` | `device` (an inventory device **name**, used only when `host` is blank) |
+| `ssh` | `device` (an inventory device **name**, resolved here to its address and credential) | `host` (a literal address; ignored when `device` is present) |
 | `git` | `repository` | the repository's **name**, resolved here to its id |
 
-An alias is used only when the canonical key is absent — a node carrying both is
-a FlowWeaver node with a leftover key, and the canonical one is what it means.
+`slack_message` accepts a `via` key and ignores it: this product posts with the
+deployment token.
+
+An alias is used only when the canonical key is absent — in a node carrying
+both, the alias is a leftover key and the canonical one is what it means.
 Keys no alias covers are left alone (the handler ignores what it does not read)
 but **noted per node at import**, so a typo or a product-specific extension is
 visible before the first run rather than after it.

@@ -1,6 +1,6 @@
 # workflow.v1 — Interchange bundle (v3)
 
-Status: draft · Contract 1.1.0-draft · Oracle: flow-weaver `fw@1a11ea3` (2026-08-26)
+Status: draft · Contract 1.1.0-draft · Oracle: FlowWeaver (this repository)
 
 The bundle is the **only** portable form of a workflow. A workflow.v1 document
 (`{nodes, edges}`) is meaningful inside one instance; the bundle gives every
@@ -8,9 +8,8 @@ identifier in it a portable identity and carries every definition the receiving
 instance needs to run it. A bundle that imports must run; a bundle that cannot run
 must be refused at import, naming what is missing. Nothing may be guessed.
 
-This document supersedes the informal v2 shape emitted by both products since
-2026-08-05. v2 remains **readable** by every conforming importer; conforming
-exporters emit v3.
+This document supersedes the earlier, informal v2 shape. v2 remains **readable**
+by every conforming importer; conforming exporters emit v3.
 
 ## 1. Root
 
@@ -19,7 +18,7 @@ exporters emit v3.
   "schema_version": "v3",
   "kind": "flow_weaver.workflow_bundle",   // the marker; never detect by shape
   "exported_at": "2026-08-27T12:00:00Z",
-  "exported_by": { "product": "nashira" | "flow-weaver", "version": "..." },   // informational
+  "exported_by": { "product": "flow-weaver", "version": "..." },   // the exporting product; informational
   "requires": { ... },                     // §2 — what the importer must support
   "workflow": { ... },                     // §3
   "nodes": [ ... ],                        // workflow.v1 nodes, verbatim (§4 for reference keys)
@@ -29,8 +28,8 @@ exporters emit v3.
 }
 ```
 
-`kind` values a conforming importer MUST accept: `flow_weaver.workflow_bundle`,
-`nashira.workflow_bundle`, `netora.workflow_bundle`. Exporters SHOULD emit
+`kind` value a conforming importer MUST accept: `flow_weaver.workflow_bundle`.
+Older format identifiers are also accepted by FlowWeaver. Exporters SHOULD emit
 `flow_weaver.workflow_bundle`.
 
 `schema_version` values a conforming importer MUST accept: `v2`, `v3`. Any other
@@ -139,7 +138,7 @@ what it puts on the wire is this.
 (`canonicalization/SPEC.md`), and that hash is what §8's round trip compares. A
 local GUID in `config_overrides` is meaningful only on the instance that wrote it,
 so carrying one makes the hash instance-specific: the same workflow exported from
-two instances would fingerprint differently, and a bundle that crossed products
+two instances would fingerprint differently, and a bundle that crossed implementations
 could never come back equal to itself. Same-instance re-import is not a good enough
 reason — it is already exact, because the importer resolves the same names to the
 same rows.
@@ -216,13 +215,11 @@ Portable types: `cron`, `webhook`. Other types (`schedule`, `event`, git hooks)
 are exported as-is and **skipped with a note** by an importer that lacks them.
 
 What never travels: the webhook HMAC secret, `target_devices` (local ids), run
-statistics, and **`notification_webhook_url`**. That last one was in this
-document's first draft and it was a mistake: an incoming-webhook URL for Slack,
-Teams or PagerDuty carries its token in the path, so the URL *is* the credential.
-It is bearer material wearing a field name that reads like configuration — which
-is exactly how a secret escapes a review. The receiving instance supplies its own;
-the importer notes that a notification target was declared and dropped, so the
-operator knows to re-point it.
+statistics, and **`notification_webhook_url`**. An incoming-webhook URL for Slack,
+Teams or PagerDuty carries its token in the path, so the URL *is* the credential:
+bearer material under a field name that reads like configuration. The receiving
+instance supplies its own; the importer notes that a notification target was
+declared and dropped, so the operator knows to re-point it.
 
 On import every trigger is created **disabled**, with a **fresh secret**, and no
 targets — the note tells the operator what to set before enabling. `route` is kept
@@ -249,19 +246,19 @@ hand-authored write.
 Family `bundle` (vectors/bundle/): each vector is a v3 bundle plus the expected
 outcome (`refused` with codes, or `imported` with the expected canonical hash of
 `nodes`+`edges` after remap, the expected notes, and the expected set of created
-kinds). The round-trip vector exports from the oracle, imports here, exports
-again, and asserts the canonical hash and the `requires` block are unchanged.
+kinds). The round-trip vector exports, imports, exports again, and asserts the canonical hash and the `requires` block are unchanged.
 
 The hash compared there is the one over the **bundle's own** `nodes` + `edges`,
 not over the imported workflow row. The two are deliberately different things: the
 stored row may carry whatever local vocabulary the product runs on (ids, local
 names), while the wire form carries portable identities only — which is exactly
 what §4 forbids ids for. Comparing stored rows would make the vector assert that
-two products store workflows identically, which is not the contract and is not
+two implementations store workflows identically, which is not the contract and is not
 true; comparing wire forms asserts the only thing that matters, that the workflow
 survived the crossing intact.
 
 `snippet_id` and `subflow_workflow_id` are the exception the round trip must
 tolerate: they are remapped to the receiving instance's rows by design, so the
-comparison normalizes them (`normalize: ["remap:snippet_ids", "remap:workflow_ids"]`)
-rather than expecting equality.
+comparison replaces each with an ordinal placeholder (its order of first
+appearance) before hashing, rather than expecting equality. The adapter applies
+this when it computes `schema_hash`; it is not a vector `normalize` rule.

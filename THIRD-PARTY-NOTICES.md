@@ -2,16 +2,16 @@
 
 This file preserves a dependency inventory and tracks the work needed for a release-specific third-party notice. It is not a notice for a released artifact.
 
-**Source inventory:** CycloneDX 1.6 SBOM `flowweaver-sbom_2e0cc0b_2026-09-10.cdx.json`, produced on 10 September 2026 from the internal tree (commit `2e0cc0b`, branch `repository_pattern`) and validated against the official CycloneDX schema with no errors.
+**Source inventory:** CycloneDX 1.6 SBOM `flowweaver-sbom_2e0cc0b_2026-09-10.cdx.json`, produced on 10 September 2026 from the pre-publication source tree and validated against the official CycloneDX schema with no errors.
 
 **How each layer was resolved:**
 
 - **NuGet** — `dotnet restore` followed by `dotnet list package --include-transitive`. Each licence was read from the package's own `.nuspec`, not from a third-party table.
 - **npm** — `frontend/package-lock.json` (lockfileVersion 3), with the licence resolved per package and exact version.
-- **PyPI** — resolution of the ranges used by the internal source tree at the date below. The current public checkout does not include `deploy/requirements.txt`.
+- **PyPI** — resolution of the ranges used by the pre-publication source tree at that date. The current public checkout does not include `deploy/requirements.txt`.
 - **Operating-system packages and base images** — declared from `deploy/Dockerfile` and `deploy/docker-compose.yml`.
 
-> This inventory describes the internal tree on one date, not the current public checkout. Its NuGet and npm version lists and container inputs must be reconciled with the exact source and images of any release. Section 4 distinguishes resolved classifications from remaining release work.
+> This inventory describes the pre-publication source tree on one date, not the current public checkout. Its NuGet and npm version lists and container inputs must be reconciled with the exact source and images of any release. Section 4 distinguishes resolved classifications from remaining release work.
 
 ## 1. Summary
 

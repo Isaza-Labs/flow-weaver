@@ -86,13 +86,17 @@ The agent has three tools (grant `mcp.read` to discover, `mcp.execute` to call):
 3. `call_mcp_tool` — invoke a tool (`single_confirm` tier; counts against the
    mutation budget).
 
-The discovery-before-call discipline and safety notes live in `Skills/mcp.md`.
+The discovery-before-call discipline and safety notes live in `flow_weaver_backend/Skills/mcp.md`.
 
 ## Using MCP tools in workflows
 
 In the workflow builder, open the left palette's **MCP** section, expand a server,
-and drag a tool onto the canvas. The node stores `mcp_server_id`, `tool_name`, and
-an `arguments` object in its `config_overrides`; `arguments` accepts templates like
+and drag a tool onto the canvas. The node stores `mcp_server_id`, the tool name, and
+an `arguments` object in its `config_overrides`. The handler's canonical key for the
+tool is `tool`; the editor writes `tool_name`, which is accepted as an alias. In a
+[workflow bundle](./workflow-bundles.md) `mcp_server_id` is replaced by the portable
+`server` key (the server's name) and translated back to a local id on import.
+`arguments` accepts templates like
 `{{ steps.<node-id>.output.<field> }}`. The node is `requires_compensation` (its
 external effect is unknown) and its output is `{ content, structured, is_error }`.
 
@@ -133,9 +137,9 @@ author an `mcp_call` node for a server/tool you aren't allowed to call.
   namespaced as MCP in the prompt, and `Skills/mcp.md` instructs the agent to treat
   tool descriptions/outputs as data, never as instructions. Re-sync is explicit.
 
-## Deferred (non-blocking) follow-ups
+## Current limitations
 
-- Enqueue-time readiness gate for `mcp_call` nodes whose server is not `ok` (today
-  the node fails gracefully at run time instead).
-- Connection/session pooling (v1 is connect-per-operation).
-- MCP resources & prompts, and the local `stdio` transport.
+- A run is not blocked at enqueue when an `mcp_call` node's server is not `ok`;
+  the node fails at run time instead.
+- Connections are not pooled: each operation opens its own connection/session.
+- MCP resources and prompts, and the local `stdio` transport, are not supported.

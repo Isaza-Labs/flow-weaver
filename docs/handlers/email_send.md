@@ -27,7 +27,7 @@ touches one row and no workflows.
 | `username`, encrypted password | `subject`, `body`, `html` |
 | `from_address`, `from_name`, `reply_to` | `attachments[]` |
 | `allow_private_network`, `tls_skip_verify` | optional `from_*` / `reply_to` overrides |
-| `is_default`, `enabled` | optional `channel_id` |
+| `is_default`, `enabled` | optional `channel` (or `channel_id`) |
 
 ## Input
 
@@ -36,10 +36,10 @@ unwrapped, matching `python_snippet` and `slack_message`.
 
 ```json
 {
-  "channel_id": "…",
-  "to": "a@x.com",
-  "cc": ["b@x.com"],
-  "bcc": "c@x.com",
+  "channel": "ops-relay",
+  "to": "a@example.com",
+  "cc": ["b@example.com"],
+  "bcc": "c@example.com",
   "subject": "…",
   "body": "plain text",
   "html": "<p>…</p>",
@@ -55,6 +55,10 @@ unwrapped, matching `python_snippet` and `slack_message`.
 Required: at least one recipient across `to`/`cc`/`bcc`, a `subject`, and
 at least one of `body`/`html`. Everything else is optional.
 
+`channel` names the relay and is the canonical key (it also accepts a channel
+GUID). `channel_id` (a GUID) is accepted as an alias and is used only when
+`channel` is absent.
+
 `to`/`cc`/`bcc` each accept a single address, a comma-separated string, or
 an array of strings — hand-authored nodes write one address, nodes fed from
 an upstream fan-out write arrays, and both are normal.
@@ -67,11 +71,13 @@ produces. `content_type` defaults to `application/octet-stream`.
 
 ## Channel resolution
 
-1. `channel_id` present → `FindEnabledByIdAsync`. A disabled or
+1. `channel` present → `FindEnabledByNameAsync` (or `FindEnabledByIdAsync`
+   when the value is a GUID). A name that matches no enabled channel **fails
+   the step** (`not_found`); it never falls back to the default relay.
+2. Otherwise `channel_id` present → `FindEnabledByIdAsync`. A disabled or
    soft-deleted channel **fails the step**; it is not silently swapped.
-2. `channel_id` absent → `FindDefaultAsync` (the single `IsDefault`
-   + `Enabled` row).
-3. Neither → the step fails with a pointer to `/email`.
+3. Neither key → `FindDefaultAsync` (the single `IsDefault` + `Enabled` row).
+4. No default configured → the step fails with a pointer to `/email`.
 
 The handler never guesses "the only channel". A deployment with one
 non-default relay fails loudly rather than sending corporate mail through
@@ -194,9 +200,9 @@ a preset later cannot silently repoint existing channels.
 
 ## Relationship to `fw_email`
 
-An external SMTP microservice (spec `Specs/fw_email.yaml`, skill
-`Skills/email.md`) predates this handler and still serves the **chat**
-agent through `execute_operation`. Workflows should use `email_send`:
+An external SMTP microservice (spec `flow_weaver_backend/Specs/fw_email.yaml`,
+skill `flow_weaver_backend/Skills/email.md`) is a separate path that serves the
+**chat** agent through `execute_operation`. Workflows should use `email_send`:
 no external dependency, credentials encrypted in-platform, and the SSRF /
 TLS / redaction guarantees above.
 

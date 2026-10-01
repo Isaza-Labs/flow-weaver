@@ -1,9 +1,9 @@
 # workflow.v1 — Snippet type contracts
 
-Status: draft · Contract 1.1.0-draft · Oracle: flow-weaver `fw@1a11ea3`
+Status: draft · Contract 1.1.0-draft · Oracle: FlowWeaver (this repository)
 
 A node executes the snippet its `snippet_id` names; the snippet's `type` picks the
-handler. Two products that agree on the graph but not on what each handler reads
+handler. Two implementations that agree on the graph but not on what each handler reads
 produce the worst possible outcome: a bundle that imports and fails on the first
 run. This document fixes, per type, the **canonical input keys**, the **aliases**
 an importer/handler must accept, the **portable output** a downstream template may
@@ -11,10 +11,10 @@ rely on, and the default idempotency.
 
 Rules that apply to every type:
 
-1. **FlowWeaver is the oracle for payload keys.** Where the two products used
-   different keys for the same thing, the FW key is canonical and the Nashira key
-   is an accepted alias. Handlers MUST accept both; exporters MUST write the
-   canonical key.
+1. **FlowWeaver is the oracle for payload keys.** Where implementations have used
+   different keys for the same thing, the key marked **C** below is canonical and
+   the other spelling is an accepted alias. Handlers MUST accept both; exporters
+   MUST write the canonical key.
 2. **Identity keys are names, not ids** (bundle/SPEC.md §4): `integration`,
    `action`, `server`, `credential`, `repository`. Handlers resolve them locally.
 3. **Extra keys are allowed.** A handler ignores keys it does not know — but an
@@ -39,7 +39,7 @@ non-conformant, so this is a SHOULD.)
 | key | notes |
 |---|---|
 | `host` **C** | IP or inventory device name; falls back to the current `{{ device.ip }}` in `per_device` mode |
-| `device` *A* | inventory device name (Nashira) |
+| `device` *A* | inventory device name |
 | `count` **C** | echo count; ignored by a TCP prober, which makes one attempt whatever it says |
 | `timeout_ms` **C** | per probe |
 | `port` | extension (TCP prober); default 22 |
@@ -54,22 +54,14 @@ A **TCP prober reports one attempt**: one connection attempt is one packet, so
 time — an average over a single sample — and is 0 when nothing answered. The
 numbers are therefore the same fields measuring a different thing (a handshake to
 one port, not a round trip to the host), which is exactly what `method` is for.
-Nashira emits `method: "tcp"` and, as extensions under rules 3 and 5, `host`,
-`port`, `reachable` and `latency_ms` (null when unreachable).
+A TCP prober emits `method: "tcp"` and may add, as extensions under rules 3 and 5,
+fields such as `host`, `port`, `reachable` and `latency_ms` (null when
+unreachable). None of these are portable; a template that must run on any
+implementation reads the portable set above.
 
-Whether an unreachable target fails the step is implementation-defined: Flow
-Weaver fails it, Nashira returns a successful step so the graph can branch on the
-result. `success` carries reachability in both.
-
-> **Correction (this revision).** The portable output above previously read
-> `{ "reachable": bool, "latency_ms": number|null, "method": "icmp"|"tcp",
-> "host": string }`. That shape was invented in this document — the oracle never
-> emitted it, and no implementation but Nashira ever did, and Nashira only because
-> the contract asked. Rule 1 makes FlowWeaver canonical, so the portable set is
-> corrected to the oracle's field names and the invented quartet is demoted to a
-> Nashira extension (kept, not removed, because templates already read it). This
-> paragraph exists so the correction is not "fixed" back into the invented shape
-> later.
+Whether an unreachable target fails the step is implementation-defined:
+FlowWeaver fails it; another implementation may return a successful step so the
+graph can branch on the result. `success` carries reachability either way.
 
 Default idempotency: `idempotent`. Target modes: `once`, `per_device`.
 
@@ -89,7 +81,7 @@ Runs commands on a device.
 | `use_structured` **C** / `structured` *A* | parse output with the device's TextFSM/structured parser |
 | `stop_on_error` **C** | default true |
 | `enable_secret` **C** / `enable` *A* | enter privileged mode; a `${secret:…}` reference or a credential field |
-| `timeout_seconds`, `port`, `device_type`, `setup_commands`, `read_until_pattern`, `direct_exec`, `preserve_ansi`, `use_timing` | FW extensions; a handler without them ignores them and the importer notes it |
+| `timeout_seconds`, `port`, `device_type`, `setup_commands`, `read_until_pattern`, `direct_exec`, `preserve_ansi`, `use_timing` | FlowWeaver extensions; a handler without them ignores them and the importer notes it |
 
 Portable output: `{ "results": [ { "command": string, "ok": bool, "output": string, "parsed": any|null, "elapsed_ms": number, "error": string|null } ], "stdout": string, "exit_code": number|null }`.
 Default idempotency: `non_reversible`. Target modes: `once` (requires `device`/`host`), `per_device`.
@@ -97,19 +89,17 @@ Default idempotency: `non_reversible`. Target modes: `once` (requires `device`/`
 ## `rest_call`
 Two valid forms under one type; the discriminator is which key is present.
 
-**Raw form** (FW): `url` **C**, `method` **C**, `headers` **C**, `body` **C**, `query` **C**.
-**Catalogued form** (Nashira): `source` **C** (spec/integration slug), `operation_id` **C**,
+**Raw form**: `url` **C**, `method` **C**, `headers` **C**, `body` **C**, `query` **C**.
+**Catalogued form**: `source` **C** (spec/integration slug), `operation_id` **C**,
 `path_params` **C**, `query_params` **C**, `body` **C**.
 
 A handler MUST implement the raw form. The catalogued form is optional: a bundle
 using it declares the `rest_catalog` capability (bundle/SPEC.md §2.2), and an
-implementation without it **refuses the bundle at import**. The first draft of this
-document said "MUST implement both", which sounded stricter and was in fact weaker:
-the oracle does not implement the catalogued form, so the requirement was unmet,
-unenforceable, and left the receiving side noting a degradation it could not
-actually degrade — a bundle that imported clean and failed on the first run, which
-is the one outcome this contract exists to prevent. A declared capability turns
-that into a refusal the operator can act on.
+implementation without it **refuses the bundle at import**. FlowWeaver implements
+only the raw form, so it refuses such a bundle, and a catalogued `rest_call` step
+that reaches its handler fails with `not_supported`. The declared capability turns
+what would otherwise be a bundle that imports clean and fails on its first run into
+a refusal the operator can act on.
 
 The raw form is subject to the same outbound URL guard the product applies to
 integrations. `${secret:…}` references inside `headers` and `url` are resolved at
@@ -119,14 +109,14 @@ Portable output: `{ "status_code": number, "body": any, "headers": object }`.
 Default idempotency: `requires_compensation`.
 
 ## `transform`
-Reshapes a JSON value with a **JMESPath** expression (decided 2026-08-27, D1).
+Reshapes a JSON value with a **JMESPath** expression.
 
 | key | notes |
 |---|---|
 | `expression` **C** | JMESPath, on the payload or on the snippet's `code` |
 | `input` **C** | the value to transform; default: the whole `steps.*` outputs map |
 | `language` | must be `jmespath` when present |
-| `mapping` *A* | `{ "<out>": "<path>" }` (Nashira) — equivalent to the JMESPath multiselect hash `{ out: path }`; handlers MUST accept it and exporters SHOULD translate it to `expression` |
+| `mapping` *A* | `{ "<out>": "<path>" }` — equivalent to the JMESPath multiselect hash `{ out: path }`; handlers MUST accept it and exporters SHOULD translate it to `expression` |
 
 Portable output: the expression's result, verbatim.
 Default idempotency: `idempotent`. Target mode: `once`.
@@ -140,7 +130,7 @@ Calls an action of a catalogued integration.
 | `action` **C** | action name |
 | `integration_id`, `action_id` *A* | translated at import (bundle/SPEC.md §4) |
 | `body` **C** | request body |
-| `params` **C** / `path_params` *A* | path parameters; `params.device_id` is the FW convention for a device-scoped call |
+| `params` **C** / `path_params` *A* | path parameters; `params.device_id` is the FlowWeaver convention for a device-scoped call |
 | `query` **C** / `query_params` *A* | query string |
 
 Portable output: `{ "status_code": number, "body": any, "headers": object }`.
@@ -150,10 +140,11 @@ Default idempotency: `requires_compensation`.
 | key | notes |
 |---|---|
 | `server` **C** / `mcp_server_id` *A* | MCP server name |
-| `tool` **C** / `tool_name` *A* | tool name |
+| `tool` **C** / `tool_name` *A* | tool name. FlowWeaver's workflow builder writes `tool_name`; its handler normalises it to `tool`, and a node carrying both calls the tool `tool` names |
 | `arguments` **C** | object |
 
-Portable output: `{ "ok": bool, "result": any, "error": string|null }`.
+Portable output: `{ "content": string, "structured": any|null, "is_error": bool }` —
+FlowWeaver's field set (`McpCallHandler`).
 Default idempotency: `requires_compensation`.
 
 ## `python_snippet`
@@ -161,7 +152,7 @@ Script on the snippet's `code`; the resolved payload is delivered on stdin as JS
 stdout JSON is the output. `timeout_seconds` on the snippet. `network_enabled` is
 never granted by an import. Module allow-lists are local policy: an importer notes
 imports in `code` that its allow-list rejects (`requires` cannot express it).
-FW's `<name>_integration_id` injection is an extension: portable scripts receive
+FlowWeaver's `<name>_integration_id` injection is an extension: portable scripts receive
 integrations through explicit `${secret:…}` references or `integration_action`
 steps.
 
@@ -181,8 +172,8 @@ Default idempotency: `requires_compensation` (`read_file`, `list_files`, `status
 | key | notes |
 |---|---|
 | `format` **C** | `html` \| `csv` \| `xlsx` \| `pdf` \| `markdown` |
-| `document` **C** | structured document `{ title, sections[…] }` (FW shape) |
-| `content` *A* | markdown string (Nashira) — equivalent to `document: { sections: [ { markdown: content } ] }` |
+| `document` **C** | structured document `{ title, sections[…] }` (FlowWeaver shape) |
+| `content` *A* | markdown string — equivalent to `document: { sections: [ { markdown: content } ] }` |
 | `retain_days` | extension |
 
 `markdown`, `html` and `pdf` render the whole document, prose included. `csv` and
@@ -215,7 +206,7 @@ Default idempotency: `non_reversible`.
 |---|---|
 | `channel` **C** | the Slack destination: `#name` or channel id |
 | `text` **C**, `thread_ts` **C**, `blocks` | message |
-| `via` | extension (Nashira): name of the messaging channel record to post through; default: the instance's default Slack channel record, or the deployment token |
+| `via` | extension: name of the messaging channel record to post through; default: the instance's default Slack channel record, or the deployment token. FlowWeaver posts with the deployment's token and ignores it |
 
 Portable output: `{ "ok": bool, "ts": string|null, "channel": string, "error": string|null }`.
 Default idempotency: `non_reversible`.
@@ -230,15 +221,6 @@ runtime parameter the node supplied through an ordinary `{{ key }}` lookup. The 
 and timeout keys are among them; `extra_vars` is one key beside the rest, not a separate
 channel that shadows them.
 
-> Corrected 2026-08-28. This section previously said that only `extra_vars` reached the
-> play. No implementation has ever done that — the oracle passes the entire payload
-> (`AnsibleHandler.cs`, `input.GetRawText()`) and so does Nashira, both documenting it as
-> the way a playbook receives parameters. The claim was written from this document's own
-> prose rather than reified from the oracle, which is the rule this kit rests on, and it
-> survived being written, reviewed and scheduled before anyone read the handler. Narrowing
-> both products to match the prose would have broken the documented parameter-passing
-> mechanism in each of them.
-
 Authentication material is **not** among the variables: it travels by the inventory file
 and the process environment. A device resolved from inventory contributes its attributes
 (name, address, platform, vendor, os version, site, role, status, properties), never its
@@ -247,16 +229,17 @@ credentials.
 Portable output: `{ "ok": bool, "changed": bool, "stdout": string, "stats": object }`.
 Default idempotency: `non_reversible`.
 
-## `email_mailbox` (Nashira extension)
-Reads a mailbox. Not in the oracle. A bundle using it declares it in
+## `email_mailbox` (extension)
+Reads a mailbox. Not implemented by FlowWeaver. A bundle using it declares it in
 `requires.snippet_types`; an importer without the handler refuses.
 
 ## `netconf`, `snmp_v3`
-Registered in both products; execution not implemented. A node using them fails
-with `not_implemented`.
+Registered as snippet types in FlowWeaver, whose handlers do not execute them: a
+node using them fails with `not_implemented`.
 
 ## Conformance
 Family `snippets` (vectors/snippets/): per type, a set of `(input, expected
-normalized input)` pairs exercising every alias, and a set of `(output sample,
-portable fields present)` checks against each product's real handler output
-captured from a run.
+normalized input)` pairs exercising every alias, and probe vectors that run the
+type's real handler on a payload and assert which portable fields its output
+carries (see `../adapters/README.md`). Like every vector, they are written from this
+text, not recorded from a run.

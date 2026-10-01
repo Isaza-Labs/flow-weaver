@@ -1,15 +1,12 @@
 # workflow.v1
 
-This directory is reserved for the versioned `workflow.v1` contract.
+The `workflow.v1` contract is published as FlowWeaver's conformance kit in [`conformance/`](../../conformance/README.md). This directory holds no separate copy; everything below lives in the kit:
 
-Before it is described as a published open standard, add and validate:
+- machine-readable schema: `conformance/schema/workflow.v1.schema.json`;
+- canonicalization rules: `conformance/canonicalization/SPEC.md`;
+- the 1.1 layers (bundle, snippets, templates, execution): `conformance/*/SPEC.md`;
+- valid and invalid examples and golden vectors: `conformance/vectors/` (including `vectors/schema/valid_*.json` and `invalid_*.json`);
+- the runner contract and how to run the suite: `conformance/ci/run-conformance.md` and `conformance/adapters/README.md`;
+- version and compatibility rules: `conformance/VERSION`, `conformance/PINNED` and "Changing a vector = changing the contract" in `conformance/README.md`.
 
-- machine-readable schemas;
-- canonicalization rules;
-- valid and invalid examples;
-- golden vectors;
-- a conformance runner or reproducible verification procedure;
-- compatibility and versioning rules.
-
-The directory currently protects the intended distribution path; it must not be represented as a complete conformance kit until those artifacts exist.
-
+The contract version is `1.1.0-draft`; see `conformance/VERSION` for its status.

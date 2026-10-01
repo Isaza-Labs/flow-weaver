@@ -1,9 +1,10 @@
 # Adapters
 
-An **adapter** is the thin, language-specific shim each repo writes to connect its engine to the
-vectors. It is the *only* language-specific piece and it **lives in each repo, not in the kit**.
-The kit stays pure data so a future third implementation (or a community UI) can verify against
-the same vectors without depending on .NET.
+An **adapter** is the thin, language-specific shim each implementation writes to connect its
+engine to the vectors. It is the *only* language-specific piece and it **lives in the
+implementation's repository, not in the kit**. The kit stays pure data so any third-party
+implementation (or a community UI) can verify against the same vectors without depending on
+.NET.
 
 ## Responsibility
 
@@ -58,13 +59,11 @@ execution**: the canonical keys of `snippets/SPEC.md`, with the alias dropped wh
 key is present (`bundle/SPEC.md` §4).
 
 `{ type, probe } -> { output }` **runs the type's real handler** on `probe` — normalised first,
-exactly as the node executor does — and returns what it emitted. This deliberately replaces the
-`{ type, output } -> { fields: [...] }` shape this document originally specified, and the reason
-is the point of the whole kit: a vector that carries a captured output and then asserts which
-fields *that same output* has can never fail. It agrees with itself. Running the handler is what
-turns "these are the portable fields" into a claim about the product — and it is what lets an
-alias vector assert the tool that was **actually invoked** rather than the key the payload
-happened to carry.
+exactly as the node executor does — and returns what it emitted. A vector that carried a captured
+output and then asserted which fields *that same output* has could never fail: it would agree
+with itself. Running the handler is what turns "these are the portable fields" into a claim about
+the implementation — and it is what lets an alias vector assert the tool that was **actually
+invoked** rather than the key the payload happened to carry.
 
 Fakes sit at the same boundary the product's own handler tests use. A type with no probe harness
 throws rather than answering quietly; add a harness, or write the vector in the `{ type, input }`
@@ -101,10 +100,10 @@ only the bundle would be asserting half a question.
 at once, so an adapter that surfaced only the first would let the other two rot.
 
 `schema_hash` is §8's hash — over the **bundle's own wire nodes+edges**, with `snippet_id` and
-`subflow_workflow_id` normalized to ordinal placeholders (`remap:snippet_ids`,
-`remap:workflow_ids`), never over the stored row. The two are deliberately different things: the
+`subflow_workflow_id` replaced by ordinal placeholders (each id by its order of first
+appearance), never over the stored row. The two are deliberately different things: the
 row may carry whatever local vocabulary the product runs on, while the wire form carries portable
-identities only. Comparing stored rows would assert that two products store workflows
+identities only. Comparing stored rows would assert that two implementations store workflows
 identically, which is not the contract and is not true.
 
 `notes_empty` is what a vector should assert about notes, not their wording: §7 fixes that
@@ -117,7 +116,7 @@ canonical name, an absence no "these fields are present" comparison can see.
 constrains the *value*: what a product stores is its business, what it puts on the wire is the
 portable identity.
 
-## `not_implemented` — and what is no longer a skip
+## `not_implemented` — the only skip
 
 **An adapter returning nothing is a FAILURE, not a skip.** A vector whose family the adapter does
 not handle fails, and the report names it. The only legitimate skip is one the **vector itself**
@@ -128,32 +127,26 @@ declares:
 ```
 
 That is the kit's documented escape hatch, and it is deliberately noisy: it lives in the
-contract, under review, rather than in a shrug from a harness nobody reads. The old rule —
-adapter silence counted as a skip — is exactly how `subflow` was claimed and never executed, how
-a rollback reported `rolled_back` for an email that had already been sent, and how conditions
-failed open, all of it under a green suite for days. Silence is not a skip.
+contract, under review, rather than in a shrug from a harness nobody reads. If adapter silence
+counted as a skip, a family with no behaviour behind it — an unexecuted node type, a rollback
+that misreports, a condition that fails open — would report green. Silence is not a skip.
 
-## Nashira adapter
+## FlowWeaver's adapter
 
-Nashira's adapter is `nashira_backend.Tests/Conformance/NashiraAdapter.*.cs`, one file per
-family, calling into `nashira_backend`. It reaches into the engine — that is the one place the
-kit touches implementation — but it only *observes* behavior, never encodes structure into a
-vector.
+FlowWeaver's adapter is `flow_weaver_backend.Tests/Conformance/FlowWeaverAdapter.*.cs`: the
+`schema` and `canonicalization` methods live beside the runner in `ConformanceRunner.cs`, and
+`bundle`, `executor`, `gate`, `snippets` and `templates` each have their own
+`FlowWeaverAdapter.<Family>.cs` file, calling into `flow_weaver_backend`. It reaches into the
+engine — that is the one place the kit touches implementation — but it only *observes* behavior,
+never encodes structure into a vector. It does not answer the `compiler` family (which has no
+vectors) or the `{ type, probe }` form of `snippets`; vectors in that form fail against it.
 
-### Runner capabilities Nashira implements
+### Runner capabilities FlowWeaver implements
 
-Beyond the kit's `exact` and `subset`:
+FlowWeaver's runner implements the equivalence modes `exact`, `normalized`, `subset` and
+`fields-present`, and the normalize rules `redact:<field>` and `sort:<field>`, as defined in
+`../ci/run-conformance.md`. An unknown `normalize` rule makes it throw rather than be ignored.
 
-| Mode / rule | Meaning |
-|---|---|
-| `fields-present` | Presence + JSON type of what `expected` names, not the values. A `null` in the expected shape asserts presence only. Used for portable output sets, where the contract fixes the field names and never the numbers a real handler produced. |
-| `normalized` | `exact` after the vector's `normalize` rules. |
-| `normalize: redact:<field>` | Every occurrence of `<field>`, at any depth, becomes `"<redacted>"` in **both** expected and actual. The field must still be present — redacting is not ignoring. This is what lets an `exact` comparison cover an audit event's `event_id` and `timestamp` instead of demoting the whole vector to a subset check, which is where real divergence hides. |
-| `normalize: sort:<field>` | The array at `<field>`, at any depth, sorted by each element's canonical form. For collections the contract does not order. |
-
-An unimplemented `normalize` rule makes the runner throw rather than be ignored: a rule nobody
-implements is a comparison nobody is really making.
-
-`yaml-normalized`, `set-equal:<field>`, `partial-order` and `numeric-tolerance:<eps>` are still
-unimplemented; no landed vector uses one, and a vector that did would fail loudly rather than be
-compared some other way.
+`yaml-normalized`, `set-equal:<field>`, `partial-order` and `numeric-tolerance:<eps>` are not
+implemented. No landed vector uses them; FlowWeaver's runner compares any mode it does not
+recognise as `exact`.

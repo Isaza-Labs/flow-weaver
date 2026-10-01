@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This file protects the expected public structure of FlowWeaver. A release or repository initialization that removes required directories, licensing files or ownership notices fails the distribution check.
+This file protects the expected public structure of FlowWeaver. A release that removes required directories, licensing files or ownership notices does not meet this policy.
 
 ## Required root files
 

@@ -122,6 +122,10 @@ To force one: `--subnet 172.20.0.0/16`.
 | `--dev-overrides` / `-DevOverrides` | Include a local `docker-compose.override.yml` |
 | `--no-dev-overrides` / `-NoDevOverrides` | Never include `docker-compose.override.yml` |
 
+The repository does not ship a `docker-compose.override.yml`; you can add one
+for a local development setup. By default the scripts include it only when a
+Docker network named `shared-net` exists on the host, so on a clean machine
+it is ignored.
 
 ## Python sandbox on Linux hosts: `setup-host.sh`
 

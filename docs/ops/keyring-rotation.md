@@ -1,24 +1,29 @@
-# DataProtection keyring — rotation and KMS plan
+# DataProtection keyring — rotation and KMS
 
 The ASP.NET DataProtection keyring at `/app/keyring` (mounted as the
 `backend_keyring` Docker volume) protects every encrypted column in the
 database, including:
 
-- `Credential.EncryptedSecret`
+- `Credential.EncryptedPassword`, `Credential.EncryptedPrivateKey`,
+  `Credential.EncryptedKeyPassphrase`
 - `Secret.EncryptedValue`
-- `Integration.AuthPayload`
-- `WorkflowTrigger.WebhookSecret`
+- `WorkflowTrigger.EncryptedSecret` and `GitWebhook.EncryptedSecret`
+- `EmailChannel.EncryptedPassword`
+- `McpServer.AuthConfigEncrypted`
+- `MessagingChannel.EncryptedBotToken`, `EncryptedSigningSecret`,
+  `EncryptedAppToken`
+- `AIProvider.EncryptedApiKey`
 
 Losing the keyring means losing access to every credential and secret
 stored at-rest. Compromising the keyring grants the attacker the same
 access. This document covers both halves: how to rotate it on schedule,
-and how we plan to migrate to a KMS-managed root key.
+and how to move to a KMS-managed root key.
 
-## Phase 1 — Filesystem keyring rotation (today)
+## Filesystem keyring rotation
 
 ASP.NET DataProtection rotates keys automatically every 90 days by
 default. It does **not** delete old keys, so previously-encrypted data
-remains decryptable. We accept the default lifetime and add operational
+remains decryptable. The default lifetime is kept; add this operational
 hygiene:
 
 | Action | Cadence | Owner |
@@ -45,18 +50,15 @@ encrypted columns cannot be decrypted.
 1. Stop backend and worker.
 2. Move existing keyring aside: `mv /keyring /keyring-old-$stamp`.
 3. Start backend; it generates a fresh key.
-4. Run the credential re-encryption job (see `Services/Credential/CredentialReEncryptionService` —
-   tracked under [N-4 follow-up], not yet implemented; until then, treat
-   forced rotation as a destructive event that requires re-entering all
-   credentials).
+4. Re-enter every encrypted value (credentials, named secrets, trigger and
+   webhook secrets, channel tokens, provider keys). FlowWeaver has no job that
+   re-encrypts existing ciphertext under the new key, so forced rotation is a
+   destructive event: values encrypted under the moved-aside keyring can no
+   longer be decrypted.
 5. Archive `/keyring-old-$stamp` under sealed storage for as long as the
    compliance retention window requires.
 
-> Open work: build a re-encryption service that reads ciphertext under
-> the old protector and writes ciphertext under the new one. Tracked as
-> follow-up to S13.4 phase 1.
-
-## Phase 2 — KMS-backed root key (implemented for AWS, pluggable)
+## KMS-backed root key (AWS, pluggable)
 
 ### Activation
 
@@ -97,23 +99,26 @@ nothing else (`*` is unsafe).
 Plaintext descriptors stay readable forever — DataProtection ignores
 the encryptor on read. A clean migration:
 
-1. Snapshot the keyring volume (Phase 1 backup).
+1. Snapshot the keyring volume (see "Snapshot procedure" above).
 2. Flip `DataProtection:KmsProvider` to `aws-kms` + `Aws:KeyId`.
 3. Restart. New keys land wrapped; old plaintext keys keep working.
-4. Wait for one rotation cycle (default 90 days). After that every
-   active descriptor is wrapped, and any plaintext key has expired.
-5. Optional: rotate the Phase 1 snapshot off the encrypted backups
-   bucket since the original plaintext is no longer load-bearing.
+4. Wait for one rotation cycle (default 90 days). After that the active
+   key is wrapped and the plaintext keys have expired.
+5. Keep the keyring snapshot. Expired keys are not used for new data, but
+   values encrypted while they were active still need them to decrypt, and
+   there is no re-encryption job, so the plaintext descriptors stay
+   load-bearing.
 
-### Switching providers (Azure / Vault later)
+### Other providers
 
-`IKmsKeyWrapper` is the entire surface a new provider needs to
-implement. The wiring in `Program.cs` switches on
-`DataProtection:KmsProvider`; add a `case "azure-key-vault":` branch
-that registers an `AzureKeyVaultKmsKeyWrapper` and add the SDK package
-to the csproj.
+`DataProtection:KmsProvider` accepts `filesystem` (default) and `aws-kms`;
+any other value stops the boot. `IKmsKeyWrapper` is the entire surface
+another provider (e.g. Azure Key Vault or Vault) would need to implement.
+The wiring in `Program.cs` switches on `DataProtection:KmsProvider`; a new
+provider needs its own branch there, an `IKmsKeyWrapper` implementation and
+its SDK package in the csproj.
 
-## Phase 3 — operational concerns (open)
+## Operational considerations
 
 - **Multi-region failover**: KMS keys are region-scoped. For multi-AZ
   HA inside one region the SDK handles it transparently. Cross-region
@@ -133,4 +138,3 @@ to the csproj.
 ## See also
 
 - [`docs/ops/dr.md`](./dr.md) — Postgres DR.
-- [`docs/ops/branch-protection.md`](./branch-protection.md) — CI gate.

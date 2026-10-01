@@ -196,7 +196,6 @@ The Playwright config and end-to-end tests live under `frontend/`.
 | `bwrap: setting up uid map: Permission denied` | The Linux host restricts unprivileged user namespaces. From `deploy/`, run `sudo bash ./setup-host.sh` once, then `bash ./run.sh restart`. See [host requirements](./docs/ops/python-sandbox-host-requirements.md). |
 | POSTs rejected by SvelteKit | `FRONTEND_ORIGIN` does not match the URL the browser actually uses. Fix it in `deploy/.env`. |
 | Every request shows one IP in the audit trail | `TRUSTED_PROXIES` does not match `COMPOSE_SUBNET`. The scripts write them together — do not edit only one. |
-| `RemoveMultiTenancy: <table> has N duplicate group(s)` | The database came from a multi-tenant install. See `deploy/ops/consolidate-to-single-tenant.sql`. |
 
 Run these everyday diagnostics from `deploy/`. The `run.sh`/`run.ps1`
 scripts wrap Compose, or you can use Compose directly:
@@ -217,10 +216,10 @@ docker compose exec db psql -U flowweaver -d flowweaver
 | | |
 |---|---|
 | [`deploy/README.md`](deploy/README.md) | Every deployment option: external databases, ports, subnets, tunnels, host setup, backup and DR. |
-| [`docs/workflow-bundles.md`](docs/workflow-bundles.md) | The portable bundle format — how a workflow moves between instances (and to Nashira). |
+| [`docs/workflow-bundles.md`](docs/workflow-bundles.md) | The portable bundle format — how a workflow moves between instances. |
 | [`docs/subflows.md`](docs/subflows.md) | Reusable sub-graphs. |
 | [`docs/imports.md`](docs/imports.md) | Importing workflows and inventory. |
 | [`docs/permissions.md`](docs/permissions.md) | Roles, and the per-user tool permissions the assistant obeys. |
 | [`docs/mcp.md`](docs/mcp.md) · [`docs/vendors.md`](docs/vendors.md) | MCP servers, and the vendor-command catalogue. |
-| [`docs/ops/`](docs/ops/) | Branch protection, keyring rotation, load testing, disaster recovery. |
+| [`docs/ops/`](docs/ops/) | Keyring rotation, load testing, disaster recovery, sandbox host requirements. |
 | `/docs` in the running app | The user manual, one chapter per screen. |

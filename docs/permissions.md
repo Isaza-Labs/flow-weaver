@@ -1,13 +1,12 @@
 # Permissions & RBAC
 
-FlowWeaver is moving from a coarse 3-tier model (Admin / Operator / Viewer) to
-a **granular, capability-based** model (ABAC-lite) where users can only perform
-the actions explicitly granted to them, optionally conditioned by **environment**
-and **device**. Grants are authored like policies and assigned to users. The
-migration is behind an application-wide rollout switch, so nothing changes until
-an admin opts the deployment in.
-
-See `plan_rbac_granular.md` for the full design and phase breakdown.
+FlowWeaver supports two permission models: a coarse 3-tier model
+(Admin / Operator / Viewer) and a **granular, capability-based** model
+(ABAC-lite) where users can only perform the actions explicitly granted to them,
+optionally conditioned by **environment** and **device**. Grants are authored
+like policies and assigned to users. The granular model is behind an
+application-wide rollout switch, so nothing changes until an admin opts the
+deployment in.
 
 ## Core concepts
 
@@ -80,7 +79,7 @@ channel or the agent can never exceed the user's real permissions.
 
 ## Management API (admin)
 
-`/api/permission-grants` (all `[Authorize(Policy="Admin")]` for now):
+`/api/permission-grants` (every endpoint requires the Admin role):
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -105,8 +104,8 @@ PUT /api/admin/settings
 { "rbac_mode": "granular" }
 ```
 
-- **`legacy`** — `[HasPermission]` reproduces the capability's original tier and
-  the agent keeps the old role matrix. Identical to the pre-refactor behaviour.
+- **`legacy`** — `[HasPermission]` reproduces the capability's tier and
+  the agent uses the role matrix (Admin / Operator / Viewer).
 - **`granular`** — the coarse HTTP gate and the agent gate consult the caller's
   grants; contextual (env/device/resource) checks fire in the service layer.
 
@@ -116,23 +115,22 @@ Flip back to `legacy` at any time with no restart. Because the backfill gives
 every user grant-parity with their role, flipping to `granular` is behaviour-
 neutral until you start authoring custom grants.
 
-## Legacy per-resource overlay (still present)
+## Per-resource overlay
 
-The earlier per-resource overlay (`ResourcePermission`, roles
+A separate per-resource overlay (`ResourcePermission`, roles
 `owner > editor > runner > viewer` on a single workflow/integration, gated by
-`permissions_granular_gating_enabled`) is unchanged and still ships disabled.
-The granular model above is the go-forward replacement; folding resource-scoped
-grants into `permission_grants` (via `conditions.resource`) is a tracked
-follow-up.
+`permissions_granular_gating_enabled`) also exists and ships disabled. It is
+independent of `permission_grants`: resource-scoped access in the granular
+model is expressed with `conditions.resource`, and existing
+`resource_permissions` rows are not converted into grants.
 
-## Follow-ups (not yet wired)
+## Current limitations
 
-- Per-command device enforcement in `SshHandler` (`device.exec.*` against the
-  concrete device role/pool/env at execution time). This also covers the
-  **device** dimension of `workflow.run` — its env/resource conditions are now
-  enforced at enqueue (`WorkflowController.Run`), but the request's target
-  devices are only checked once a step actually touches them.
-- Data migration of `resource_permissions` → `permission_grants`.
-- Removing the legacy `Admin/Operator/Viewer` ASP.NET policies once the
-  deployment runs on `granular` (admin-only controllers still use
-  `[Authorize(Policy="Admin")]`).
+- Device checks for a manual run happen at enqueue (`WorkflowController.Run`,
+  via `RunDeviceAuthorizer`): `workflow.run` and, when the graph sends anything
+  to a device, `device.exec.read` / `device.exec.write` are evaluated against
+  each resolved target device's id, role and pools. `SshHandler` does not
+  re-check `device.exec.*` per command at execution time.
+- Admin-only controllers (including `/api/permission-grants`) use the
+  `Admin` ASP.NET policy rather than a capability, in both `legacy` and
+  `granular` mode.

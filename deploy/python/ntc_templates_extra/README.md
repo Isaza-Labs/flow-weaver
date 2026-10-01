@@ -28,14 +28,15 @@ file when one parser covers several command aliases (e.g. SR Linux's
 ## Adding a template
 
 1. Capture a representative output from a real device:
-   `tests/python/fixtures/<platform>_<command_underscored>.txt`.
+   `deploy/python/tests/fixtures/<platform>_<command_underscored>.txt`.
 2. Author `<platform>_<command>.textfsm`. Keep TextFSM `Value` names in
    UPPERCASE (the runner lowercases them in the parsed dict, matching
    upstream ntc-templates convention).
 3. Append an entry to `index`.
 4. Add a parsed-expectation fixture
-   `tests/python/fixtures/<platform>_<command_underscored>.parsed.json`
-   and assert `parse_command(...)` returns it.
+   `deploy/python/tests/fixtures/<platform>_<command_underscored>.parsed.json`
+   and assert `parse_command(...)` returns it (see
+   `deploy/python/tests/test_parsers.py`).
 
 ## Why bypass ntc-templates' own loader
 
@@ -50,5 +51,5 @@ and override semantics are explicit.
 | Platform | Why local | Status |
 |---|---|---|
 | `nokia_srl` | No upstream coverage; SR Linux info-style output. | `show version` |
-| `risecom_ros` | No upstream Netmiko driver. | TODO — needs real samples |
-| `aruba_aoscx` | Fill gaps in upstream (`show vsx`, etc.). | TODO |
+| `risecom_ros` | No upstream Netmiko driver. | No local template; output falls back to the generic parser. Contributions with real device samples are welcome. |
+| `aruba_aoscx` | Gaps in upstream (`show vsx`, etc.). | No local template; upstream templates and the generic parser apply. Contributions are welcome. |

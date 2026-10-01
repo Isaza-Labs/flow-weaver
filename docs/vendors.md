@@ -5,81 +5,73 @@ devices through Netmiko. Every command goes through
 `VendorCommandValidator` before it dispatches: only commands present in
 the `vendor_commands` table are allowed to run.
 
-This document describes how the catalogue is organised, the priority
-order the team has agreed for new additions, and the open follow-up
-needed to wire the new YAML scaffolds into the seed loader.
+This document describes how the catalogue is organised, how it is
+seeded, and how to add a vendor.
 
-## Today
+## How the catalogue is built
 
-In-code catalogue lives in `Services/VendorCommand/VendorCommandService.cs`
-under `VendorFamilyByDeviceType`. Local overrides + additions live in
-the `vendor_commands` table, edited from `/vendor-commands` in the UI.
+The `vendor_commands` table is filled at startup by two idempotent seed
+passes (both wired in `Program.cs`), and can then be edited from
+`/vendor-commands` in the UI:
 
-Seed catalogue lives under `Skills/vendors/*.yaml`. Currently four
-priority vendors have **scaffold** YAML files (Arista, Fortinet,
-Palo Alto, F5). They are not yet imported on first boot — see
-"Open follow-up" below.
+1. **`DefaultVendorCommandsSeedService`** — the in-code baseline
+   (`Services/Ai/Seed/DefaultVendorCommandsSeedService.cs`) for
+   `cisco_ios`, `cisco_xe`, `cisco_xr`, `cisco_nxos`, `juniper_junos`,
+   `arista_eos`, `nokia_sros`, `nokia_srl`, `huawei`, `fortinet` and
+   `linux`. It inserts missing rows only; rows an admin deactivated are
+   not re-added, and user-authored rows are never touched.
+2. **`VendorCommandYamlSeedService`** — runs right after the baseline
+   (`Services/Ai/Seed/VendorCommandYamlSeedService.cs`). It walks
+   `flow_weaver_backend/Skills/vendors/*.yaml` (copied to the build output
+   by the `.csproj`) and, per file, inserts every `(kind, command)` pair not
+   already present for that `device_type`. For rows that already exist it
+   only backfills an empty `description` / `intent`; it never overwrites
+   values an admin or the baseline set.
 
-## Priority order (S14.3 product decision)
+The vendor family used when a row is created from the UI/API comes from
+`VendorFamilyByDeviceType` in
+`Services/VendorCommand/VendorCommandService.cs` (unknown device types fall
+back to `generic`). Rows created by the YAML seed take `vendor_family` from
+the YAML file.
 
-The product team is finalising the priority order. Working list:
+## YAML seed files
 
-1. **Arista EOS** — seed YAML in place; production-ready content.
-2. **Fortinet FortiOS** — seed YAML in place; production-ready content.
-3. **Palo Alto PAN-OS** — seed YAML in place; production-ready content.
-4. **F5 BIG-IP** (tmsh) — seed YAML in place; covers the most common
-   read commands.
-5. (next) **Mikrotik RouterOS** — covered by `mikrotik_routeros` in
-   the in-code map; needs YAML.
-6. (next) **Huawei VRP** — covered by `huawei_vrp` in the in-code map;
-   needs YAML.
+| File | `device_type` | Commands |
+|---|---|---|
+| `arista_eos.yaml` | `arista_eos` | 12 |
+| `cisco_ios.yaml` | `cisco_ios` | 95 |
+| `cisco_nxos.yaml` | `cisco_nxos` | 76 |
+| `cisco_xe.yaml` | `cisco_xe` | 54 |
+| `cisco_xr.yaml` | `cisco_xr` | 74 |
+| `f5_bigip.yaml` | `f5_tmsh` | 10 |
+| `fortinet.yaml` | `fortinet` | 10 |
+| `huawei.yaml` | `huawei` | 77 |
+| `juniper_junos.yaml` | `juniper_junos` | 105 |
+| `linux.yaml` | `linux` | 39 |
+| `nokia_srl.yaml` | `nokia_srl` | 98 |
+| `nokia_sros.yaml` | `nokia_sros` | 89 |
+| `paloalto_panos.yaml` | `paloalto_panos` | 10 |
 
-Each addition needs:
+The Arista, Fortinet, Palo Alto and F5 files are short and cover the most
+common read commands. `mikrotik_routeros` and `huawei_vrp` have a vendor
+family mapping but no baseline or YAML commands; add them from
+`/vendor-commands` or with a new YAML file.
 
-| Step | Status |
+## Adding a vendor
+
+| Step | Where |
 |---|---|
-| YAML scaffold in `Skills/vendors/<device_type>.yaml` | done for 1–4 |
-| Entry in `VendorFamilyByDeviceType` | done for 1–4 |
-| Parser in `deploy/python/flow_weaver_ssh_parsers.py` | depends |
-| Promotion via `VendorCommandSeedService` (open follow-up) | not started |
+| YAML file with `device_type`, `vendor_family` and `commands` | `flow_weaver_backend/Skills/vendors/<device_type>.yaml` (picked up on the next start, no code change) |
+| Vendor family for UI/API-created rows | `VendorFamilyByDeviceType` in `VendorCommandService.cs` |
+| Output parser, if responses need normalising | `deploy/python/flow_weaver_ssh_parsers.py` |
 
-## Open follow-up
-
-`VendorCommandSeedService` does not exist yet. To activate the YAML
-seed flow, build a service that:
-
-1. Runs after `DevSeedService` and `CatalogSeedService`.
-2. Walks `Skills/vendors/*.yaml` and, for every device_type with no rows
-   in `vendor_commands` yet, inserts one row per command.
-3. Logs a one-line summary per file.
-
-Skeleton:
-
-```csharp
-public static class VendorCommandSeedService
-{
-    public static async Task SeedAsync(
-        IServiceScopeFactory scopeFactory, ILogger logger,
-        CancellationToken ct = default)
-    {
-        // Walk Skills/vendors/*.yaml; deserialize into a record;
-        // insert one row per command when there are no rows for that
-        // device_type yet. Use the existing
-        // VendorCommandService.CreateAsync to keep audit + cache
-        // invalidation in one place.
-    }
-}
-```
-
-Wire into `Program.cs` next to `CatalogSeedService.SeedAsync`. Add a
-test under `flow_weaver_backend.Tests/VendorCommandSeedTests.cs`
-asserting the expected row count after a seed pass.
-
-Track the work as a follow-up to S14.3.
+Each command entry takes `command`, optional `intent` (`read`, `write` or
+`disruptive`), optional `description`, and optional `kind` (`exact`, the
+default, or `pattern` for a regex entry).
 
 ## Authoring guidelines
 
-- Keep the catalogue **small** at first. It is easier to add a command
+- Keep the catalogue **small**. It is easier to add a command
   than to remove one once workflows reference it.
 - Default to `intent: read`. Promote to `write` or `disruptive` only
   when you are sure the operator wants the elevated risk classification.

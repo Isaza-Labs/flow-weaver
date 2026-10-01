@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report incorrect behavior found in QA or normal use
+about: Report incorrect behavior
 title: "[Bug] "
 labels: bug, needs-triage
 ---
@@ -27,29 +27,21 @@ Describe the action and the observed behavior.
 
 Silent failures involving managed infrastructure require elevated severity.
 
-## Version under test
+## Version and environment
 
 - Commit or tag:
-- Deployed image:
-- Environment: development / QA lab / production
-- Execution date:
+- Deployment mode: Docker / native
+- Workflow environment: draft / qa / production
+- Date observed:
 
 ## Evidence
 
-Attach exported evidence rather than only linking to an ephemeral private environment.
+Attach logs or screenshots directly; links to private systems are not reachable by maintainers. Remove credentials, tokens, customer data and internal hostnames first.
 
-- Run ID or trace:
+- Run ID:
 - Logs or screenshots:
 
-## Traceability
+## Impact
 
-- Affected requirement:
-- Test case:
-- Pilot/release blocker: yes / no / unknown
-
-## Triage
-
-- Severity: critical / high / medium / low / unknown
-- Owner:
-- Confirmed defect or missing requirement:
+- Severity (your assessment): critical / high / medium / low
 

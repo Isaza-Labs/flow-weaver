@@ -1,6 +1,6 @@
 # Public compliance materials
 
-This directory contains non-confidential templates used to prepare releases. Completed approvals, vulnerability findings, personal data, internal paths and signed legal records are stored in the private compliance repository.
+This directory contains non-confidential templates used to prepare releases. Completed approvals, vulnerability findings, personal data, internal paths and signed legal records are kept by Isaza Labs LLC outside the repository.
 
 Templates:
 

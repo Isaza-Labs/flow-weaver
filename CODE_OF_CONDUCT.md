@@ -16,11 +16,11 @@ Harassment, sexualized conduct, threats, trolling, discriminatory language, disc
 
 ## Scope and enforcement
 
-This policy applies in repositories, issue trackers, discussions, chat, events and official representation of the project. Reports must be sent privately to the conduct contact published by Isaza Labs LLC. The final monitored contact must be inserted before community launch.
+This policy applies in repositories, issue trackers, discussions, chat, events and official representation of the project. Reports must be sent privately to `conduct@networkingdev.com` (see [SUPPORT.md](./SUPPORT.md)).
 
 Maintainers will protect reporter privacy and apply proportionate consequences, ranging from a warning to permanent exclusion.
 
 ## Attribution
 
-This policy is adapted from common open-source community norms, including the Contributor Covenant. Isaza Labs LLC should adopt and pin a specific upstream version before public launch.
+This policy is adapted from common open-source community norms, including the [Contributor Covenant](https://www.contributor-covenant.org/).
 

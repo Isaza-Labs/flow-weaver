@@ -49,7 +49,7 @@ services:
       # public/VPN hostname rather than localhost on a real deployment.
       Workflow__PublicBaseUrl: ${FRONTEND_ORIGIN:-http://localhost:3000}
       # pretty = colored text for `docker logs`; json = CLEF for aggregators.
-      # Unset => auto (pretty on Development, json otherwise).
+      # Compose passes pretty when LOG_FORMAT is unset; set json for aggregators.
       LOG_FORMAT: ${LOG_FORMAT:-pretty}
       # EF Core SQL verbosity (Warning = silent). Application-services tree
       # verbosity (Information). Raw LLM SSE chunk dump (triage only).
@@ -69,7 +69,7 @@ services:
       # value ONLY to satisfy a policy that requires deletion; the sweep logs
       # at Warning when it drops rows.
       Audit__RetentionDays: ${AUDIT_RETENTION_DAYS:-0}
-      # Load-test device simulation (NFR-004). OFF by default. The backend needs
+      # Load-test device simulation (staging only). OFF by default. The backend needs
       # it for the /api/admin/loadtest seed endpoint; keep in lockstep with the
       # worker. Boot refuses it when WorkerEnvironment=production.
       Simulation__Enabled: ${SIMULATION_ENABLED:-false}
@@ -109,8 +109,8 @@ services:
       # This container also runs the job-queue worker loop, BUT it keeps
       # Docker's default seccomp/AppArmor hardening (unlike the `worker`
       # service below), so bwrap cannot create namespaces here. It must
-      # therefore NEVER claim `sandbox` jobs (python_snippet steps) — when it
-      # did, python steps failed intermittently with "No permissions to
+      # therefore NEVER claim `sandbox` jobs (python_snippet steps) — if it
+      # did, python steps would fail intermittently with "No permissions to
       # create new namespace" depending on which container won the claim
       # race. `default` + `orchestrator` only; python steps are routed to
       # the worker via the `sandbox` tag.
@@ -154,9 +154,10 @@ services:
     # `kernel.apparmor_restrict_unprivileged_userns=1`. That is enforced on the
     # HOST and it targets exactly the *unconfined* processes `apparmor=
     # unconfined` produces, so relaxing it here makes no difference — the
-    # symptom is `bwrap: setting up uid map: Permission denied`. And `cap_add:
-    # SYS_ADMIN` below does not reach bwrap either: the worker runs as the
-    # non-root `app` user, and capabilities are granted to root.
+    # symptom is `bwrap: setting up uid map: Permission denied`. The `cap_add:
+    # SYS_ADMIN` below does not work around it either: it is added to the
+    # container's capability set, but the worker process runs as the non-root
+    # `app` user, so bwrap does not receive it.
     # Run `sudo ./deploy/setup-host.sh` on the host — it detects which
     # restriction applies and installs the narrowest fix. See
     # docs/handlers/python_snippet.md.
@@ -185,7 +186,7 @@ services:
     # PythonHandler also defends itself in-process: it caps concurrent
     # namespace-creating launches (Python__MaxConcurrentSandboxes) and
     # retries transient setup failures with backoff, so a per-device
-    # fan-out no longer fires N bwrap launches at the same instant. Lower
+    # fan-out does not fire N bwrap launches at the same instant. Lower
     # the cap on a host with a tight user.max_user_namespaces; raise it
     # once the host sysctl is bumped.
     init: true
@@ -288,10 +289,12 @@ services:
   # to http://backend:8080, copy its token into CLOUDFLARE_TUNNEL_TOKEN, and set
   # MESSAGING_PUBLIC_BASE_URL to that public hostname. (Throwaway alternative
   # with no account, for quick tests: run `cloudflared tunnel --url
-  # http://localhost:8083` on the host and use the printed URL.)
+  # http://localhost:8080` on the host — the backend's published port,
+  # BACKEND_PORT — and use the printed URL.)
   #
   # NOTE: if you'd rather expose NOTHING publicly, use Slack Socket Mode instead
-  # (the app dials OUT to Slack over a WebSocket) — ask to have it implemented.
+  # (the app dials OUT to Slack over a WebSocket): configure an App-Level Token
+  # on the Slack messaging channel and no tunnel is needed.
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: flow-weaver-cloudflared

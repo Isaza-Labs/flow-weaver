@@ -3,7 +3,8 @@
 The `SchemaHash` is the fingerprint of a workflow's structure. Two implementations that
 canonicalize differently produce different hashes for the *same* logical workflow, and all
 simulation-staleness logic diverges silently. This spec is **normative**: the algorithm below
-is the contract. It is reified from flow-weaver's `ComputeSchemaHash` at the frozen oracle commit.
+is the contract. It is reified from FlowWeaver's `ComputeSchemaHash`; FlowWeaver (this repository)
+is the oracle.
 
 ## Input
 
@@ -55,7 +56,8 @@ prior simulation. See `../vectors/canonicalization/` (invariants A and B) and `.
 
 ## Reference implementation
 
-Nashira implements this in `nashira_backend/Services/Workflow/WorkflowCanonicalizer.cs`
-(`ComputeSchemaHash`), covered by unit tests and by the `canonicalization` conformance family.
-The vectors assert **relations** (equivalent → equal hash; edited → different hash), never a
-literal hash value — pinning a literal would couple the contract to one implementation's output.
+FlowWeaver implements this in `flow_weaver_backend/Services/Workflow/WorkflowCanonicalizer.cs`
+(`ComputeSchemaHash`, with `Canonical` exposing the canonical form), covered by unit tests and by
+the `canonicalization` conformance family. The vectors assert **relations** (equivalent → equal
+hash; edited → different hash), never a literal hash value — pinning a literal would couple the
+contract to one implementation's output.

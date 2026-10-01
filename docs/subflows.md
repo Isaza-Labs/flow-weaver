@@ -10,7 +10,7 @@ of reuse: build the "drain a port", "open a maintenance window",
 |---|---|
 | Subflow definition | A regular `Workflow` row, tagged `metadata.is_subflow = true` |
 | Subflow listing | `/subflows` (UI) or `GET /api/workflow/subflows` (API) |
-| Caller | Any workflow node with `type = "subflow"` referencing the subflow's `workflow_id` |
+| Caller | Any workflow node with `type = "subflow"` and `snippet_id = "subflow"`, whose `config_overrides.subflow_workflow_id` holds the subflow's `workflow_id` |
 | Runtime link | `WorkflowRun.ParentRunId` points the child run at the parent run |
 
 The schema does not require a special table. A subflow is just a
@@ -33,41 +33,39 @@ subflow will keep working — the reference is by id, not by tag.
 In the editor:
 
 1. Add a node and choose the **Subflow** type.
-2. Pick a subflow from the dropdown (populated from `GET /api/workflow/subflows`).
-3. Map inputs: the subflow's `input_schema` defines what it expects.
-4. The subflow's outputs become available downstream as
-   `steps.<node_id>.output.<key>`.
+2. Pick a subflow from the dropdown (populated from `GET /api/workflow/subflows`,
+   all environments).
+3. Map inputs: the dialog previews the subflow's `input_schema` so you can see
+   what it expects.
+4. Downstream nodes read the result as `steps.<node_id>.output`, an object with
+   the child's `run_id`, `status`, `final_state`, `error` (when it failed) and
+   `steps` — each child step's output keyed by its node id, e.g.
+   `{{ steps.<node_id>.output.steps.<child_node_id>.<key> }}`.
 
 At runtime:
 
 - A child `WorkflowRun` is created with `ParentRunId` set to the parent run.
+  Its input is the parent run's input merged with the subflow node's
+  `config_overrides`, and it inherits the parent's target devices and pools.
 - The child run advances independently and completes (or fails) the
-  parent's subflow node.
-- Cancellation propagates: cancelling the parent cancels its children.
+  parent's subflow node. A failed child fails the node with `subflow_failed`;
+  a reference to a workflow that does not exist fails it with
+  `subflow_missing`.
+- Cancelling the parent run stops the parent's own steps; a child run that
+  has already started is a separate run and must be cancelled on its own.
 
 ## Conventions
 
-- **Inputs**: define an explicit `input_schema` on the subflow. Callers
-  cannot pass arbitrary fields — the editor validates against the schema.
+- **Inputs**: define an explicit `input_schema` on the subflow so callers can
+  see what it expects. The child input is not validated against the schema at
+  run time, so check required fields in the subflow itself.
 - **Outputs**: end the subflow with a node that emits a JSON object the
   caller can consume.
 - **Naming**: prefix subflow workflow names with their domain
   (`net.drain_port`, `inv.refresh`) so they are easy to find in the picker.
-- **Promotion**: subflows are promoted independently. A subflow tagged
-  in `qa` only appears in the picker for callers also in `qa`.
-
-## Example seed
-
-Bundled example (loaded by `CatalogReseedService` on first boot):
-
-| Name | Environment | Purpose |
-|---|---|---|
-| `net.drain_port` | `qa` | Drain traffic from a port and verify with a `show interfaces` poll. |
-| `inv.refresh_devices` | `qa` | Pull NetBox inventory and reconcile against the local cache. |
-
-> Open work: ship the seed JSON files under `flow_weaver_backend/Skills/`
-> and have `DevSeedService` import them on first run. Tracked as a
-> follow-up to S14.1.
+- **Promotion**: subflows are promoted independently. The node picker lists
+  tagged subflows from every environment; the `/subflows` page and
+  `GET /api/workflow/subflows?environment=<env>` can filter by environment.
 
 ## Sharing a workflow that calls subflows
 
@@ -76,11 +74,6 @@ nodes travels with the parent, transitively, once each, under
 `dependencies.workflows` — with its own snippets and references merged into the
 same `dependencies` block, so the receiving instance has everything it needs in
 one file.
-
-This was not always true: the bundle used to carry the parent alone. It imported
-cleanly, the subflow node kept pointing at a GUID that does not exist on the
-receiving instance, and the step failed with `subflow_missing` on the first run —
-the workflow looked shared and was not.
 
 On import the children are created **first**, callees before callers, as drafts
 tagged `metadata.is_subflow = true`; then every `subflow_workflow_id` is
@@ -95,12 +88,12 @@ with `bundle_subflow_cycle`. It could never run, so there is no reason to ship i
 
 See `docs/workflow-bundles.md` for the rest of the format.
 
-## Open follow-ups
+## Current limitations
 
-- Editor warning when promoting a parent past a subflow's environment
-  (e.g. promote-to-production when subflow is still in `qa`).
-- Subflow versioning: should a parent pin a subflow's `Version`, or
-  always call the latest? Default today is "always latest"; pinning is
-  not implemented.
-- Drill-down navigation from a parent step to its child run in the
-  monitor view.
+- Promoting a parent does not check the environment of the subflows it calls
+  (e.g. a parent promoted to `production` while a subflow is still in `qa`).
+- A parent always calls the subflow's current version; pinning a subflow
+  `Version` is not supported.
+- The run monitor does not link a parent's subflow step to its child run; the
+  child's id is in the step output (`run_id`) and the child is listed under
+  runs like any other run.

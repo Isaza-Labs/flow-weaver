@@ -19,7 +19,7 @@ Start with the [quick start](../QUICK_START_GUIDE.md) for a local deployment and
 - [Python snippet sandbox](./handlers/python_snippet.md) and [email sender](./handlers/email_send.md)
 - [Host requirements for Python snippets](./ops/python-sandbox-host-requirements.md)
 - [Backup and disaster recovery](./ops/dr.md), [keyring rotation](./ops/keyring-rotation.md), and [load testing](./ops/load-testing.md)
-- [Branch protection](./ops/branch-protection.md) and [repository structure](./repository/README.md)
+- [Repository structure](./repository/README.md)
 - [Backend notes](../flow_weaver_backend/README.md) and [frontend development](../frontend/README.md)
 
 For bugs, usage questions, or private security reports, see [Support](../SUPPORT.md). This documentation describes the current development branch; check the [changelog](../CHANGELOG.md) for release status and known limitations.

@@ -10,7 +10,7 @@ Use the channel that matches the request:
 
 ## Contact routes
 
-Each address is a monitored shared mailbox, not a personal one, so a request does not wait on one person being available. FlowWeaver, Nashira and Netora share these routes — name the product in the subject line.
+Each address is a monitored shared mailbox, not a personal one, so a request does not wait on one person being available. Name the product in the subject line.
 
 | Purpose | Address |
 |---|---|

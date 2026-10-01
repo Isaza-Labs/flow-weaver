@@ -22,7 +22,7 @@ No dependency, vendored component, copied snippet, font, image, dataset, model o
 
 ## FlowWeaver-specific gates
 
-The existing dependency report identifies items requiring release attention, including QuestPDF's commercial threshold, LGPL/GPL components in runtime images, packages with linking exceptions, optional maintenance terms and alternative license expressions. These must be revalidated against the resolved dependencies of each release; the July 2026 report is not a permanent approval.
+The dependency inventory in [`THIRD-PARTY-NOTICES.md`](../THIRD-PARTY-NOTICES.md) identifies items requiring release attention, including QuestPDF's commercial threshold, LGPL/GPL components in runtime images, packages with linking exceptions, optional maintenance terms and alternative license expressions. These must be revalidated against the resolved dependencies of each release; an earlier inventory is not a permanent approval.
 
 ## Vendoring
 

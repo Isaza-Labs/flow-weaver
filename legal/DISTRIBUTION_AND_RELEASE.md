@@ -37,5 +37,5 @@ When FlowWeaver distributes a modified third-party file under Apache 2.0, that f
 
 ## Release approval
 
-Engineering, security, license/compliance, IP ownership and release management approvals must be recorded. A single person may hold multiple roles in an early-stage company, but the record must identify which role was exercised.
+Engineering, security, license/compliance, IP ownership and release management approvals must be recorded. When one person holds several roles, the record identifies which role was exercised.
 

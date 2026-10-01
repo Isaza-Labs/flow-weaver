@@ -2,21 +2,23 @@
 
 Measures how a single FlowWeaver instance behaves as the managed-device count
 grows (50 / 250 / 1000 / 5000) under a representative per-device workflow load,
-and where it saturates. Since licensing moved to per-device (acta F1), this also
-feeds the **commercial bands** — the saturation knee defines the per-instance
-device ceiling for each tier.
+and where it saturates. The saturation knee is the practical device ceiling for
+one instance on the hardware tested.
 
 The whole harness runs on **synthetic devices with faked device I/O**, so it
-never touches real hardware and never needs the shared lab.
+never touches real hardware or a real device lab.
 
-## Targets (fill in from product)
+## What to record
 
-| Metric | Target |
+| Metric | Source |
 |---|---|
-| Run p95 latency | _TBD by product_ |
-| Error rate | _TBD_ |
-| Throughput (runs/hr) | _TBD_ |
-| Device ceiling per instance | _the output of this test_ |
+| Run p95 latency | SLO endpoint (see below) |
+| Error rate | SLO endpoint |
+| Throughput (runs/hr) | SLO endpoint |
+| Device ceiling per instance | the knee of the curves this test produces |
+
+Set your own pass/fail thresholds for each metric before running the sweep, and
+judge the results against them.
 
 ## Safety model
 
@@ -33,7 +35,8 @@ never touches real hardware and never needs the shared lab.
 
 ## Run it
 
-1. Stand up an **isolated staging** stack (its own DB — never the shared lab):
+1. Stand up an **isolated staging** stack with its own database (never one
+   shared with real inventory):
    ```bash
    # in deploy/.env
    SIMULATION_ENABLED=true
@@ -44,7 +47,7 @@ never touches real hardware and never needs the shared lab.
    ```
 2. Drive the sweep:
    ```bash
-   BASE_URL=http://localhost:8080 ADMIN_USER=admin ADMIN_PASS=admin \
+   BASE_URL=http://localhost:8080 ADMIN_USER=admin ADMIN_PASS='<admin-password>' \
      COUNTS="50 250 1000 5000" ./deploy/loadtest/run-loadtest.sh
    ```
    For each step it tears down, seeds N synthetic devices + a pool, fires one
@@ -60,7 +63,8 @@ never touches real hardware and never needs the shared lab.
 - **Wall-clock per run** — the script times each fan-out end to end.
 
 Plot `device_count` vs `run_seconds` / `p95` / `error_rate`; the knee where the
-curves bend up is the saturation point / the device ceiling for the band.
+curves bend up is the saturation point, i.e. the device ceiling for that
+configuration.
 
 ## Known bottlenecks & tuning knobs
 
@@ -95,9 +99,8 @@ pools, and the ping workflow/snippet).
 
 ## Scope note
 
-This document + `deploy/loadtest/run-loadtest.sh` are the **tooling**. Producing
-the actual approved curves and the commercial bands is a product/perf exercise:
-it needs the staging hardware sizing and the success thresholds filled in above.
-The in-repo unit tests (`SimulationHarnessTests`) only pin the harness mechanics
+This document and `deploy/loadtest/run-loadtest.sh` are the **tooling**; they do
+not publish capacity numbers. Results depend on the staging hardware sizing and
+the thresholds you choose. The in-repo unit tests (`SimulationHarnessTests`) only pin the harness mechanics
 (fake handlers, the production guard, seeding) — not capacity numbers, which
 require the real Postgres queue.
