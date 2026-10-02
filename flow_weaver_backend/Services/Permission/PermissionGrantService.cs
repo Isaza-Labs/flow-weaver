@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace flow_weaver_backend.Services.Permission;
 
-// Phase 3 of plan_rbac_granular.md: CRUD for permission grants,
+// CRUD for permission grants,
 // authored "like a policy" (name + capability picker + condition builder) and
 // assigned to users. Thin layer over IRepository<PermissionGrant>; the resolver
 // (IEffectivePermissions) is what actually reads these at enforcement time.

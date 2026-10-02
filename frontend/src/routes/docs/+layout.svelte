@@ -35,10 +35,10 @@
       label: 'Integrate',
       items: [
         { href: '/docs/integrations', label: 'Integrations' },
-        { href: '/docs/vendor-commands', label: 'Vendor commands', adminOnly: true },
+        { href: '/docs/vendor-commands', label: 'Vendor commands' },
         { href: '/docs/admin/mcp-servers', label: 'MCP servers', adminOnly: true },
         { href: '/docs/ai/channels', label: 'Messaging channels' },
-        { href: '/docs/email', label: 'Email', adminOnly: true },
+        { href: '/docs/email', label: 'Email' },
       ],
     },
     {

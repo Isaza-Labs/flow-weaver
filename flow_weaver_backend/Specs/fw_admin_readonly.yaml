@@ -88,12 +88,11 @@ paths:
     get:
       operationId: fw_admin_readonly:device_usage
       summary: >
-        Device-inventory usage report (per-device licensing, TC-FW-066). Returns
+        Device-inventory usage report. Returns
         total + a breakdown per dimension (active/inactive, qa-lab/non, from-
         inventory/manual, synced/never-synced, by-status) and the count under each
         candidate "managed device" definition, each with its exact WHERE clause —
-        so the report is reproducible against a direct DB query. Neutral: the
-        billable definition is a pending product sign-off.
+        so the report is reproducible against a direct DB query.
       tags: [metrics]
       responses: { "200": { description: Device usage report } }
 

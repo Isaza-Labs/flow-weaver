@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace flow_weaver_backend.BackgroundServices;
 
-// S14.2: daily SLO sweep. Runs SloComputeService against the
+// Daily SLO sweep. Runs SloComputeService against the
 // last 7 days, and for each metric whose value crosses its target,
 // writes a single AuditEvent row with action `slo.breach.<metric_key>`.
 //

@@ -20,7 +20,7 @@ public sealed class SecretResolver : ISecretResolver
 {
     // ${secret:<source>:<id|name>:<field>}
     // source, id/name and field captured as groups 1/2/3. Square bracket
-    // syntax not supported — keeps the grammar simple and matches netora.
+    // syntax not supported — keeps the grammar simple.
     private static readonly Regex TokenPattern = new(
         @"\$\{secret:(?<source>[a-z_]+):(?<idOrName>[^:}]+):(?<field>[^}]+)\}",
         RegexOptions.Compiled | RegexOptions.IgnoreCase);

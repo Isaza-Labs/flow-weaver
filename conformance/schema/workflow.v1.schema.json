@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://networkingdev.com/schemas/workflow.v1.json",
   "title": "workflow.v1",
-  "description": "Structural schema for a workflow.v1 DAG document. Reified from flow-weaver (frozen oracle). The idempotency of a node is a property of the referenced snippet, not of the node inline.",
+  "description": "Structural schema for a workflow.v1 DAG document. The idempotency of a node is a property of the referenced snippet, not of the node inline.",
   "type": "object",
   "required": ["nodes", "edges"],
   "additionalProperties": false,

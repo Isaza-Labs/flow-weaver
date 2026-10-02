@@ -23,7 +23,7 @@
   let error = $state('');
   let expandedSchemas = $state(new Set<string>());
   let searchText = $state('');
-  // S13.6 follow-up: filter pill that narrows the list to snippets
+  // Filter pill that narrows the list to snippets
   // whose authors set an explicit rollback policy override. Useful for
   // periodic review ("which snippets did someone tag as idempotent?
   // is that still true?").

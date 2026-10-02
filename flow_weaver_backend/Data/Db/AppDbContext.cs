@@ -1,6 +1,8 @@
 using System.Text.Json;
 using flow_weaver_backend.Models;
+using flow_weaver_backend.Services.Security;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace flow_weaver_backend.Data.Db;
@@ -17,9 +19,29 @@ namespace flow_weaver_backend.Data.Db;
 //     loop over all derived types so we do not duplicate per-entity setup.
 public class AppDbContext : DbContext
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options)
+    // Encrypts Integration.AuthConfig at rest. DI always supplies it; contexts
+    // built by hand (tests, tooling) without one store the config as-is.
+    private readonly IntegrationAuthCipher? _integrationAuthCipher;
+
+    public AppDbContext(DbContextOptions<AppDbContext> options, IntegrationAuthCipher? integrationAuthCipher = null)
         : base(options)
     {
+        _integrationAuthCipher = integrationAuthCipher;
+    }
+
+    public bool EncryptsIntegrationAuth => _integrationAuthCipher is not null;
+
+    // The model bakes the cipher into a value converter, so a context with a
+    // cipher and one without must not share a cached model.
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.ReplaceService<IModelCacheKeyFactory, CipherAwareModelCacheKeyFactory>();
+    }
+
+    internal sealed class CipherAwareModelCacheKeyFactory : IModelCacheKeyFactory
+    {
+        public object Create(DbContext context, bool designTime) =>
+            (context.GetType(), (context as AppDbContext)?._integrationAuthCipher, designTime);
     }
 
     // ─── Inventory ──────────────────────────────────────────────────
@@ -139,12 +161,12 @@ public class AppDbContext : DbContext
     // purges expired rows.
     public DbSet<ReportArtifact> ReportArtifacts => Set<ReportArtifact>();
 
-    // S13.5: Per-resource RBAC. Grants a subject one of
+    // Per-resource RBAC. Grants a subject one of
     // owner/editor/runner/viewer on a single Workflow or Integration.
     // The global Admin/Operator/Viewer tier still applies as a floor.
     public DbSet<ResourcePermission> ResourcePermissions => Set<ResourcePermission>();
 
-    // RBAC-granular refactor (plan_rbac_granular.md): capability-based grants
+    // RBAC-granular refactor: capability-based grants
     // binding users to CapabilityCatalog keys under optional ABAC conditions.
     // Supersedes the coarse 3-tier model; the two "builtin.*" grants reproduce
     // the legacy operator/viewer bundles.
@@ -171,6 +193,15 @@ public class AppDbContext : DbContext
                     property.SetColumnType("jsonb");
                 }
             }
+        }
+
+        if (_integrationAuthCipher is { } cipher)
+        {
+            modelBuilder.Entity<Integration>()
+                .Property(x => x.AuthConfig)
+                .HasConversion(new ValueConverter<JsonElement, string>(
+                    v => cipher.Protect(v),
+                    v => cipher.Unprotect(v)));
         }
 
         // ─── Tables + PKs ───────────────────────────────────────────
@@ -205,7 +236,7 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Snippet>(e =>
         {
-            // S13.6: Idempotency must be one of the three known values
+            // Idempotency must be one of the three known values
             // or null (= fall back to the handler default). Enforced by
             // a CHECK constraint so a typo at the API layer fails loud.
             e.ToTable("snippets", t =>

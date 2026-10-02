@@ -8,7 +8,7 @@ using WorkflowModel = flow_weaver_backend.Models.Workflow;
 
 namespace flow_weaver_backend.Services.Ai.Tools.Handlers;
 
-// FR-022: dry-run a workflow without touching any device or external
+// Dry-run a workflow without touching any device or external
 // system. The agent (or the admin, via chat) can use this to catch
 // missing snippets, unresolvable templates, orphan nodes, and broken
 // integration references BEFORE issuing run_workflow against real

@@ -12,7 +12,7 @@ using WorkflowModel = flow_weaver_backend.Models.Workflow;
 
 namespace flow_weaver_backend.Tests;
 
-// NFR-004 / TC-FW-065 — the load-test simulation harness. Covers the parts that
+// The load-test simulation harness. Covers the parts that
 // ARE deterministically unit-testable: the fake device handlers (no real I/O +
 // synthetic latency + failure injection), the production safety guard, and the
 // bulk device/pool/workflow seeding. The actual capacity CURVES still require

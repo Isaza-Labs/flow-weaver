@@ -20,8 +20,9 @@
       A <strong>run</strong> is one invocation of a workflow. The engine creates
       a <code>workflow_run</code> row at enqueue time, freezes a snapshot of the
       DAG into <code>nodes_snapshot</code> and <code>edges_snapshot</code>, then
-      produces one <strong>step run</strong> per node execution. Runs are
-      read-only from the UI; only admins can prune them after the fact.
+      produces one <strong>step run</strong> per node execution. From the UI
+      you can stop a run that is still pending or running; only admins can
+      prune runs.
     </p>
     <p>
       Every run has three views in the app:
@@ -32,16 +33,38 @@
       <dt>Detail</dt>
       <dd>Step-by-step payload inspector plus a transform playground. Good for post-mortem and data-flow debugging.</dd>
       <dt>Monitor</dt>
-      <dd>The live DAG graph with coloured nodes and a right-hand step timeline. Streams via WebSocket while the run is in flight.</dd>
+      <dd>The live DAG graph with colored nodes and a right-hand step timeline. Streams via WebSocket while the run is in flight.</dd>
     </dl>
   </section>
 
   <section>
     <h2>The list page</h2>
     <p>
-      Route: <code>/runs</code>. Header with a <em>Refresh</em> button and,
-      for admins, a red <em>Delete all</em> button (hidden when the list is
-      empty).
+      Route: <code>/runs</code>. Header with a <em>Live</em> /
+      <em>Paused</em> toggle, a <em>Refresh</em> button and, for admins, a
+      red <em>Delete all</em> button (hidden when the list is empty).
+      <em>Live</em> is on by default: it reloads the list every 5 seconds
+      while the browser tab is visible and shows <em>Auto-refreshing</em>
+      under the table. The list is paginated, 50 runs per page.
+    </p>
+
+    <h3>Filters</h3>
+    <dl>
+      <dt>Status</dt>
+      <dd>
+        <em>All statuses</em>, <em>Pending</em>, <em>Running</em>,
+        <em>Completed</em>, <em>Failed</em> or <em>Cancelled</em>, matched
+        exactly against the run's status.
+      </dd>
+      <dt>Search</dt>
+      <dd>Workflow name or workflow id.</dd>
+    </dl>
+    <p>
+      Both filters act only on the page that is loaded, not on the whole
+      history. Their state is kept in the URL (<code>?status=</code>,
+      <code>?q=</code>, and <code>?live=0</code> when paused), so a filtered
+      view can be bookmarked or shared. The Workflow, Status and Started
+      columns can be sorted by clicking their headers.
     </p>
 
     <h3>Columns</h3>
@@ -50,8 +73,8 @@
       <tbody>
         <tr><td>Run</td><td>First 8 hex characters of the run id, monospace, linked to <code>/runs/{'{id}'}</code>.</td></tr>
         <tr><td>Workflow</td><td>Workflow name, resolved by a parallel fetch. Falls back to a truncated workflow id if the workflow has been deleted.</td></tr>
-        <tr><td>Status</td><td>StatusBadge. Common values: <code>pending</code>, <code>running</code>, <code>completed</code>, <code>success</code>, <code>failed</code>, <code>failure</code>, <code>skipped</code>.</td></tr>
-        <tr><td>Trigger</td><td>Source of the run (<code>manual</code>, <code>cron</code>, a scheduled trigger name). Dash when empty.</td></tr>
+        <tr><td>Status</td><td>Status badge: <code>pending</code>, <code>running</code>, <code>completed</code>, <code>failed</code> or <code>cancelled</code>.</td></tr>
+        <tr><td>Trigger</td><td>Source of the run: <code>manual</code> (Run button or API), <code>schedule</code>, <code>webhook</code> (workflow or Git webhook) or <code>subflow</code>. Dash when empty.</td></tr>
         <tr><td>Started</td><td>Absolute date-time (local timezone).</td></tr>
         <tr><td>Duration</td><td>Tabular-nums duration, live while the run is active.</td></tr>
         <tr>
@@ -74,8 +97,8 @@
     <h3>Admin bulk delete</h3>
     <Callout tone="admin" title="Admin only">
       The <em>Delete all</em> header button is hidden unless your session role
-      is <code>admin</code>. The backend also enforces this with
-      <code>[Authorize(Policy = "Admin")]</code>.
+      is <code>admin</code>. The server also refuses deletes without the
+      <code>run.delete</code> capability, which only admins hold by default.
     </Callout>
     <p>
       Clicking <em>Delete all</em> opens a confirm dialog warning that every
@@ -85,8 +108,8 @@
     </p>
     <p>
       Individual row delete has the same semantics at single-row scope: the
-      run and its step runs are marked <code>IsActive = false</code> so they
-      vanish from every list/monitor query.
+      run and its step runs are soft-deleted, so they vanish from every list
+      and monitor view.
     </p>
   </section>
 
@@ -97,13 +120,19 @@
       Header includes a <em>Live</em> indicator (pulsing dot) while the run is
       still running plus a <em>Monitor</em> button that jumps to the DAG view.
     </p>
+    <p>
+      While the run is <code>pending</code> or <code>running</code>, a
+      <em>Stop run</em> button also appears. It asks for confirmation, marks
+      the run <code>cancelled</code> and leaves steps already in flight to
+      finish.
+    </p>
 
     <h3>Overview card</h3>
     <p>
       Four-column summary at the top:
     </p>
     <dl>
-      <dt>Status</dt><dd>StatusBadge with the current state.</dd>
+      <dt>Status</dt><dd>Status badge with the current state.</dd>
       <dt>Started / Finished</dt><dd>Absolute times, tabular-nums.</dd>
       <dt>Duration</dt><dd>Live-updating while <code>running</code>.</dd>
       <dt>Trigger</dt><dd>Source of the run.</dd>
@@ -123,8 +152,8 @@
 
     <h3>Step list</h3>
     <p>
-      Each node that produced a step run is rendered as a card. Use the
-      <strong>StepDetail</strong> expander to inspect:
+      Each node that produced a step run is rendered as a card. Expand it to
+      inspect:
     </p>
     <ul>
       <li><code>input_payload</code> — JSON the engine handed the node.</li>
@@ -175,7 +204,7 @@
         separator, the workflow name, and the run id (truncated).
       </li>
       <li>
-        <strong>Center</strong> — the run's StatusBadge plus a progress bar
+        <strong>Center</strong> — the run's status badge plus a progress bar
         (<code>completed_steps / total_steps</code>). The bar is red on
         failure, green on success, primary otherwise.
       </li>
@@ -183,14 +212,15 @@
         <strong>Right</strong> — <em>Elapsed</em>, <em>Started</em>,
         <em>Finished</em> timestamps; a pulsing <em>Live</em> pill while
         streaming; a <em>Back to workflow</em> button (opens
-        <code>/workflows/{'{workflow_id}'}</code>) and a <em>Details</em>
-        shortcut to <code>/runs/{'{id}'}</code>.
+        <code>/workflows/{'{workflow_id}'}</code>), a <em>Details</em>
+        shortcut to <code>/runs/{'{id}'}</code>, and the same <em>Stop run</em>
+        button as the detail page while the run is pending or running.
       </li>
     </ul>
 
     <h3>Failure banner</h3>
     <p>
-      When the run finishes as <code>failed</code> or <code>failure</code>, a
+      When the run finishes as <code>failed</code>, a
       red alert appears above the graph listing every distinct step error
       message (deduplicated). If no step reported a message, the banner says
       so and points you to the step detail for logs.
@@ -198,18 +228,18 @@
 
     <h3>DAG (left pane)</h3>
     <p>
-      A SvelteFlow canvas rendering the snapshot captured at enqueue time.
-      Nodes are coloured by current status:
+      A graph canvas rendering the snapshot captured at enqueue time.
+      Nodes are colored by current status:
     </p>
     <dl>
       <dt>pending</dt><dd>Neutral border.</dd>
       <dt>running</dt><dd>Blue border with a soft ring-halo.</dd>
-      <dt>completed / success</dt><dd>Green fill.</dd>
-      <dt>failed / failure</dt><dd>Red fill.</dd>
+      <dt>completed</dt><dd>Green fill.</dd>
+      <dt>failed</dt><dd>Red fill.</dd>
       <dt>skipped</dt><dd>Dimmed neutral, 60% opacity.</dd>
     </dl>
     <p>
-      Edges animate when either endpoint is running and are coloured green when
+      Edges animate when either endpoint is running and are colored green when
       a success has flowed through.
     </p>
     <p>
@@ -254,8 +284,8 @@
   <section>
     <h2>Role differences</h2>
     <ul>
-      <li><strong>Viewer</strong> — read-only list, detail, and monitor.</li>
-      <li><strong>Operator</strong> — same as viewer. Runs are created by the engine, not by user writes.</li>
+      <li><strong>Viewer</strong> — list, detail and monitor, plus <em>Stop run</em> (<code>run.cancel</code> is viewer-tier).</li>
+      <li><strong>Operator</strong> — same; starting runs happens from <a href="/docs/workflows">Workflows</a>.</li>
       <li><strong>Admin</strong> — can see and use the <em>Delete all</em> button plus the per-row delete icon.</li>
     </ul>
   </section>

@@ -322,7 +322,7 @@ public sealed class AnsibleHandler : ISnippetHandler
     // playbook that ran and changed nothing is exactly the case the change signal
     // exists to tell apart. Measured, not assumed from the handler's tier.
     //
-    // Nashira parses the recap into named counts and this product keeps the raw line,
+    // Other engines parse the recap into named counts; this product keeps the raw line,
     // so the same measurement is read off the same text a different way. Structuring
     // the recap here would change the step's OUTPUT, which belongs to the `snippets`
     // family, not to this change.

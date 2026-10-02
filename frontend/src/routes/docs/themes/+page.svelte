@@ -5,7 +5,7 @@
 
 <DocLayout
   title="Themes"
-  lead="FlowWeaver ships seven built-in themes, and lets you build your own from a handful of base colours plus a few style knobs — corners, fonts, heading weight, interface scale. A theme you save appears in the palette picker beside the built-in ones; an admin can publish one to everybody."
+  lead="FlowWeaver ships seven built-in themes, and lets you build your own from a handful of base colors plus a few style knobs — corners, fonts, heading weight, interface scale. A theme you save appears in the palette picker beside the built-in ones; an admin can publish one to everybody."
 >
   <Callout tone="where" title="Where to find it">
     Studio: <a href="/themes"><code>/themes</code></a> ·
@@ -16,12 +16,12 @@
   <section>
     <h2>Concept</h2>
     <p>
-      A theme is <strong>seven base colours</strong> — one per palette — not a
+      A theme is <strong>seven base colors</strong> — one per palette — not a
       stylesheet. Each base expands into the 11 shades
       (<code>50</code>…<code>950</code>) the interface actually uses, plus the
       contrast tokens that decide whether text on a filled button comes out
       dark or light. That expansion happens in your browser every time the app
-      loads, which is why the editor is a row of colour pickers rather than a
+      loads, which is why the editor is a row of color pickers rather than a
       77-field form.
     </p>
     <dl>
@@ -32,24 +32,24 @@
       <dt>Surface</dt><dd>Page background, cards, borders and body text — the one that changes the most.</dd>
     </dl>
     <p>
-      Any palette you leave at its default keeps the FlowWeaver brand colour, so
-      "the standard look but our brand blue" is a one-colour theme.
+      Any palette you leave at its default keeps the FlowWeaver brand color, so
+      "the standard look but our brand blue" is a one-color theme.
     </p>
     <p>
       You don't have to start from the brand palette: the
       <strong>Start from</strong> row loads a curated preset (Midnight, Ocean,
       Forest, …) into the editor, and <strong>Surprise me</strong> rolls a
-      random palette that keeps green/amber/red where status colours belong.
+      random palette that keeps green/amber/red where status colors belong.
       Both only fill the form — nothing is saved until you save.
     </p>
   </section>
 
   <section>
-    <h2>Beyond colour: the Style section</h2>
+    <h2>Beyond color: the Style section</h2>
     <p>
-      A theme can also carry a handful of non-colour settings. Anything you
+      A theme can also carry a handful of non-color settings. Anything you
       leave at its default simply inherits the standard FlowWeaver look, so an
-      existing colours-only theme is unaffected.
+      existing colors-only theme is unaffected.
     </p>
     <dl>
       <dt>Corner roundness</dt>
@@ -102,7 +102,7 @@
         theme you can't edit.
       </li>
       <li>
-        <strong>Export JSON</strong> — copies the theme (name, colours,
+        <strong>Export JSON</strong> — copies the theme (name, colors,
         settings) to the clipboard as JSON, ready to paste into a chat, a
         ticket or another FlowWeaver instance.
       </li>
@@ -116,17 +116,17 @@
   </section>
 
   <section>
-    <h2>How a base colour becomes a ramp</h2>
+    <h2>How a base color becomes a ramp</h2>
     <p>
       Shades are interpolated in <strong>OKLCh</strong>, not HSL: hue and
       perceived saturation stay put while only lightness moves, which is what
-      keeps a generated ramp from going muddy in the mid-tones. Two behaviours
+      keeps a generated ramp from going muddy in the mid-tones. Two behaviors
       are worth knowing about:
     </p>
     <ul>
       <li>
-        <strong>Your colour survives verbatim</strong> — it appears in the ramp
-        exactly as picked, never re-quantised.
+        <strong>Your color survives verbatim</strong> — it appears in the ramp
+        exactly as picked, never re-quantized.
       </li>
       <li>
         <strong>It lands in the shade its lightness belongs to</strong>, which
@@ -137,15 +137,15 @@
         shades and the ramp would stop being a ramp.
       </li>
     </ul>
-    <Callout tone="info" title="Where the brand colour ends up">
-      If you want a specific colour on the <em>buttons</em>, watch the marker on
+    <Callout tone="info" title="Where the brand color ends up">
+      If you want a specific color on the <em>buttons</em>, watch the marker on
       the Primary strip: buttons use shade 500. A base that anchors at 600 will
       render buttons one step lighter than the swatch you picked — nudge it
       lighter until the marker reads 500.
     </Callout>
     <p>
       Saturated hues can't hold their chroma at the ends of a ramp, so chroma is
-      tapered towards both extremes and then reduced until the colour fits in
+      tapered towards both extremes and then reduced until the color fits in
       sRGB. Clipping the channels instead would drift the hue — a bright red
       would turn orange at the light end.
     </p>

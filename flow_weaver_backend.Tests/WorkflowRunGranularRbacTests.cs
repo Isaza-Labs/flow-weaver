@@ -15,7 +15,7 @@ using WorkflowRunModel = flow_weaver_backend.Models.WorkflowRun;
 
 namespace flow_weaver_backend.Tests;
 
-// DEF-006 / TC-FW-046 regression. With rbac_mode=granular, POST /workflow/{id}/run
+// Regression test. With rbac_mode=granular, POST /workflow/{id}/run
 // must honor a workflow.run grant's environment/resource conditions against the
 // CONCRETE workflow being run. Previously the run path never consulted
 // IEffectivePermissions (unlike PromotionService for promote), so a grant scoped

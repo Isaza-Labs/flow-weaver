@@ -3,14 +3,14 @@ info:
   title: fw_workflows
   version: "1.0"
   description: >
-    Flow Weaver's own workflow + run + trigger API. Operates on the
-    of the calling user via the session JWT. Use this whenever the agent
+    FlowWeaver's own workflow + run + trigger API. Operates with the
+    permissions of the calling user via the session JWT. Use this whenever the agent
     needs to create, read, update, delete, run, promote, or rollback a
     workflow.
 
 # Relative URL — the RestOperationExecutor resolves this against the
-# current request's scheme+host so chat calls run against the same
-# backend they were served from.
+# backend's own address (Backend:SelfBaseUrl), never the incoming
+# request's Host, so chat calls run against this same backend process.
 servers:
   - url: /api
 
@@ -233,8 +233,8 @@ paths:
               properties:
                 target_environment: { type: string, enum: [qa, production] }
                 change_summary: { type: string }
-                promoted_by: { type: string, description: "Username of the operator triggering the promotion (optional — taken from the JWT when omitted)." }
-                approved_by: { type: string, description: "Approver identifier for production promotions; optional for qa." }
+                promoted_by: { type: string, description: "Ignored for authenticated calls: the promoter is always the session user." }
+                approved_by: { type: string, description: "Second reviewer for production promotions (required there; optional for qa). Must differ from the calling user's username." }
       responses:
         "200": { description: Promoted }
 

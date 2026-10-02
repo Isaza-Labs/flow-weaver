@@ -12,13 +12,13 @@ namespace flow_weaver_backend.Services.WorkflowTrigger;
 // Handles a verified inbound webhook delivery for a `webhook`-type
 // WorkflowTrigger: verifies the signature, applies backpressure, and enqueues
 // exactly one workflow run with the raw payload as `input`. Mirrors
-// GitWebhookReceiver (FR-027 / TC-FW-061).
+// GitWebhookReceiver.
 //
 // SSRF note: this receiver makes NO outbound HTTP calls — it only reads the
 // trigger row and enqueues a run. A URL inside the payload is inert here; it
 // only becomes a request if the fired workflow's rest_call / integration nodes
 // use it, and those are already guarded by IUrlGuard at execution time
-// (UrlGuardSsrfTests / TC-FW-032). So the ingest itself is not an SSRF vector.
+// (UrlGuardSsrfTests). So the ingest itself is not an SSRF vector.
 //
 // Concurrency: invoked from the public [AllowAnonymous] controller, so there is
 // no ICurrentUser from claims — this rebinds the caller via MutableCurrentUser
@@ -161,7 +161,7 @@ public sealed class WorkflowWebhookReceiver
     // The caller here holds the trigger's shared secret, not a user session,
     // and the run is enqueued straight through IWorkflowExecutor — so it never
     // passes the environment/resource-scoped RBAC check a manual run goes
-    // through (see the DEF-006 block in WorkflowController.Run). The body
+    // through (see the granular-RBAC block in WorkflowController.Run). The body
     // therefore cannot be trusted to widen anything:
     //
     //   AllowTargetOverride = false (default)

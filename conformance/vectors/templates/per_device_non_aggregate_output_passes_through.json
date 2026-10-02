@@ -12,5 +12,5 @@
   "expected": { "resolved": 2 },
   "equivalence": "exact",
   "oracle_commit": "fw@1a11ea3",
-  "notes": "Derived from section 6, which defines the aggregate by devices[].device_id and devices[].output and says templates may rely only on that pair, so an ordinary step whose output happens to carry a devices list must not be mistaken for a fan-out. Nashira requires the device_id to be present before it treats an output as a fan-out (VariableResolver.IsAggregate); the oracle was not consulted for this case."
+  "notes": "Derived from section 6, which defines the aggregate by devices[].device_id and devices[].output and says templates may rely only on that pair, so an ordinary step whose output happens to carry a devices list must not be mistaken for a fan-out. An implementation should require the device_id to be present before it treats an output as a fan-out; the oracle was not consulted for this case."
 }

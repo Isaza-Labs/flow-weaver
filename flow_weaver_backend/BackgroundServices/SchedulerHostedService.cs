@@ -18,7 +18,7 @@ namespace flow_weaver_backend.BackgroundServices;
 // :00/:30 boundaries. Set the tick below the smallest cadence you need
 // (default 10s; env Scheduler__PollSeconds to tune, e.g. 5 for tighter 30s).
 //
-// Concurrency-safe (FR-027 / DEF-004): each due occurrence is CLAIMED with an
+// Concurrency-safe: each due occurrence is CLAIMED with an
 // atomic compare-and-swap on NextRunAt (see FireAsync) before the run is
 // enqueued, so even if the API tier is scaled to multiple replicas a trigger
 // fires EXACTLY once — the replica that wins the CAS enqueues, the rest bow
@@ -115,7 +115,7 @@ public sealed class SchedulerHostedService : BackgroundService
         var next = CronSchedule.ComputeNextUtc(
             trigger.CronExpression, trigger.Timezone, now, out var cronError);
 
-        // FR-027 / DEF-004 — atomic claim. Advance NextRunAt with a
+        // Atomic claim. Advance NextRunAt with a
         // compare-and-swap against the EXACT value we observed as due. This one
         // UPDATE both CLAIMS the occurrence and advances the schedule: even if
         // the API tier is scaled to multiple replicas, only the replica whose

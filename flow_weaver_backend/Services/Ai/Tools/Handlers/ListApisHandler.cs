@@ -5,7 +5,7 @@ using flow_weaver_backend.Services.Identity;
 namespace flow_weaver_backend.Services.Ai.Tools.Handlers;
 
 // Lists every OpenAPI spec loaded. Entry point for the
-// netora-style discover → detail → execute flow: the agent calls this
+// discover → detail → execute flow: the agent calls this
 // first to learn which APIs it can talk to.
 public sealed class ListApisHandler : IToolHandler
 {

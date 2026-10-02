@@ -4,7 +4,7 @@ using flow_weaver_backend.Services.Workflow;
 namespace flow_weaver_backend.Tests;
 
 // A workflow created here is born with a start and an end whose NODE id is the
-// sentinel. An imported graph brings its own — Nashira writes
+// sentinel. An imported graph brings its own — one exporter writes
 // `{"id":"start","snippet_id":"__start__"}`, which the engine accepts because it
 // has always identified a sentinel by `snippet_id`.
 //

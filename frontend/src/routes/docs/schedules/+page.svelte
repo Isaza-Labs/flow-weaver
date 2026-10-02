@@ -24,7 +24,7 @@
       triggers expose a public, HMAC-signed <code>POST</code> endpoint
       (<code>/api/webhooks/workflow/&#123;id&#125;</code>). The JSON body is handed to
       the run under <code>input.webhook</code> (so a body field <code>x</code> is
-      read as <code>{'{{ input.webhook.x }}'}</code>); this page filters to <code>type === 'schedule'</code> only.
+      read as <code>{'{{ input.webhook.x }}'}</code>). This page lists schedule triggers only.
     </p>
     <Callout tone="warning" title="Webhooks don't pick their own devices by default">
       A webhook caller proves it holds the trigger's secret — not that it is a

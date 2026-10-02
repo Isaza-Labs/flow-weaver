@@ -57,7 +57,13 @@
         Required. The server checks it before accepting the new value.
       </dd>
       <dt>New password</dt>
-      <dd>Required. Minimum 8 characters.</dd>
+      <dd>
+        Required. The form checks for at least 8 characters; the server then
+        applies the password policy. By default: at least 12 characters,
+        upper- and lower-case letters, a digit and a symbol; it must not
+        contain your username or the part of your email before
+        <code>@</code>; common passwords are rejected.
+      </dd>
       <dt>Confirm new password</dt>
       <dd>
         Must match <em>New password</em> exactly. Mismatches are caught
@@ -69,13 +75,13 @@
     <ul>
       <li>Success → a green toast <em>"Password changed successfully"</em>. All three fields reset.</li>
       <li>Validation error (empty field, mismatch, too short) → a red alert at the top of the form with the specific reason.</li>
-      <li>Server rejection (wrong current password) → the same alert style with the server's message.</li>
+      <li>Server rejection (wrong current password, or a new password the policy refuses) → the same alert style with the server's message.</li>
     </ul>
     <Callout tone="warning">
-      Changing your password does not invalidate other active sessions. If
-      you suspect a credential leak, ask an admin to rotate your password
-      from <a href="/admin/users"><code>/admin/users</code></a> — that
-      revokes refresh tokens too.
+      Changing your password revokes every refresh token issued to your
+      account. Each open session, this one included, keeps working only until
+      its short-lived access token expires. If you suspect a credential leak,
+      change your password right away.
     </Callout>
   </section>
 
@@ -130,7 +136,7 @@
     <h2>Related chapters</h2>
     <ul>
       <li><a href="/docs/getting-started">Getting started</a> — the full app-shell tour including the user menu.</li>
-      <li><a href="/docs/admin/users">Users</a> — admin-side password management.</li>
+      <li><a href="/docs/admin/users">Users</a> — how admins create and remove accounts.</li>
     </ul>
   </section>
 </DocLayout>

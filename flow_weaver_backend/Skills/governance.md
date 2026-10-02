@@ -2,7 +2,7 @@
 
 FlowWeaver has a `WorkflowPlan` governance layer for cases where a
 change **needs human review before it becomes a real workflow**. Most
-day-to-day asks don't need it — and the backend now enforces this.
+day-to-day asks don't need it , and the backend enforces this.
 
 ## When to use a plan vs. creating the workflow directly
 

@@ -29,7 +29,7 @@ public class UpdateIntegration
     [JsonPropertyName("allow_private_network")]
     public bool? AllowPrivateNetwork { get; set; }
 
-    // S13.3: optional justification text written into the audit row when
+    // Optional justification text written into the audit row when
     // AllowPrivateNetwork transitions. The backend ignores the value
     // unless the flag actually changed; the UI prompts for it whenever
     // the toggle moves so reviewers see *why* the SSRF guard is relaxed

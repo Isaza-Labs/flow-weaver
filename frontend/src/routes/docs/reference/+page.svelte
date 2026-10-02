@@ -80,7 +80,8 @@
     <Callout tone="info" title="Screens not in the sidebar">
       <code>/admin/secrets</code> is reached from the AI hub's <em>Agent
       composition</em> card, <code>/admin/slo</code> and
-      <code>/admin/settings</code> from the admin dashboard, and
+      <code>/admin/settings</code> from the admin dashboard's
+      <a href="/docs/admin#tools">Tools</a> cards, and
       <code>/admin/actions</code> only by typing its URL.
     </Callout>
   </section>
@@ -110,21 +111,20 @@
         <tr><td>AI chat</td><td>chat; write tools fail with 403</td><td>chat with write tools</td><td>also see and clear all conversations</td></tr>
         <tr><td>AI providers</td><td>view</td><td>view</td><td>create, edit, delete</td></tr>
         <tr><td>AI agents</td><td>view</td><td>create, edit, delete</td><td>same</td></tr>
-        <tr><td>Prompt skills, API specs</td><td>—</td><td>—</td><td>full (the API is admin-only)</td></tr>
+        <tr><td>Prompt skills, API specs</td><td>—</td><td>attach them to an integration while creating or editing it</td><td>also the <code>/ai/skills</code> and <code>/ai/specs</code> screens</td></tr>
         <tr><td>MCP servers</td><td>discover tools</td><td>discover and call tools</td><td>also register and manage servers</td></tr>
         <tr><td>Messaging channels</td><td>link own account</td><td>link own account</td><td>configure channels</td></tr>
-        <tr><td>Email</td><td>—</td><td>send test</td><td>configure channels</td></tr>
+        <tr><td>Email</td><td>view the channel list (by URL)</td><td>also send a test, run <code>email_send</code> steps</td><td>also configure channels</td></tr>
         <tr><td>Policies</td><td>view the policies and the policy audit (by URL)</td><td>same</td><td>also create, edit and delete policies</td></tr>
         <tr><td>Permissions, Python packages, secrets, settings</td><td>—</td><td>—</td><td>full, including saving steps that reference a secret</td></tr>
         <tr><td>Users, audit, traces, artifacts, SLOs</td><td>—</td><td>—</td><td>full</td></tr>
         <tr><td>Own password, themes</td><td>yes</td><td>yes</td><td>also publish shared themes</td></tr>
       </tbody>
     </table>
-    <Callout tone="warning" title="Where a chapter disagrees">
-      Some chapters were written before capability-based permissions existed. When a
-      chapter's <em>Role differences</em> and this table disagree, the
-      <a href="/docs/permissions">Permissions</a> matrix, which is derived from the
-      capability catalogue, is the reference.
+    <Callout tone="info" title="Capabilities behind each row">
+      Each row summarizes one or more capabilities; the
+      <a href="/docs/permissions">Permissions</a> chapter lists every capability
+      with the base role that holds it by default.
     </Callout>
   </section>
 

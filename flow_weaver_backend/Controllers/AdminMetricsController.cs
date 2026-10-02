@@ -84,7 +84,7 @@ public class AdminMetricsController : ControllerBase
         });
     }
 
-    // S14.2: SLO snapshot. Delegates the heavy lifting to SloComputeService
+    // SLO snapshot. Delegates the heavy lifting to SloComputeService
     // so the daily breach watcher (SloBreachWatcherService) consumes the
     // exact same computation the dashboard does.
     [HttpGet("slo")]
@@ -138,7 +138,7 @@ public class AdminMetricsController : ControllerBase
         });
     }
 
-    // Device-inventory usage report (TC-FW-066 / per-device licensing). The
+    // Device-inventory usage report. The
     // commercial definition of a "managed device" is a signed product decision
     // that does NOT live in code — so this endpoint stays deliberately neutral:
     // it exposes the raw breakdown by every dimension that could matter plus the
@@ -198,8 +198,7 @@ public class AdminMetricsController : ControllerBase
                 new() { Key = "C_active_excluding_qa_and_never_synced", Count = candC, Rule = "IsActive AND NOT AllowQa AND LastSyncAt <> '0001-01-01'" },
                 new() { Key = "D_active_excluding_qa_reachable", Count = candD, Rule = "IsActive AND NOT AllowQa AND Status = 'reachable'" },
             },
-            Note = "The billable 'managed device' definition is pending product sign-off (TC-FW-066). "
-                + "No single count here is authoritative yet. Each candidate is reproducible with a direct "
+            Note = "Candidate definitions of a managed device. Each candidate is reproducible with a direct "
                 + "SELECT COUNT(*) FROM devices WHERE <rule>.",
         });
     }

@@ -252,10 +252,9 @@
         <option value="">All statuses</option>
         <option value="pending">Pending</option>
         <option value="running">Running</option>
-        <option value="success">Success</option>
+        <option value="completed">Completed</option>
         <option value="failed">Failed</option>
         <option value="cancelled">Cancelled</option>
-        <option value="skipped">Skipped</option>
       </Select>
     </div>
     <SearchInput value={searchQuery} placeholder="Filter by workflow name or id…" onInput={onSearch} />

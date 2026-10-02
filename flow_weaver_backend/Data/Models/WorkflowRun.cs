@@ -29,8 +29,8 @@ public class WorkflowRun : BaseModel
 
     // The canonical hash of the GRAPH this run executed, stamped when the run starts.
     //
-    // Same field and same name as Nashira's WorkflowRun.SchemaHash, and the reason both
-    // carry it is the same: a workflow is edited between runs, so "which version of the
+    // Same field and same name as the shared contract's SchemaHash, and the reason
+    // for it is simple: a workflow is edited between runs, so "which version of the
     // graph did this run actually execute" is a question only the run row can answer. It is
     // also the audit.v1 member of that name.
     //
@@ -40,7 +40,7 @@ public class WorkflowRun : BaseModel
     // ─── run outcome (workflow-v1/run-outcome) ──────────────────────────────
     //
     // `Status` says whether the run finished; these say what it LEFT BEHIND. Same names and
-    // same wire values as Nashira's, because the shared contract defines them:
+    // same wire values as other engines, because the shared contract defines them:
     //
     //   FinalState       completed | rolled_back | failed
     //                    A failed run whose changed steps were all reversible is

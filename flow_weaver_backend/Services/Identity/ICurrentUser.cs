@@ -15,7 +15,7 @@ public interface ICurrentUser
     IReadOnlyList<string> Roles { get; }
     bool IsAuthenticated { get; }
 
-    // RBAC-granular (plan_rbac_granular.md §6.3): an optional per-transport
+    // RBAC-granular: an optional per-transport
     // capability ceiling — e.g. a messaging channel's MaxRole expressed as
     // capabilities. null = no ceiling. When set, EffectivePermissions and the
     // [HasPermission] handler intersect the caller's effective capabilities with

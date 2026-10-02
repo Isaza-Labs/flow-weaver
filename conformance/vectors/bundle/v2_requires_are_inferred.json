@@ -6,7 +6,7 @@
   "input": {
     "bundle": {
       "schema_version": "v2",
-      "kind": "nashira.workflow_bundle",
+      "kind": "flow_weaver.workflow_bundle",
       "workflow": { "name": "audit" },
       "nodes": [
         { "id": "start", "snippet_id": "__start__" },

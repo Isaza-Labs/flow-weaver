@@ -8,11 +8,15 @@ info:
     agent pairs this with `generate_report` to deliver PDFs/CSVs to the
     user over email instead of only as a chat download.
 servers:
-  # Overridden via the Integration `base_url`. The default
-  # here is just a sensible placeholder for the spec index — the real
-  # call goes through a registered Integration (`integration_action`)
-  # so base URL + auth live in the integration config, not in the spec.
-  - url:
+  # Placeholder. The agent calls these operations with
+  # `execute_operation(fw_email:<operationId>)`. When the spec is linked
+  # to an Integration (set on the spec in /ai/specs), that Integration's
+  # `base_url` and auth replace this URL. Without one, this URL is used
+  # as-is and goes through the outbound URL guard, which blocks private
+  # addresses unless `Security:AllowInternalUrls` is set. Link an
+  # Integration rather than editing this URL: 'Reseed from disk'
+  # overwrites edited spec content but keeps the link.
+  - url: http://email-gateway.example.internal:8092
 components:
   schemas:
     AttachmentRequest:

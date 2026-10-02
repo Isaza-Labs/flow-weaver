@@ -6,11 +6,11 @@ using flow_weaver_backend.Utils.Report;
 
 namespace flow_weaver_backend.Services.Ai.Tools.Handlers;
 
-// Parses a file into structured data. Ported from Nashira, where the same tool
-// carries the same name, schema and output shapes — a user moving between the two
-// products should not have to learn a second name for one thing.
+// Parses a file into structured data. It keeps the name, schema and output shapes of the
+// shared tool contract — a user moving between engines
+// should not have to learn a second name for one thing.
 //
-// One source differs, and it has to. Nashira's version takes an `attachment`: the
+// One source differs, and it has to. The shared version takes an `attachment`: the
 // filename of a file the user attached to the conversation. This product has no
 // user-uploaded attachments — its "attachment" is outbound, a tool result carried
 // on an SSE event — so there is nothing to name.

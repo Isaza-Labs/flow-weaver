@@ -31,8 +31,7 @@
       <li>The agent's optional <code>system_prompt</code> string.</li>
     </ol>
     <p>
-      The <code>SkillPromptLoader</code> cache invalidates on every save so the
-      next message picks up edits immediately.
+      Saving a skill takes effect on the next message; no restart is needed.
     </p>
   </section>
 
@@ -43,7 +42,7 @@
     </p>
     <dl>
       <dt><code>{'{{CurrentDate}}'}</code></dt>
-      <dd>ISO date in the default timezone — useful for "as of today" prompts.</dd>
+      <dd>Today's date in UTC, formatted <code>yyyy-MM-dd</code> — useful for "as of today" prompts.</dd>
       <dt><code>{'{{ToolList}}'}</code></dt>
       <dd>Formatted list of every tool the agent is allowed to call. Keeps your skill honest about what the assistant can actually do.</dd>
     </dl>
@@ -90,7 +89,7 @@
         <tr><td>Name</td><td>Skill identifier, monospace.</td></tr>
         <tr><td>Integration</td><td>Integration name, or <em>Global</em> when unscoped.</td></tr>
         <tr><td>Order</td><td>Integer. Lower values are concatenated earlier.</td></tr>
-        <tr><td>Active</td><td>StatusBadge — inactive skills stay in the catalogue but don't ship in prompts.</td></tr>
+        <tr><td>Active</td><td>Status badge — inactive skills stay in the catalog but don't ship in prompts.</td></tr>
         <tr><td>Updated</td><td>Last save time.</td></tr>
         <tr><td>Actions</td><td>Edit, download, delete.</td></tr>
       </tbody>
@@ -133,7 +132,8 @@
   <section>
     <h2>Role differences</h2>
     <ul>
-      <li><strong>Viewer / Operator</strong> — no access: the prompt-skills API is admin-only, whatever the RBAC mode.</li>
+      <li><strong>Viewer / Operator</strong> — no access to this screen: the prompt-skills API is admin-only, whatever the RBAC mode.</li>
+      <li><strong>Through an integration</strong> — anyone with <code>integration.manage</code> (operator and above) can attach integration-scoped skills when creating or editing an integration.</li>
       <li><strong>Admin</strong> — full CRUD, upload, download, active toggle.</li>
     </ul>
   </section>

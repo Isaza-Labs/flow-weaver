@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Automated DR drill (S13.1).
+# Automated DR drill.
 #
 # Restores the latest pgbackrest backup into a TEMPORARY Postgres
 # instance, runs sanity queries, and writes a timestamped report. Safe to
@@ -89,10 +89,10 @@ docker exec "${container}" sh -c "
 #    If any returns 0 or errors, the backup is suspect.
 log "running sanity queries"
 sanity_sql='
-SELECT (SELECT COUNT(*) FROM "Workflow") AS workflows,
-       (SELECT COUNT(*) FROM "Integration") AS integrations,
-       (SELECT COUNT(*) FROM "Credential") AS credentials,
-       (SELECT MAX("CreatedAt") FROM "WorkflowRun") AS last_run;'
+SELECT (SELECT COUNT(*) FROM workflows) AS workflows,
+       (SELECT COUNT(*) FROM integrations) AS integrations,
+       (SELECT COUNT(*) FROM credentials) AS credentials,
+       (SELECT MAX("CreatedAt") FROM workflow_runs) AS last_run;'
 docker exec "${container}" psql -U flowweaver -d flowweaver -c "${sanity_sql}" \
   >> "${report}" 2>&1 \
   || fail "sanity queries did not run"

@@ -5,7 +5,7 @@
 
 <DocLayout
   title="Vendor commands"
-  lead="The per-platform catalogue of known CLI commands. FlowWeaver checks ssh commands against it when a workflow is saved and when a step runs, and warns about anything it doesn't recognise. The agent also uses it to look up the right syntax for a vendor."
+  lead="The per-platform catalog of known CLI commands. FlowWeaver checks ssh commands against it when a workflow is saved and when a step runs, and warns about anything it doesn't recognise. The agent also uses it to look up the right syntax for a vendor."
 >
   <Callout tone="where" title="Where to find it">
     Sidebar → <strong>Integrate</strong> → <strong>Vendor commands</strong>
@@ -22,11 +22,11 @@
     <h2>Purpose</h2>
     <p>
       Network CLIs differ by vendor. A command that works on Cisco IOS is often wrong on
-      Nokia SR Linux or Junos. The catalogue records which commands are known to be valid for
+      Nokia SR Linux or Junos. The catalog records which commands are known to be valid for
       each platform (<code>device_type</code>), so that typos and cross-vendor mistakes show up
       as <strong>warnings</strong> before or while a workflow runs.
     </p>
-    <Callout tone="warning" title="The catalogue warns; it never blocks">
+    <Callout tone="warning" title="The catalog warns; it never blocks">
       An unknown command never stops a save or a run. It only produces a warning. To actually
       <em>forbid</em> a command, write a policy with <code>ssh_command_regex</code> (see
       <a href="#rejected">Allowed vs rejected</a>).
@@ -81,7 +81,7 @@
 
     <h3>Relation to the device platform</h3>
     <p>
-      The catalogue is looked up by <code>device_type</code>, ignoring case but otherwise
+      The catalog is looked up by <code>device_type</code>, ignoring case but otherwise
       exact: <code>paloalto_panos</code> and <code>panos</code> are two different platforms.
       Which device_type applies depends on when the check runs:
     </p>
@@ -90,7 +90,7 @@
       <li><strong>At run time:</strong> the node's <code>device_type</code> if set, otherwise the target device's <strong>Platform</strong>.</li>
     </ul>
 
-    <h3>Shipped catalogue</h3>
+    <h3>Shipped catalog</h3>
     <p>
       On every start, the backend inserts any shipped entries that are missing. It never
       changes or removes existing rows, and it does not bring back seed entries you deleted.
@@ -136,14 +136,14 @@
     </ul>
     <p>At run time the same texts appear without the <code>node '…'</code> prefix.</p>
 
-    <h3>Who uses the catalogue</h3>
+    <h3>Who uses the catalog</h3>
     <ul>
       <li><strong>Workflow save</strong> and the <strong>ssh step</strong>, as above.</li>
       <li><strong>Agent tools</strong> (they need <code>vendorcommand.read</code>): <code>list_vendor_commands</code>; <code>validate_ssh_commands</code>; <code>find_command</code>, which ranks <em>exact</em> entries by word overlap with a plain-language task and can filter by risk. The agent's ssh skill tells it to look up commands before drafting nodes for any vendor other than <code>cisco_ios</code> or <code>linux</code>, and to validate them afterwards.</li>
       <li><strong>Agent write tools</strong> <code>create_vendor_command</code>, <code>update_vendor_command</code>, <code>delete_vendor_command</code> (they need <code>vendorcommand.manage</code> and ask you to confirm first).</li>
     </ul>
     <p>
-      Each server process caches the catalogue for up to 60 seconds. A change made on this page
+      Each server process caches the catalog for up to 60 seconds. A change made on this page
       applies at once in the process that saved it; other processes, such as the worker that
       runs ssh steps, pick it up within a minute.
     </p>
@@ -151,17 +151,17 @@
 
   <section id="rejected">
     <h2>Allowed vs rejected</h2>
-    <p>The catalogue only holds <em>known</em> commands. There are no deny entries.</p>
+    <p>The catalog only holds <em>known</em> commands. There are no deny entries.</p>
     <table>
       <thead><tr><th>Outcome</th><th>Why</th><th>What happens</th></tr></thead>
       <tbody>
         <tr><td>Accepted, silently</td><td>Matches an exact entry or a pattern, or contains a template.</td><td>Runs.</td></tr>
-        <tr><td>Accepted with a warning</td><td>Not in the catalogue, or the device_type has no entries.</td><td>Runs; the warning is in the save response or step log.</td></tr>
+        <tr><td>Accepted with a warning</td><td>Not in the catalog, or the device_type has no entries.</td><td>Runs; the warning is in the save response or step log.</td></tr>
         <tr><td><strong>Blocked</strong></td><td>An enabled <a href="/docs/policies">policy</a> with <code>ssh_command_regex</code> matches the command.</td><td>That command and every command after it in the step are not sent. The result entry has <code>blocked_by_policy: true</code> and the error <code>blocked by policy `&lt;name&gt;`: &lt;reason&gt;</code>. The step fails.</td></tr>
       </tbody>
     </table>
     <p>
-      Deleting a catalogue entry therefore does <strong>not</strong> ban the command; it only
+      Deleting a catalog entry therefore does <strong>not</strong> ban the command; it only
       makes it produce a warning. A broad pattern such as <code>^show\s+…</code> also means
       that deleting a single exact <code>show</code> entry changes nothing.
     </p>
@@ -180,7 +180,7 @@
       <dt>Search</dt>
       <dd>
         Filters the <strong>loaded</strong> entries by command, notes, device_type, kind or
-        vendor family. A counter shows the matches, or the total in the catalogue when you
+        vendor family. A counter shows the matches, or the total in the catalog when you
         aren't searching.
       </dd>
       <dt>Entry row</dt>
@@ -208,7 +208,7 @@
     </dl>
     <p>
       The page shows the first 200 entries (the server maximum). With <em>All device
-      types</em> selected on a large catalogue, entries beyond 200 are not shown or
+      types</em> selected on a large catalog, entries beyond 200 are not shown or
       searchable; pick a device_type to narrow the list. The footer shows
       <em>&lt;shown&gt; of &lt;total&gt;</em>.
     </p>
@@ -257,7 +257,7 @@
 for device_type 'nokia_srl'. Did you mean: '...'? If this is a vendor
 extension or custom command, add it to the vendor_commands catalog.`}</code></pre>
     <p>
-      <strong>Reading it:</strong> the device_type resolved, the catalogue has entries for
+      <strong>Reading it:</strong> the device_type resolved, the catalog has entries for
       it, and neither an exact entry nor a pattern matched. On this platform that is usually a
       Cisco-style command used by mistake. Filter the page by <code>nokia_srl</code> and
       search for <code>bgp</code> to find the right one, then fix the node. The workflow was
@@ -292,7 +292,7 @@ extension or custom command, add it to the vendor_commands catalog.`}</code></pr
       <li><code>vendorcommand.read</code> (viewer and above): list and view. The agent's lookup tools need it as well.</li>
       <li><code>vendorcommand.manage</code> (operator and above by default): create, edit, delete.</li>
       <li>Every create, update and delete is written to the <a href="/docs/admin/audit">audit log</a> (entity <code>vendor_command</code>, with the old and new value) and to traces (<code>vendor_command.create</code> / <code>.update</code> / <code>.delete</code>).</li>
-      <li>Adding a broad pattern silences warnings for a whole family of commands. Review patterns as carefully as you review policies. The catalogue is advisory, but people and the agent rely on its silence.</li>
+      <li>Adding a broad pattern silences warnings for a whole family of commands. Review patterns as carefully as you review policies. The catalog is advisory, but people and the agent rely on its silence.</li>
     </ul>
   </section>
 
@@ -301,7 +301,7 @@ extension or custom command, add it to the vendor_commands catalog.`}</code></pr
     <ul>
       <li><strong>Loading:</strong> a spinner.</li>
       <li><strong>No entries for the filter:</strong> <em>No vendor commands match</em>, with <em>Catalog has no entries for &lt;dt&gt; yet. Add one or clear the filter.</em></li>
-      <li><strong>Catalogue completely empty:</strong> the same title, explaining that every ssh command will get a "validation deferred" warning.</li>
+      <li><strong>Catalog completely empty:</strong> the same title, explaining that every ssh command will get a "validation deferred" warning.</li>
       <li><strong>Search with no hits:</strong> <em>No entries match your search</em>, with <strong>Clear search</strong>.</li>
       <li><strong>Load failure:</strong> a red alert with the error and the toast <em>Couldn’t load vendor commands</em>.</li>
     </ul>

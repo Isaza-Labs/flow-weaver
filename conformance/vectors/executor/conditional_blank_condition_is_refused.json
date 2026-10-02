@@ -39,5 +39,5 @@
   },
   "equivalence": "subset",
   "oracle_commit": "fw@fe07550",
-  "notes": "CORRECTED 2026-08-29. This vector previously asserted that the edge simply did not fire, and named itself `blank_condition_does_not_fire`. That was reified from the DAG-WALK layer, where an empty expression does evaluate to false — without noticing that the oracle's parser refuses the graph one layer earlier, so no walk ever happens. Nashira accepted such a graph and was tightened to match. The lesson generalises: read a value at the layer the CONTRACT can speak about, not merely at the layer that produced it."
+  "notes": "CORRECTED 2026-08-29. This vector previously asserted that the edge simply did not fire, and named itself `blank_condition_does_not_fire`. That was reified from the DAG-WALK layer, where an empty expression does evaluate to false — without noticing that the oracle's parser refuses the graph one layer earlier, so no walk ever happens. An implementation that accepted such a graph was tightened to match. The lesson generalises: read a value at the layer the CONTRACT can speak about, not merely at the layer that produced it."
 }

@@ -15,9 +15,8 @@
   <section>
     <h2>Concept</h2>
     <p>
-      A pool is a persistent bag of device ids. A workflow's <em>Run</em>
-      dialog accepts a list of target devices and/or target pools; at
-      execution time the engine expands every pool into its members and
+      A pool is a persistent bag of device ids. A run request can name
+      target devices and/or target pools; at execution time the engine expands every pool into its members and
       unions the result.
     </p>
     <p>
@@ -27,12 +26,11 @@
       <dt>Name</dt><dd>A short, recognisable label (e.g. <code>core-routers</code>).</dd>
       <dt>Description</dt><dd>Optional free-text context.</dd>
       <dt>Static members</dt><dd>The list of device ids that belong to this pool.</dd>
-      <dt>Environments</dt><dd>Three flags — <em>draft</em> (hammer), <em>qa</em> (flask), <em>production</em> (rocket) — declaring which environments may target this pool.</dd>
+      <dt>Environments</dt><dd>Three flags — <em>draft</em> (hammer), <em>qa</em> (flask), <em>production</em> (rocket) — declaring which environments may target this pool. A new pool allows draft and production, not qa.</dd>
     </dl>
     <Callout tone="info">
-      The backend model also supports <em>filter rules</em> for dynamically
-      resolved membership, but the current UI only exposes the static list.
-      Dynamic pools are reserved for a future release.
+      Membership is static: a pool contains exactly the devices you add to it.
+      There are no rule-based (dynamic) pools.
     </Callout>
   </section>
 
@@ -71,8 +69,7 @@
       <dt>Description (optional)</dt><dd>Full-width text input.</dd>
       <dt>Devices</dt>
       <dd>
-        A dynamic <strong>device picker</strong> (see below). Replaces the old
-        UUID-paste textarea — you don't need to copy GUIDs anymore.
+        A searchable <strong>device picker</strong> (see below).
       </dd>
     </dl>
     <p>
@@ -84,7 +81,7 @@
   <section>
     <h2>Device picker</h2>
     <p>
-      The modern selector for both the create form and the inline edit form.
+      The selector used by both the create form and the inline edit form.
       Three visual elements stacked vertically:
     </p>
 
@@ -125,9 +122,8 @@
     </p>
     <Callout tone="success" title="Fast path">
       Type a partial site tag like <code>dc1</code> to filter the dropdown to
-      a single rack, then click the header's check-all behaviour by selecting
-      rows one at a time — each click toggles that row's membership in the
-      pool.
+      a single rack, then click the rows you want. Each click toggles that
+      row's membership in the pool; there is no select-all.
     </Callout>
   </section>
 
@@ -152,7 +148,7 @@
   </section>
 
   <section>
-    <h2>Environment checkboxes (inline)</h2>
+    <h2>Environment toggles (inline)</h2>
     <p>
       Three icon toggles on the right side of each pool card — hammer for
       <code>draft</code>, flask for <code>qa</code>, rocket for
@@ -175,28 +171,30 @@
     <p>
       Confirmation dialog. On delete the pool is removed.
     </p>
-    <Callout tone="warning" title="Workflows referencing a deleted pool">
-      Any workflow that still lists this pool id under <code>target_pools</code>
-      will fail to resolve targets until the reference is removed. The pool's
-      members (the underlying device rows) are not affected — only the
-      grouping.
+    <Callout tone="warning" title="Callers referencing a deleted pool">
+      A run request or webhook that still passes this pool id in
+      <code>target_pools</code> gets nothing from it: the id counts as a
+      missing target and, if nothing else resolves, the run is rejected. The
+      pool's members (the underlying device rows) are not affected.
     </Callout>
   </section>
 
   <section>
     <h2>Using a pool from a workflow</h2>
+    <p>
+      The <em>Run</em> dialog and the schedule form pick individual devices.
+      Pools are targeted by id with <code>target_pools</code> through:
+    </p>
     <ol>
-      <li>Open a workflow editor at <code>/workflows/{'{id}'}</code>.</li>
-      <li>Click <em>Run</em> in the toolbar.</li>
+      <li>the run API, <code>POST /api/workflow/{'{id}'}/run</code>;</li>
       <li>
-        In the <em>Target devices</em> section the picker lets you mix
-        individual devices with pools. Pick one or more pools — the run fans
-        out over every device each pool resolves at dispatch time.
+        a webhook trigger with target override enabled and no fixed device
+        list.
       </li>
     </ol>
     <p>
-      Schedules can also carry pool ids so cron-triggered runs fan out the
-      same way.
+      In both cases the run expands to the pool's members after the
+      environment filter.
     </p>
   </section>
 
@@ -214,7 +212,7 @@
     <ul>
       <li><a href="/docs/devices">Devices</a> — members of pools.</li>
       <li><a href="/docs/qa-lab">QA lab</a> — what the QA flag gates.</li>
-      <li><a href="/docs/workflows">Workflows</a> — where pools get used at run time.</li>
+      <li><a href="/docs/workflows">Workflows</a> — running workflows against targets.</li>
     </ul>
   </section>
 </DocLayout>

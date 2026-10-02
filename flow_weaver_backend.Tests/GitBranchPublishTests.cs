@@ -13,7 +13,7 @@ namespace flow_weaver_backend.Tests;
 // cloned and already tracks a remote branch; a branch created locally does not,
 // and `Network.Push(Branch, …)` refuses one that does not.
 //
-// Reported against Nashira; this product had the identical call in two places.
+// This product had the identical call in two places.
 // The SSH path is not covered here — it shells out to the git CLI, which sets
 // the upstream itself.
 //

@@ -3,7 +3,7 @@ using System.Text;
 
 namespace flow_weaver_backend.Tests.Conformance;
 
-// The conformance kit in this repository is a COPY of the one in netora, and a copy is only
+// The conformance kit in this repository is a COPY of an upstream kit, and a copy is only
 // as trustworthy as the thing that notices it changed.
 //
 // `PINNED` records a digest over every vector and the schema, plus per-family counts. This
@@ -15,7 +15,7 @@ namespace flow_weaver_backend.Tests.Conformance;
 //     see at all — the remaining files still hash to a value, just not the recorded one, and
 //     without counts the message would say "something changed" rather than "one is missing".
 //
-// What neither can catch is the twin in netora moving. See conformance/OWNERSHIP.md.
+// What neither can catch is the upstream kit moving. See conformance/OWNERSHIP.md.
 public class KitIntegrityTests
 {
     private static string KitRoot => Path.Combine(AppContext.BaseDirectory, "conformance");
@@ -78,7 +78,7 @@ public class KitIntegrityTests
               files:    {files.Count}
 
             Something under conformance/ was edited, added or renamed. If that was deliberate —
-            a contract change, or a re-sync from netora — regenerate PINNED as part of the same
+            a contract change, or a re-sync from the shared kit — regenerate PINNED as part of the same
             change, and copy the change into the twin (conformance/OWNERSHIP.md). If it was not
             deliberate, this is the check working.
             """);

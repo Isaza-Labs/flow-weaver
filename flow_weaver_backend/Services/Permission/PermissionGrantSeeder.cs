@@ -5,8 +5,7 @@ namespace flow_weaver_backend.Services.Permission;
 
 // Boot-time seed of the built-in permission grants plus the backfill of
 // existing users into them, mirroring each user's legacy role.
-// Idempotent — safe on every startup. Phase 1 of plan_rbac_granular.md; runs
-// alongside the other always-on seeders in Program.cs.
+// Idempotent — safe on every startup. Runs alongside the other always-on seeders in Program.cs.
 public static class PermissionGrantSeeder
 {
     public static async Task SeedAsync(IServiceScopeFactory scopeFactory, ILogger logger)

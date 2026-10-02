@@ -88,16 +88,16 @@ public sealed class PermissionClassifier
         // its caller could not already fetch.
         ["parse_file"] = new("report", "read", TierAutonomous),
 
-        // Intake (FR-002/FR-003) — read level. Pure analysis, no side effects.
+        // Intake — read level. Pure analysis, no side effects.
         ["evaluate_prompt_sufficiency"] = new("workflow", "read", TierAutonomous),
 
-        // FR-022: static DAG validation, no handler execution.
+        // Static DAG validation, no handler execution.
         ["simulate_workflow_run"] = new("workflow", "read", TierAutonomous),
 
         // Import-assist tools (FU-3 / S15). Both are pure analysis / draft
         // generation that persist NOTHING — the wizard commits separately —
         // so read-level + autonomous, matching the other intake tools. Explicit
-        // entries are REQUIRED (TC-FW-063): the unknown-fallback would tag them
+        // entries are REQUIRED: the unknown-fallback would tag them
         // human_only and block the wizard's own tool calls. The coverage test
         // (ToolClassificationCoverageTests) fails if either is dropped.
         ["analyze_foreign_workflow"] = new("workflow", "read", TierAutonomous),

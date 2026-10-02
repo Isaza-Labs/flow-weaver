@@ -19,7 +19,7 @@ namespace flow_weaver_backend.Services.Ai.Seed;
 // agent from /ai/agents.
 public static class DefaultAgentSeedService
 {
-    public const string AssistantAgentName = "Flow Weaver Assistant";
+    public const string AssistantAgentName = "FlowWeaver Assistant";
     public const string AssistantRole = "assistant";
     public const string DefaultModel = "gpt-5.5";
     public const int DefaultMaxIterations = 20;
@@ -51,11 +51,11 @@ public static class DefaultAgentSeedService
         "delete_vendor_command",
         "query_devices",
         "create_workflow_plan",
-        // FR-002 / FR-003: intake clarifier. The agent calls it BEFORE
+        // Intake clarifier. The agent calls it BEFORE
         // create_workflow_plan so missing targets / required keys turn
         // into clarifying questions instead of silent assumptions.
         "evaluate_prompt_sufficiency",
-        // FR-022: dry-run a workflow (no handler execution) to catch
+        // Dry-run a workflow (no handler execution) to catch
         // structural issues before run_workflow hits real targets.
         "simulate_workflow_run",
         // SSH command catalog: retrieve the right command for a vendor by

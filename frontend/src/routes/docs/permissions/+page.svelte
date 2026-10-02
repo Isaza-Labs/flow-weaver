@@ -110,14 +110,10 @@
     <p>
       Admins are not added to either grant (they bypass checks). Membership is
       re-synced at every backend start and whenever a user is created or their role
-      changes — but <strong>not</strong> when a user is deactivated: deleting a user
-      in <a href="/docs/admin/users">Users</a> only marks the account inactive and
-      leaves their id in the built-in grant's subject list, permanently. The
-      start-up re-sync walks the <em>active</em> accounts only, so it never comes
-      back to clear the entry either. Nothing is granted by it, because a
-      deactivated account cannot sign in at all, but don't read a built-in grant's
-      subject list as a roster of current users — the counts on those two cards
-      drift upwards as people leave. The capability lists are refreshed from code at
+      changes. Deleting a user in <a href="/docs/admin/users">Users</a> marks the
+      account inactive and leaves its id in the built-in grant's subject list, so
+      the subject counts on those two cards include deactivated accounts; this
+      grants nothing, because a deactivated account cannot sign in. The capability lists are refreshed from code at
       startup, and both
       grants are forced back to enabled. You cannot edit, disable, delete or change
       the subjects of a built-in grant: the API answers
@@ -157,7 +153,7 @@
       it says <em>The selected capabilities take no conditions — they apply
       globally.</em>
     </p>
-    <Callout tone="warning" title="Where conditions are actually enforced today">
+    <Callout tone="warning" title="Where conditions are enforced">
       Conditions are checked against the concrete context only at these points, and
       only in <code>granular</code> mode:
       <ul>
@@ -214,7 +210,7 @@
     <ul>
       <li><code>ssh</code> steps whose commands are all literal read commands (<code>show</code>, <code>display</code>, <code>get</code>, <code>ping</code>, <code>traceroute</code>, <code>tracert</code>, <code>info</code>) with no output redirect → <code>device.exec.read</code>.</li>
       <li>Any other <code>ssh</code> step — a configuration command, a template, a missing command, or a run input that carries <code>command</code>/<code>commands</code> → <code>device.exec.write</code>.</li>
-      <li><code>ansible_playbook</code>, <code>netconf</code> and network-enabled Python → <code>device.exec.write</code>; <code>snmp_v3</code> → <code>device.exec.read</code>.</li>
+      <li><code>ansible_playbook</code>, <code>netconf</code> and network-enabled Python → <code>device.exec.write</code>; <code>snmp_v3</code> → <code>device.exec.read</code>. (<code>netconf</code> and <code>snmp_v3</code> are recognized step types without an implementation: such a step always fails at run time, but the permission check still applies.)</li>
       <li><code>ping</code> and steps that never reach a device → nothing beyond <code>workflow.run</code>.</li>
     </ul>
     <p>
@@ -245,7 +241,7 @@
     <p>
       These are ranked <code>owner</code> &gt; <code>editor</code> &gt;
       <code>runner</code> &gt; <code>viewer</code>; holding a higher role satisfies a
-      lower requirement. They are a separate, older mechanism from capability grants,
+      lower requirement. They are a separate mechanism from capability grants,
       and are checked only when <strong>Require per-resource Editor / Owner grants for
       workflow and integration writes</strong> is on in settings. When it is on:
     </p>
@@ -353,6 +349,14 @@
         <tr><td><code>user.read</code>, <code>user.manage</code>, <code>settings.read</code>, <code>settings.manage</code></td><td>—</td><td>—</td><td>✓</td><td>none</td></tr>
       </tbody>
     </table>
+    <p>
+      <strong>Workflow plans</strong> (<code>plan.*</code>) are a review path for
+      changes headed to qa or production: a plan is created, submitted for
+      approval, approved or rejected, and then built into a workflow. Plans have
+      no screen: the AI assistant creates, submits and builds them with its
+      tools, and the <code>/api/workflowplan</code> API offers the same steps
+      (approving and rejecting are available only there).
+    </p>
     <Callout tone="info" title="Some admin screens ignore grants">
       These APIs still check the <code>admin</code> role directly, in both modes:
       users, application settings, permission grants, audit log, traces, admin metrics,
@@ -410,18 +414,13 @@
           <li><strong>Visual</strong> — <em>Environment</em> pills (<code>draft</code>, <code>qa</code>, <code>production</code>); <em>Device roles</em>, <em>Device pools (by name)</em> and <em>Device IDs</em> chip pickers filled from your existing devices and pools; <em>Resource (optional)</em> with a type box (<em>type — workflow, integration…</em>) and an id box (<em>resource UUID</em>); and a <em>Preview</em> of the resulting JSON (or <em>Empty — this grant applies in any context.</em>).</li>
           <li><strong>JSON</strong> — a <em>Conditions (JSON)</em> text area. Use this tab for <code>mcp_server</code> and <code>mcp_tool</code>, which the visual builder does not offer.</li>
         </ul>
-        <Callout tone="warning" title="The Visual tab silently drops mcp_server and mcp_tool">
-          The two tabs do not really share one value: the Visual tab knows only
-          six fields — <code>environment</code>, <code>device_role</code>,
-          <code>device_pool</code>, <code>device_ids</code> and the resource
-          type and id — and it rewrites the whole JSON from those whenever you
-          touch one of its controls. Anything you typed in the JSON tab that it
-          has no field for, <code>mcp_server</code> and <code>mcp_tool</code>
-          above all, is gone the moment you go back and change a pill or a chip.
-          Switching to the Visual tab to look is harmless; editing there is not.
-          So when a grant needs an MCP condition, write it in the JSON tab
-          <strong>last</strong>, save, and stay out of the Visual tab afterwards.
-          Check the stored JSON after any later edit.
+        <Callout tone="warning" title="Editing in the Visual tab drops mcp_server and mcp_tool">
+          The Visual tab handles <code>environment</code>, <code>device_role</code>,
+          <code>device_pool</code>, <code>device_ids</code> and the resource type
+          and id, and rewrites the whole JSON whenever you change one of its
+          controls, removing <code>mcp_server</code> and <code>mcp_tool</code>.
+          Just viewing the tab changes nothing. Add an MCP condition in the JSON
+          tab last, save, and check the JSON after any later edit.
         </Callout>
       </dd>
     </dl>
@@ -503,7 +502,7 @@
       <thead><tr><th>Action by &lt;qa-user&gt;</th><th>Result</th></tr></thead>
       <tbody>
         <tr><td>Run a workflow whose environment is <code>qa</code> and whose steps never reach a device</td><td>Allowed — the run is queued.</td></tr>
-        <tr><td>Run a <code>qa</code> workflow that does reach a device (an <code>ssh</code>, <code>netconf</code>, <code>ansible_playbook</code>, <code>snmp_v3</code> or network-enabled Python step)</td><td>Denied. <code>workflow.read</code> and <code>workflow.run</code> are not enough: the run also needs <code>device.exec.read</code> or <code>device.exec.write</code>, and <code>qa-runner</code> has neither. Add the one the graph calls for to the grant.</td></tr>
+        <tr><td>Run a <code>qa</code> workflow that does reach a device (an <code>ssh</code>, <code>ansible_playbook</code> or network-enabled Python step)</td><td>Denied. <code>workflow.read</code> and <code>workflow.run</code> are not enough: the run also needs <code>device.exec.read</code> or <code>device.exec.write</code>, and <code>qa-runner</code> has neither. Add the one the graph calls for to the grant.</td></tr>
         <tr><td>Run a workflow in <code>production</code></td><td>Denied: <code>you do not have permission to run this workflow in production</code> (403, code <code>permission_denied</code>).</td></tr>
         <tr><td>Edit a workflow</td><td>Denied — <code>workflow.update</code> is in neither <code>builtin.viewer</code> nor <code>qa-runner</code>.</td></tr>
       </tbody>
@@ -581,7 +580,7 @@
     <ul>
       <li>Conditions are enforced only for running and promoting workflows and calling MCP tools. Other capabilities ignore them — except the <code>secret.read</code> and <code>git.manage</code> save-time gates, which are checked with no context and so are <em>defeated</em> by any condition rather than ignoring it.</li>
       <li><code>device.exec.*</code> is decided from the saved graph when the run starts, not per command at execution time, and unattended runs (schedules, webhooks, git) are not checked.</li>
-      <li>The per-resource <code>runner</code> and <code>viewer</code> roles don't change anything today: running and reading are not checked per resource.</li>
+      <li>The per-resource <code>runner</code> and <code>viewer</code> roles have no effect: running and reading are not checked per resource.</li>
       <li>An <code>owner</code> cannot grant roles on their own resource. In <code>legacy</code> mode only admins can, because <code>access.manage</code> is an Admin-tier capability; in <code>granular</code> mode a grant carrying <code>access.manage</code> lets a non-admin grant per-resource roles through the API, even though the page hides the form from them.</li>
       <li>Subjects are individual users; groups are not supported.</li>
       <li>No screen shows a user's effective permissions.</li>

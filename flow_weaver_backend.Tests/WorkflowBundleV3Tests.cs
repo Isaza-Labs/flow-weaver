@@ -713,7 +713,7 @@ public class WorkflowBundleV3Tests
     // typo, and it said "the handler ignores them" when the worker READS this one and fails
     // the step when a deferring type has no declaration anywhere.
     //
-    // Found by importing a Nashira-authored bundle into a live Flow Weaver, not by a unit
+    // Found by importing an externally authored bundle into a live FlowWeaver, not by a unit
     // test: nothing here had a node that declared `changes` until the two products actually
     // exchanged one.
     [Fact]

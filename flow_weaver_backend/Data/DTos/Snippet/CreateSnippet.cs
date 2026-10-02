@@ -48,7 +48,7 @@ public class CreateSnippet
     [JsonPropertyName("logic_diagram_mermaid")]
     public string? LogicDiagramMermaid { get; set; }
 
-    // S13.6: optional override; null = inherit handler default. Allowed:
+    // Optional override; null = inherit handler default. Allowed:
     // "idempotent" | "requires_compensation" | "non_reversible".
     // Validated by the snippet service against the handler's floor —
     // the override may not weaken below the handler's DefaultIdempotency.

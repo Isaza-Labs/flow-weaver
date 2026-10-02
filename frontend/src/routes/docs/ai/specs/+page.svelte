@@ -110,9 +110,13 @@
         <code>execute_operation</code>.
       </li>
       <li>
-        <code>execute_operation</code> resolves credentials from the
-        scoped integration's auth config — the agent never handles keys
-        directly.
+        <code>execute_operation</code> resolves credentials server-side —
+        the agent never handles keys directly. A spec scoped to an
+        integration uses that integration's auth config; a global spec uses
+        the <code>x-credential-ref</code> extension on its security scheme,
+        typically a reference such as
+        <code>{'${secret:secret:netbox-token:value}'}</code>; see
+        <a href="/docs/admin/secrets">Secrets</a>.
       </li>
     </ol>
   </section>
@@ -120,7 +124,8 @@
   <section>
     <h2>Role differences</h2>
     <ul>
-      <li><strong>Viewer / Operator</strong> — no access: the API-specs API is admin-only, whatever the RBAC mode. The agent still uses active specs on everyone's behalf.</li>
+      <li><strong>Viewer / Operator</strong> — no access to this screen: the API-specs API is admin-only, whatever the RBAC mode. The agent still uses active specs on everyone's behalf.</li>
+      <li><strong>Through an integration</strong> — anyone with <code>integration.manage</code> (operator and above) can attach an OpenAPI spec to an integration when creating or editing it.</li>
       <li><strong>Admin</strong> — full CRUD, upload, download.</li>
     </ul>
   </section>

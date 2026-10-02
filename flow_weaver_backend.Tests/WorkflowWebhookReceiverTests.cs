@@ -16,7 +16,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace flow_weaver_backend.Tests;
 
-// FR-027 / TC-FW-061 — inbound webhook trigger. Exercises the three acceptance
+// Inbound webhook trigger. Exercises the three acceptance
 // cases (legit fire, auth rejection, and the SSRF property) plus the guard rails,
 // through WorkflowWebhookReceiver end-to-end against InMemory EF + a recording
 // executor. Signature verification and the enqueue path are real; the executor

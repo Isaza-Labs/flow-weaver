@@ -5,17 +5,15 @@ using System.Text.RegularExpressions;
 
 namespace flow_weaver_backend.Services.Engine;
 
-// PORTED FROM NASHIRA, 2026-08-28, and identical to it but for the namespace.
-//
 // The conformance gate found six vectors where this product's evaluator failed OPEN: an
 // unresolvable reference, a malformed expression and an unbalanced parenthesis each yielded
 // `true`, so a conditional edge fired and the workflow branched on data it could not read.
 // Two more failed on missing grouping and on an operator inside a quoted literal being read
 // as an operator.
 //
-// Nashira's evaluator already answered all eight, so this is a copy rather than a rewrite —
-// the second file in the shared engine map, after WorkflowCanonicalizer. Keeping the two
-// byte-identical is the point: a condition is either the same in both products or a workflow
+// The reference evaluator already answered all eight, so this is a copy rather than a
+// rewrite — the second file in the shared engine map, after WorkflowCanonicalizer. Keeping
+// it identical is the point: a condition is either the same in every engine or a workflow
 // means two different things depending on where it runs.
 //
 public interface IConditionEvaluator

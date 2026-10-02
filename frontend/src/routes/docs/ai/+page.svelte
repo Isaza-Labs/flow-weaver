@@ -91,7 +91,7 @@
     <h4>Built-in tools</h4>
     <p>
       A short, read-only sample of the tools the agent can call, grouped
-      visually with a small wrench icon. It is not the full catalogue — the
+      visually with a small wrench icon. It is not the full catalog — the
       default assistant also has vendor-command, Git, MCP, report and
       administration tools; the complete, live list is the <em>Tools</em>
       picker on <a href="/docs/ai/agents">Agents</a>. The card shows:
@@ -120,29 +120,29 @@
     <ol>
       <li>
         Picks the active agent (either the <code>agent_id</code> you
-        selected in the composer's agent picker or the default fallback with
-        <code>Role = "assistant"</code>).
+        selected in the composer's agent picker or the default fallback, the
+        agent with role <code>assistant</code>).
       </li>
       <li>
         Looks up the agent's provider, resolves the API key from encrypted
         storage, and starts a session at the chosen <code>default_model</code>
-        (overridden by the agent's <code>modelOverride</code> if set).
+        (overridden by the agent's <em>Model override</em> if set).
       </li>
       <li>
-        Concatenates the system prompt from: the agent's own prompt +
-        every active <strong>prompt skill</strong> (sorted by
-        <code>sort_order</code> then name) with <code>{'{{CurrentDate}}'}</code>
-        and <code>{'{{ToolList}}'}</code> placeholders resolved.
+        Concatenates every active <strong>prompt skill</strong> (sorted by
+        <code>sort_order</code>, then name, with <code>{'{{CurrentDate}}'}</code>
+        and <code>{'{{ToolList}}'}</code> placeholders resolved), followed by
+        the agent's own system prompt.
       </li>
       <li>
-        Populates the tool catalogue from the agent's allowlist intersected
+        Populates the tool catalog from the agent's allowlist intersected
         with what the caller's role can actually invoke. Loads every active
         <strong>API spec</strong> so <code>discover_operations</code> can
         reference them.
       </li>
       <li>
-        Streams deltas back through SSE. Tool calls are rendered as
-        collapsible cards; text deltas are accumulated character-by-character.
+        Streams the reply back as it is generated. Tool calls are rendered as
+        collapsible cards; text appears as it arrives.
       </li>
     </ol>
   </section>

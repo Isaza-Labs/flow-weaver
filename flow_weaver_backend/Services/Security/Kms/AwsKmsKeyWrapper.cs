@@ -4,7 +4,7 @@ using Amazon.KeyManagementService.Model;
 
 namespace flow_weaver_backend.Services.Security.Kms;
 
-// S13.4: wraps the DataProtection keyring with AWS KMS. The KMS key
+// Wraps the DataProtection keyring with AWS KMS. The KMS key
 // itself is identified by `DataProtection:Aws:KeyId` (a key ARN, alias
 // ARN, or alias name). AWS credentials follow the standard SDK chain:
 // environment variables, instance profile, shared credentials file.

@@ -1244,8 +1244,7 @@ export const FIELD_HINTS: Record<string, FieldHint> = {
   // ----------------------------------------------------------------------- Runs
   'runs.status_filter': {
     label: 'Status filter',
-    help: 'Narrows the list to one run state. Applied by the backend, so it filters the whole history rather than just the page you are looking at.',
-    detail: 'Skipped means the run finished but a node never activated — usually a conditional edge that did not fire, not an error.',
+    help: 'Narrows the list to one run state: pending, running, completed, failed or cancelled. It filters the runs already loaded on this page, not the whole history.',
   },
 
   // ------------------------------------------------------------------- Run a workflow

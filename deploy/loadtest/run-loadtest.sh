@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Device-scaling load test (NFR-004 / TC-FW-065).
+# Device-scaling load test.
 #
 # Drives a STAGING FlowWeaver (with Simulation:Enabled=true) through a series of
 # device counts, firing one representative per-device ping fan-out run at each

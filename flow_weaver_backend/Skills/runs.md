@@ -30,14 +30,13 @@ A run with `completed` can still have individual steps in `failed` if the
 DAG routes around failures — inspect `get_run_details`'s `failed_count`.
 
 When a run has a failed step AND skipped steps, do not describe the skipped ones as "not
-reached yet" or as a second problem. They are the stop working: the run halted at the failure
+reached yet" or as a second problem. They are the consequence of the stop: the run halted at the failure
 because no `failure` edge left that node. The fix a user usually wants is a `failure` edge, not
 a retry.
 
-**Every node of the graph now has a step row.** Nodes the walk never reached
-are recorded `skipped` rather than being absent, so "this node is missing
-from the run" is no longer a thing you have to interpret — if a node has no
-row at all, something is wrong with the run record itself, not with the DAG.
+**Every node of the graph has a step row.** Nodes the walk never reached
+are recorded `skipped` rather than being absent. If a node has no row at
+all, something is wrong with the run record itself, not with the DAG.
 
 ## Did it change anything — read this before saying a run is safe
 
@@ -95,9 +94,9 @@ code is what you branch on; the message is written for a person and changes.
      whether it changed anything, and nobody said. Fix with
      `update_workflow_node_config(... {"changes": true|false})`, or set
      `changes_state` on the snippet if the action lives in its code.
-4b. If the run failed, read `final_state` before summarising. `failed` means
+4. If the run failed, read `final_state` before summarising. `failed` means
    something is still changed and un-reversed; say so first.
-4. Present the diagnosis in markdown:
+5. Present the diagnosis in markdown:
    - `### Root cause`
    - `### Proposed fix`
    - a code block with the exact new config

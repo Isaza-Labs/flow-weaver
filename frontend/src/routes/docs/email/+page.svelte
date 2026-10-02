@@ -9,9 +9,11 @@
 >
   <Callout tone="where" title="Where to find it">
     Sidebar → <strong>Integrate</strong> → <strong>Email</strong>
-    (<a href="/email"><code>/email</code></a>).
+    (<a href="/email"><code>/email</code></a>). The sidebar shows the entry to
+    admins only; other roles open the URL directly.
   </Callout>
-  <Callout tone="admin" title="Admin only">
+  <Callout tone="admin" title="Who can do what">
+    Reading the channel list needs <code>email.read</code> (viewer and above).
     Creating and editing channels requires the <code>admin</code> role — a channel
     holds an SMTP password. Firing a test message needs <code>email.send</code>,
     which an operator has, so an operator can verify a relay without being able to
@@ -97,7 +99,7 @@
     <h3>Sender identity</h3>
     <p>
       <strong>From address</strong> is required and must be an identity the provider
-      recognises as yours — SES needs it verified, Microsoft 365 needs it to be the
+      recognizes as yours — SES needs it verified, Microsoft 365 needs it to be the
       authenticated mailbox or one it can send-as. A mismatch is rejected by the
       server, not by FlowWeaver. <strong>From name</strong> and <strong>Reply-To</strong>
       are optional.
@@ -142,26 +144,27 @@
     <pre><code>{`{
   "to": "noc@example.com",
   "cc": ["oncall@example.com"],
-  "subject": "Backup finished on {{ device.name }}",
+  "subject": "Backup finished: {{ run.workflow_name }}",
   "body": "{{ steps.backup.output.summary }}",
   "attachments": [
     {
-      "file_name": "report.pdf",
-      "content_base64": "{{ steps.report.output.content_base64 }}",
-      "content_type": "application/pdf"
+      "file_name": "{{ steps.report.output.filename }}",
+      "content_base64": "{{ steps.report.output.base64 }}",
+      "content_type": "{{ steps.report.output.content_type }}"
     }
   ]
 }`}</code></pre>
     <p>
       <code>to</code>, <code>cc</code> and <code>bcc</code> each accept a single address,
       a comma-separated string, or an array. Supplying only <code>html</code> generates a
-      plain-text alternative automatically — many relays penalise HTML-only mail.
-      Attachments take base64, which is exactly what an upstream
-      <code>report</code> step produces.
+      plain-text alternative automatically — many relays penalize HTML-only mail.
+      Each attachment takes base64 in <code>content_base64</code>; an upstream
+      <code>report</code> step exposes it as <code>base64</code>, alongside
+      <code>filename</code> and <code>content_type</code>.
     </p>
     <p>
-      Add <code>channel_id</code> to pin the node to a specific relay; omit it to use the
-      default channel.
+      Add <code>channel</code> (the channel name; <code>channel_id</code> is accepted as
+      an alias) to pin the node to a relay; omit both to use the default channel.
     </p>
 
     <h3>Reading the result</h3>

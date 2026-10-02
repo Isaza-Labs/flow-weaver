@@ -7,13 +7,13 @@ namespace flow_weaver_backend.Services.Workflow;
 /// shape (execution/SPEC.md §3 — FlowWeaver's shape is the oracle's).
 /// </summary>
 /// <remarks>
-/// Nashira's engine stored <c>{ max_attempts, delay_seconds, backoff }</c>.
+/// Older bundles stored <c>{ max_attempts, delay_seconds, backoff }</c>.
 /// The two shapes count differently: <c>max_attempts</c> includes the first
 /// try, <c>max_retries</c> does not — so a policy of "3 attempts" is "2
 /// retries", and reading the number across unchanged would grant one retry
 /// too many on every imported step. <c>max_delay_seconds</c> is set to 30,
-/// the cap Nashira's profile applies, so the imported step never waits longer
-/// here than it would have there. Exporters write the canonical shape only.
+/// the cap the older format applies, so the imported step never waits longer
+/// here than it would have before. Exporters write the canonical shape only.
 /// </remarks>
 public static class RetryPolicyTranslation
 {

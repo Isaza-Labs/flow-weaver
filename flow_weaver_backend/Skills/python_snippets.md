@@ -216,7 +216,12 @@ snippet.
 ## Building CSVs and email attachments
 
 Canonical pattern for "iterate, build a CSV, hand to a downstream
-email step":
+email step". It calls `integration()` in a loop, so it only runs in a
+**network-enabled** snippet, which an admin has to flag (see *Calling a
+registered Integration* and say so in the plan). If the data can come from
+upstream `integration_action` nodes, read it from `inp['steps']` instead.
+NetBox paths here assume `base_url` is the NetBox root, so they start with
+`/api/`:
 
 ```python
 from flowweaver_runtime import get_input, set_output, integration
@@ -227,7 +232,7 @@ def run(ctx):
     netbox = integration("netbox")
     infoblox = integration("infoblox")
 
-    resp = netbox.get("/dcim/devices/", params={"status": "active", "limit": 500})
+    resp = netbox.get("/api/dcim/devices/", params={"status": "active", "limit": 500})
     if not resp.ok:  # the client has .ok / .status_code / .text / .json(); no raise_for_status()
         raise RuntimeError(f"NetBox HTTP {resp.status_code}: {resp.text[:200]}")
     devices = resp.json().get("results", [])
@@ -240,7 +245,7 @@ def run(ctx):
             continue
         ib = infoblox.get("/record:host", params={"name": name})
         in_sync = ib.ok and bool(ib.json())
-        netbox.patch(f"/dcim/devices/{d['id']}/",
+        netbox.patch(f"/api/dcim/devices/{d['id']}/",
                      json={"tags": [{"slug": "dns-verified" if in_sync else "missing-dns"}]})
         rows.append([name, ip, "In Sync" if in_sync else "Missing DNS"])
 
@@ -287,16 +292,16 @@ Always wrap related-object writes in a dict (or pass the numeric id):
 
 ```python
 # ❌ Will be rejected by NetBox 4.x
-nb.patch(f"/dcim/devices/{id}/", json={"tags": ["missing-dns"]})
+nb.patch(f"/api/dcim/devices/{id}/", json={"tags": ["missing-dns"]})
 
 # Accepted — slug as a dict
-nb.patch(f"/dcim/devices/{id}/", json={"tags": [{"slug": "missing-dns"}]})
+nb.patch(f"/api/dcim/devices/{id}/", json={"tags": [{"slug": "missing-dns"}]})
 
 # Also accepted — name as a dict
-nb.patch(f"/dcim/devices/{id}/", json={"tags": [{"name": "missing-dns"}]})
+nb.patch(f"/api/dcim/devices/{id}/", json={"tags": [{"name": "missing-dns"}]})
 
 # Also accepted — numeric id (cheapest if you already have it)
-nb.patch(f"/dcim/devices/{id}/", json={"tags": [625]})
+nb.patch(f"/api/dcim/devices/{id}/", json={"tags": [625]})
 ```
 
 Same rule applies to **every** related field: `role`, `site`,

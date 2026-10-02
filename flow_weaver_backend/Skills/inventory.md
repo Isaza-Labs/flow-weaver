@@ -51,12 +51,13 @@ When the user asks "add these 3 devices to pool X":
 
 ## Inventory sources
 
-An `inventory_source` pulls devices from an external CMDB on a schedule.
+An `inventory_source` records an external CMDB that devices come from.
 Touching this rarely needs the chat — usually admins wire it once.
-Available today: list / get / create / update / delete. **There is no
-"force sync" endpoint** in the current API; if the user wants an
-immediate refresh, point them at the admin UI or the backend team — the
-agent can't trigger it.
+Through `fw_inventory` you can list and get sources
+(`list_inventory_sources`, `get_inventory_source`); creating, editing and
+deleting them is done by an operator/admin outside the chat. **There is no
+"force sync" endpoint.** If the user wants an immediate refresh, say
+plainly that it can't be triggered from here.
 
 ## What you CAN'T do
 

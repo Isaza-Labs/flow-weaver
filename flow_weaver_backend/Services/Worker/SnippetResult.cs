@@ -56,7 +56,7 @@ public sealed class SnippetResult
     /// Whether this step changed anything. REQUIRED — there is no silence.
     /// </summary>
     /// <remarks>
-    /// New here, and the same shape and name Nashira uses, because it is contract vocabulary
+    /// New here, and the same shape and name the shared contract uses, because it is contract vocabulary
     /// rather than either product's idea: `workflow-v1/run-outcome` needs a run to be able to
     /// say whether a failure left changes behind, and neither product could answer honestly —
     /// this one had no signal at all, and the other inferred it from the idempotency tier.

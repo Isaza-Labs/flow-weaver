@@ -1,6 +1,6 @@
 namespace flow_weaver_backend.Services.Worker.Simulation;
 
-// Device-simulation / load-test mode (NFR-004 / TC-FW-065). When enabled, the
+// Device-simulation / load-test mode. When enabled, the
 // device-touching leaf handlers (ping / ssh / ansible) are swapped for fakes
 // that emit realistic output after a synthetic latency and NEVER perform real
 // network I/O — so a staging box can be scaled to thousands of synthetic

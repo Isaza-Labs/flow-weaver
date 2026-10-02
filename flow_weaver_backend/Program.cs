@@ -246,6 +246,10 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
+// Encrypts Integration.AuthConfig at rest with the Data Protection key ring
+// configured below. AppDbContext takes it as an optional constructor argument.
+builder.Services.AddSingleton<flow_weaver_backend.Services.Security.IntegrationAuthCipher>();
+
 // Restores the client address from X-Forwarded-For for proxies the operator
 // declared trusted. Without it every browser request looks like it came from
 // the frontend container. See ForwardedHeadersConfiguration.
@@ -260,8 +264,8 @@ var keyRingPath = builder.Configuration["DataProtection:KeyRingPath"]
                   ?? Path.Combine(builder.Environment.ContentRootPath, "keyring");
 Directory.CreateDirectory(keyRingPath);
 
-// S13.4: register the active KMS wrapper. Default "filesystem" is a
-// passthrough (keys persist plaintext on disk — pre-S13.4 behaviour).
+// Register the active KMS wrapper. Default "filesystem" is a
+// passthrough (keys persist plaintext on disk).
 // "aws-kms" wraps every persisted key with AWS KMS Encrypt; the KMS
 // key id is required via DataProtection:Aws:KeyId.
 var kmsProvider = (builder.Configuration["DataProtection:KmsProvider"] ?? "filesystem")
@@ -425,8 +429,8 @@ builder.Services.AddScoped<
     flow_weaver_backend.Services.Workflow.WorkflowExportService>();
 // Portable workflow bundle (export v3, read v2+v3, deterministic
 // cross-instance import). Separate from the Services/Import translation
-// pipeline on purpose: a bundle from another FlowWeaver — or from Nashira,
-// which shares the format — resolves by identity or fails with a list, it is
+// pipeline on purpose: a bundle from another FlowWeaver — or from another
+// engine that shares the format — resolves by identity or fails with a list, it is
 // never fuzzy-matched like a foreign n8n/Itential definition.
 builder.Services.AddScoped<
     flow_weaver_backend.Services.Workflow.IWorkflowBundleService,
@@ -455,17 +459,17 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     flow_weaver_backend.Services.Mcp.IMcpServerService,
     flow_weaver_backend.Services.Mcp.McpServerService>();
-// FR-023: corporate guardrails. Service handles CRUD; the evaluator is
+// Corporate guardrails. Service handles CRUD; the evaluator is
 // what both WorkflowService and WorkflowExecutor consult to gate writes
 // and runs. Both are scoped because they touch AppDbContext.
 builder.Services.AddScoped<IPolicy, flow_weaver_backend.Services.Policy.PolicyService>();
 builder.Services.AddScoped<flow_weaver_backend.Services.Policy.IPolicyEvaluator,
     flow_weaver_backend.Services.Policy.PolicyEvaluator>();
-// S13.5: per-resource RBAC (workflow/integration grants).
+// Per-resource RBAC (workflow/integration grants).
 builder.Services.AddScoped<flow_weaver_backend.Services.Permission.IResourcePermissionService,
     flow_weaver_backend.Services.Permission.ResourcePermissionService>();
 
-// RBAC-granular refactor (plan_rbac_granular.md) phase 1: keeps the built-in
+// RBAC-granular refactor phase 1: keeps the built-in
 // operator/viewer permission grants in sync with each user's legacy role.
 builder.Services.AddScoped<flow_weaver_backend.Services.Permission.IBuiltinGrantSync,
     flow_weaver_backend.Services.Permission.BuiltinGrantSync>();
@@ -489,7 +493,7 @@ builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<flow_weaver_backend.Services.Settings.IAppSettingsService,
     flow_weaver_backend.Services.Settings.AppSettingsService>();
 
-// S13.6: rollback risk analyzer used by PromotionService and the editor.
+// Rollback risk analyzer used by PromotionService and the editor.
 builder.Services.AddScoped<flow_weaver_backend.Services.Promotion.WorkflowRollbackAnalyzer>();
 
 // S15: cross-system workflow import pipeline (analyze → commit) with
@@ -520,7 +524,7 @@ builder.Services.AddScoped<flow_weaver_backend.Services.Ai.Tools.Handlers.Genera
 // FU-3: chat-tool front for the import pipeline.
 builder.Services.AddScoped<flow_weaver_backend.Services.Ai.Tools.Handlers.AnalyzeForeignWorkflowHandler>();
 
-// S14.2: SLO compute service shared by the dashboard endpoint and the
+// SLO compute service shared by the dashboard endpoint and the
 // daily breach watcher. Scoped because it touches AppDbContext.
 builder.Services.AddScoped<flow_weaver_backend.Services.Slo.SloComputeService>();
 // Concrete service also registered so IntegrationBundleService can reuse
@@ -551,7 +555,7 @@ builder.Services.AddScoped<flow_weaver_backend.Services.Git.IGitWebhookService,
 // own scope). Singleton so the IServiceScopeFactory it captures is
 // the root one — child scopes get a fresh DbContext per call.
 builder.Services.AddSingleton<flow_weaver_backend.Services.Git.GitWebhookReceiver>();
-// Same rationale for the workflow-trigger webhook receiver (FR-027 / TC-FW-061).
+// Same rationale for the workflow-trigger webhook receiver.
 builder.Services.AddSingleton<flow_weaver_backend.Services.WorkflowTrigger.WorkflowWebhookReceiver>();
 builder.Services.AddSingleton<flow_weaver_backend.Services.Compiler.IWorkflowYamlCompiler,
     flow_weaver_backend.Services.Compiler.WorkflowYamlCompiler>();
@@ -691,7 +695,7 @@ builder.Services.AddScoped<
     flow_weaver_backend.Services.Ai.Scratch.IAgentScratchService,
     flow_weaver_backend.Services.Ai.Scratch.AgentScratchService>();
 
-// Sprint 8 dynamic API tools (netora-style).
+// Sprint 8 dynamic API tools (discover → detail → execute).
 builder.Services.AddScoped<flow_weaver_backend.Services.Ai.Tools.Handlers.ListApisHandler>();
 builder.Services.AddScoped<flow_weaver_backend.Services.Ai.Tools.Handlers.DiscoverOperationsHandler>();
 builder.Services.AddScoped<flow_weaver_backend.Services.Ai.Tools.Handlers.OperationDetailHandler>();
@@ -851,7 +855,7 @@ if (!workerOnly)
 {
     builder.Services.AddHostedService<flow_weaver_backend.BackgroundServices.AllowPrivateNetworkReminderService>();
 
-    // S14.2: daily SLO breach sweep. Same gating rationale as the
+    // Daily SLO breach sweep. Same gating rationale as the
     // AllowPrivateNetwork reminder — it writes audit rows, so only the
     // backend container should own it to avoid duplicates.
     builder.Services.AddHostedService<flow_weaver_backend.BackgroundServices.SloBreachWatcherService>();
@@ -877,7 +881,7 @@ builder.Services.AddScoped<flow_weaver_backend.Services.Ai.Seed.CatalogReseedSer
 // never see it. See SsrfGuardingRedirectHandler.
 builder.Services.AddGuardedHttpClient("rest_call", c => c.Timeout = TimeSpan.FromSeconds(60));
 
-// Load-test device simulation (NFR-004 / TC-FW-065). When Simulation:Enabled,
+// Load-test device simulation. When Simulation:Enabled,
 // the device-touching leaf handlers (ping/ssh/ansible) are swapped for fakes
 // that do NO real network I/O — so a staging box can scale to thousands of
 // synthetic devices to measure orchestrator/queue/DB capacity. Boot is refused
@@ -1124,7 +1128,7 @@ if (!workerOnly)
             .Build();
     });
 
-    // RBAC-granular refactor (plan_rbac_granular.md §6.1): resolve
+    // RBAC-granular refactor: resolve
     // [HasPermission("cap")] gates. The provider materialises "perm:*"
     // policies on demand; the scoped handler decides them (admin-bypass →
     // granular grants → legacy-tier fallback per the configured RbacMode).
@@ -1150,7 +1154,7 @@ if (!workerOnly)
     using var initScope = app.Services.CreateScope();
     var reg = app.Services.GetRequiredService<flow_weaver_backend.Services.Ai.Tools.ToolRegistry>();
     // Single source of truth (also iterated by ToolClassificationCoverageTests
-    // so a new tool can't ship unclassified — FR-037 / TC-FW-063).
+    // so a new tool can't ship unclassified).
     foreach (var ht in flow_weaver_backend.Services.Ai.Tools.AgentToolHandlers.All)
     {
         var handler = (flow_weaver_backend.Services.Ai.Tools.IToolHandler)initScope.ServiceProvider.GetRequiredService(ht);
@@ -1162,6 +1166,14 @@ if (!workerOnly)
 // where the backend container starts before Postgres finishes booting, even
 // when compose declares depends_on: service_healthy.
 await ApplyMigrationsWithRetryAsync(app, TimeSpan.FromSeconds(60));
+
+// Encrypt integration auth configs stored before encryption at rest existed.
+// Idempotent: only rows still holding plaintext are re-saved.
+{
+    var scopeFactory = app.Services.GetRequiredService<IServiceScopeFactory>();
+    var backfillLogger = app.Services.GetRequiredService<ILogger<Program>>();
+    await flow_weaver_backend.Services.Security.IntegrationAuthBackfill.RunAsync(scopeFactory, backfillLogger);
+}
 
 // Dev-only seed: creates the admin/admin user so a fresh
 // database is immediately usable from the frontend login page. Production
@@ -1191,7 +1203,7 @@ if (app.Environment.IsDevelopment())
     await flow_weaver_backend.Services.Policy.PolicyDefaultsSeeder.SeedAsync(scopeFactory, policyLogger);
 }
 
-// RBAC-granular refactor (plan_rbac_granular.md) phase 1: ensure the built-in
+// RBAC-granular refactor phase 1: ensure the built-in
 // operator/viewer permission grants exist and backfill existing
 // users into them by their legacy role. Idempotent; no behaviour change (the
 // bundles reproduce the 3-tier model until later phases enforce grants).
@@ -1251,14 +1263,14 @@ if (app.Environment.IsDevelopment())
     await flow_weaver_backend.Services.Ai.Seed.DefaultVendorCommandsSeedService.SeedAsync(
         scopeFactory, vendorCommandsLogger);
 
-    // S14.3: gap-fill from Skills/vendors/*.yaml. Runs after the in-code
+    // Gap-fill from Skills/vendors/*.yaml. Runs after the in-code
     // catalogue so YAML scaffolds (Arista, Fortinet, Palo Alto, F5, …)
     // only insert what the curated catalogue did not cover.
     await flow_weaver_backend.Services.Ai.Seed.VendorCommandYamlSeedService.SeedAsync(
         scopeFactory, app.Environment, vendorCommandsLogger);
 }
 
-// FR-023 sample policies. Idempotent by name; ships disabled.
+// Sample policies. Idempotent by name; ships disabled.
 {
     var scopeFactory = app.Services.GetRequiredService<IServiceScopeFactory>();
     var policiesSeedLogger = app.Services.GetRequiredService<ILogger<Program>>();

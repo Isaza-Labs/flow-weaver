@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace flow_weaver_backend.Tests;
 
-// Phase 2 of the RBAC-granular refactor (plan_rbac_granular.md): the resolver
+// Phase 2 of the RBAC-granular refactor: the resolver
 // that turns a user's PermissionGrants into HasAsync/CapabilitiesAsync
 // decisions — admin-bypass, default-deny, and ABAC condition matching.
 public class EffectivePermissionsTests

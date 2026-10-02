@@ -10,5 +10,5 @@
   "expected": { "resolved": "unresolved" },
   "equivalence": "exact",
   "oracle_commit": "fw@1a11ea3",
-  "notes": "Derived from the spec text alone: section 1 names four namespace keywords and gives each an optional path, so a longer word that merely starts with one is not a reference. Nashira anchors with a word boundary in VariableResolver.AnyRegex; the oracle was not consulted for this case."
+  "notes": "Derived from the spec text alone: section 1 names four namespace keywords and gives each an optional path, so a longer word that merely starts with one is not a reference. An implementation can anchor the keyword with a word boundary; the oracle was not consulted for this case."
 }

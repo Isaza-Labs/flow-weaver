@@ -154,7 +154,7 @@
 
   let showRunDialog = $state(false);
 
-  // FR-022: dry-run simulation state. Null = never run; otherwise the
+  // Dry-run simulation state. Null = never run; otherwise the
   // latest result. Loading flag keeps the button from re-firing while
   // the request is in flight.
   let showSimulateDialog = $state(false);
@@ -446,7 +446,7 @@
     // microtask at the bottom re-arms it.
     editorReady = false;
     if (!workflow) return;
-    // S13.6: which nodes already have a `failure` edge feeding a
+    // Which nodes already have a `failure` edge feeding a
     // compensation step. Combined with `idempotency` to decide whether
     // a mutating node gets a yellow warning (no compensation wired)
     // or no badge (compensated).
@@ -461,7 +461,7 @@
     // test `snippet_id`, and the node id is free-form. This canvas tested the
     // node id instead. That holds for anything it saved itself (it writes
     // `__start__` as the node id too) and fails for everything else: a bundle
-    // imported from Nashira, and FlowWeaver's own load-test seeds, which write
+    // imported from older bundles, and FlowWeaver's own load-test seeds, which write
     // `{"id":"start","snippet_id":"__start__"}`.
     //
     // The symptom is not a missing sentinel, it is two: the real one renders as
@@ -549,7 +549,7 @@
       }
 
       nodeCounter = Math.max(nodeCounter, parseInt(n.id.replace(/\D/g, '') || '0') + 1);
-      // S13.6: surface the effective rollback policy on the canvas
+      // Surface the effective rollback policy on the canvas
       // so authors can see at a glance which nodes block rollback.
       // Floor + per-snippet override are merged by the shared helper
       // that the analyzer mirrors on the backend. A `requires_compensation`

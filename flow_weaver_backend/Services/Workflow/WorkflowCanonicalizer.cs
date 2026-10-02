@@ -13,9 +13,9 @@ namespace flow_weaver_backend.Services.Workflow;
 /// while it keeps agreeing — so a change here silently invalidates stored simulations and
 /// re-opens closed gates.
 ///
-/// It is also the one part of the engine that is already byte-for-byte equivalent to Nashira's,
-/// which is why this file carries the same name, type name and public surface as
-/// <c>nashira_backend/Services/Workflow/WorkflowCanonicalizer.cs</c>: the parity programme's
+/// It is also the one part of the engine that is already byte-for-byte equivalent to the reference
+/// engine's, which is why this file keeps the same name, type name and public surface:
+/// the parity programme's
 /// first entry in a shared file map, and the cheapest kind — a relocation, not a rewrite.
 ///
 /// Moved here verbatim from <c>Services/Ai/Tools/Handlers/SimulateWorkflowRunHandler</c>, where

@@ -16,7 +16,7 @@ const SENTINEL_WIDTH = 56;
 const SENTINEL_HEIGHT = 56;
 const NODE_WIDTH = 180;
 const NODE_HEIGHT = 72;
-// S14.1: subflow nodes are visually wider so the encapsulated workflow
+// Subflow nodes are visually wider so the encapsulated workflow
 // reads as a "block" instead of a single step. Dagre uses these to leave
 // extra horizontal whitespace around them, so neighbouring nodes don't
 // crowd the subflow's drill-down hint.

@@ -23,12 +23,13 @@
       <strong>MCP</strong> (Model Context Protocol) is an open standard for exposing
       <em>tools</em> to AI agents. FlowWeaver acts as an MCP <strong>client</strong>:
       you register a remote server, and its tools become available to the
-      <strong>chat agent</strong> and to a new <strong>MCP call</strong> workflow
+      <strong>chat agent</strong> and to the <strong>MCP call</strong> workflow
       node — both through the same executor.
     </p>
     <p>
-      v1 supports remote <strong>Streamable HTTP</strong> servers and their
-      <strong>tools</strong> (not resources/prompts, and no local subprocesses).
+      FlowWeaver connects to remote <strong>Streamable HTTP</strong> servers and
+      uses their <strong>tools</strong>. MCP resources and prompts, and local
+      (subprocess) servers, are not supported.
     </p>
   </section>
 

@@ -14,5 +14,5 @@
   },
   "equivalence": "subset",
   "oracle_commit": "fw@fe07550",
-  "notes": "REPLACES snippets.ansible_playbook.extra_vars_is_a_key_not_the_payload, which asserted that ONLY a declared variables key reached the play. No implementation has ever done that: the oracle passes input.GetRawText() (AnsibleHandler.cs) and so does Nashira, both with a comment saying the payload is how a playbook reads runtime parameters. The old assertion was written from the specification's prose rather than reified from the oracle, which is the kit's own rule; the specification was corrected instead. What the play receives is invisible in the step's output, so this asserts the process arguments."
+  "notes": "REPLACES snippets.ansible_playbook.extra_vars_is_a_key_not_the_payload, which asserted that ONLY a declared variables key reached the play. No implementation has ever done that: the oracle passes input.GetRawText() (AnsibleHandler.cs) and so does the other known implementation, both with a comment saying the payload is how a playbook reads runtime parameters. The old assertion was written from the specification's prose rather than reified from the oracle, which is the kit's own rule; the specification was corrected instead. What the play receives is invisible in the step's output, so this asserts the process arguments."
 }

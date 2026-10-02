@@ -24,7 +24,6 @@
       <dd>
         Every meaningful write on your data — a workflow created, a device
         updated, a credential rotated, a policy toggled. One row per write.
-        Written by the controllers via <code>IAudit</code>.
       </dd>
       <dt>Auth events</dt>
       <dd>
@@ -67,7 +66,7 @@
       <dt>Auth event kind</dt>
       <dd>Select, bounded to the known kinds. Only used on the Auth tab.</dd>
       <dt>User</dt>
-      <dd>Filter by user id. The select is pre-populated from <code>/admin/users</code>.</dd>
+      <dd>Filter by user id. The select lists the accounts from the Users screen.</dd>
       <dt>From / to</dt>
       <dd>Date inputs (<code>YYYY-MM-DD</code>, local). Widened to UTC day boundaries on the wire.</dd>
     </dl>
@@ -88,7 +87,7 @@
         <tr><td>Action</td><td>What happened (<code>create</code>, <code>update</code>, …).</td></tr>
         <tr><td>Entity</td><td>The entity type plus the entity id. Truncated in the cell; full in the expander.</td></tr>
         <tr><td>Before / After</td><td>Shown inside the expander — two JSON panes showing the diff for update events.</td></tr>
-        <tr><td>Request id</td><td>Correlation id to pivot to traces and Serilog. It is the same <code>X-Request-Id</code> value those two carry, so the three sources join on it.</td></tr>
+        <tr><td>Request id</td><td>Correlation id to pivot to traces and the backend logs. It is the same <code>X-Request-Id</code> value those two carry, so the three sources join on it.</td></tr>
       </tbody>
     </table>
 
@@ -103,7 +102,7 @@
     <h2>Auth events tab</h2>
     <p>
       Same shape but narrower. Columns: timestamp, actor, event kind
-      (coloured badge), IP address, request id. Failures and lockouts are
+      (colored badge), IP address, request id. Failures and lockouts are
       highlighted in red; successes in green; neutral kinds
       (<code>logout</code>, <code>refresh</code>) in grey.
     </p>
@@ -123,9 +122,9 @@
       username the caller <em>tried</em>, and nothing else.
     </p>
     <p>
-      They also show up on the auth metrics chart as their own
-      <code>.unattributed</code> series, so a spike is visible without
-      inflating the failure counts on real accounts.
+      The admin dashboard's <em>Sign-in activity</em> chart does not separate
+      them: they count as <code>login_failure</code>, so a spike there can come
+      from enumeration attempts as well as real accounts.
     </p>
   </section>
 
@@ -142,7 +141,7 @@
     <h2>Related chapters</h2>
     <ul>
       <li><a href="/docs/admin/traces">Traces</a> — finer-grained action trail that complements the audit log with <em>every</em> handler call (including reads).</li>
-      <li><a href="/docs/admin">Admin dashboard</a> — the charts summarise the same two streams.</li>
+      <li><a href="/docs/admin">Admin dashboard</a> — its <em>Sign-in activity</em> chart summarizes the auth stream.</li>
       <li><a href="/docs/policies">Policies</a> — changes here leave audit rows too.</li>
     </ul>
   </section>

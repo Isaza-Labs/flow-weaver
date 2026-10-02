@@ -5,11 +5,11 @@
 
 <DocLayout
   title="Users"
-  lead="Create accounts, assign roles, disable access, rotate passwords. The admin-only surface for managing who can log in and what they can do."
+  lead="Create accounts, assign roles and remove access. The admin-only surface for managing who can log in and what they can do."
 >
   <Callout tone="where" title="Where to find it">
     URL: <a href="/admin/users"><code>/admin/users</code></a>.
-    Sidebar → Admin dashboard → Users link.
+    User menu → Admin dashboard → Tools → Users card.
   </Callout>
   <Callout tone="admin" title="Admin only">
     Requires the <code>admin</code> role.
@@ -29,8 +29,10 @@
       </dd>
       <dt>operator</dt>
       <dd>
-        Day-to-day builder. Full CRUD on Build and Operate resources but no
-        access to Govern or Administration.
+        Day-to-day builder. Creates and edits workflows, subflows, snippets,
+        integrations, devices, pools, credentials and schedules; no access to
+        Govern or Administration. See
+        <a href="/docs/reference">Screens and roles</a> for the exceptions.
       </dd>
       <dt>viewer</dt>
       <dd>
@@ -62,7 +64,7 @@
         <tr><td>Username</td><td>Login name, must be unique.</td></tr>
         <tr><td>Email</td><td>Contact address. Also unique.</td></tr>
         <tr><td>Role</td><td>Tone-coded badge (<em>admin</em> primary, <em>operator</em> success, <em>viewer</em> neutral).</td></tr>
-        <tr><td>Status</td><td><em>Active</em> or <em>Disabled</em>. Disabled accounts can't sign in.</td></tr>
+        <tr><td>Status</td><td><em>Active</em>. The list only shows active accounts: a disabled or deleted account leaves it (see below).</td></tr>
         <tr><td>Created</td><td>Account creation date.</td></tr>
         <tr><td>Actions</td><td>Edit, delete.</td></tr>
       </tbody>
@@ -78,7 +80,12 @@
       <dt>Username</dt><dd>Required.</dd>
       <dt>Email</dt><dd>Required.</dd>
       <dt>Password</dt>
-      <dd>Required. Minimum 8 characters (enforced client-side and server-side).</dd>
+      <dd>
+        Required. Must satisfy the password policy; by default at least 12
+        characters with upper- and lower-case letters, a digit and a symbol.
+        It must not contain the username or the part of the email before
+        <code>@</code>, and common passwords are rejected.
+      </dd>
       <dt>Role</dt>
       <dd>
         Select among <code>admin</code>, <code>operator</code>,
@@ -100,26 +107,29 @@
     <dl>
       <dt>Email</dt><dd>Any valid address.</dd>
       <dt>Role</dt><dd>Change the role anytime.</dd>
-      <dt>Active</dt><dd>Flip to disable the account without deleting it. Disabled accounts stay in the list for audit purposes.</dd>
+      <dt>Active</dt><dd>Unchecking Active disables sign-in. The account then disappears from this list and can no longer be opened or edited here, exactly as after a delete.</dd>
     </dl>
     <p>
-      Passwords are reset separately via the <em>Change password</em> action
-      (key icon). The admin types a new password; the user will use it next
-      time they sign in.
+      The username can't be changed. There is no password-reset action on
+      this screen: users change their own password at
+      <a href="/settings/password"><code>/settings/password</code></a>.
     </p>
   </section>
 
   <section>
     <h2>Delete</h2>
     <p>
-      Confirmation dialog. Deleting a user removes the row.
-      Historical audit and trace events keep the <code>user_id</code>
-      reference so the past stays intact.
+      Confirmation dialog. Deleting is a soft delete: the account is marked
+      inactive, can't sign in and leaves this list; the record is kept, so
+      audit and trace events still resolve. You can't delete your own
+      account.
     </p>
     <Callout tone="warning">
-      Prefer disabling over deleting. Disable when someone leaves; only
-      delete when you've also confirmed there's no need to audit their past
-      actions under a searchable name.
+      Disabling and deleting have the same result here: this screen can't
+      restore the account, and its username stays taken (creating it again
+      fails with <em>username already exists</em>). Open sessions keep
+      working until their refresh tokens expire, as the confirmation dialog
+      says.
     </Callout>
   </section>
 

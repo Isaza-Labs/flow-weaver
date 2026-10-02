@@ -2,7 +2,7 @@ namespace flow_weaver_backend.Services.Permission;
 
 // Resolves a caller's effective granular permissions from their
 // PermissionGrants. Scoped: grants are loaded once per request/turn and cached
-// on the instance. admin bypasses every check. See plan_rbac_granular.md §5.
+// on the instance. admin bypasses every check.
 //
 // Two layers:
 //   • HasAsync(cap, ctx)   — contextual (ABAC) decision at an enforcement point.

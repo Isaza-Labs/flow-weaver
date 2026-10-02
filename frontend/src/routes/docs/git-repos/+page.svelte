@@ -62,8 +62,8 @@
     <dl>
       <dt>Working copy</dt>
       <dd>
-        One clone per repository on the server, under the configured Git root
-        (<code>Git:Root</code>, default <code>./data/git</code>). It is created on the first
+        One clone per repository on the server, under the server's Git data
+        directory (default <code>./data/git</code>). It is created on the first
         operation that needs it. The page, workflows and the agent all share the same copy.
       </dd>
       <dt>Current branch</dt>
@@ -79,7 +79,7 @@
       </dd>
       <dt>File size</dt>
       <dd>
-        Reading or writing a file larger than <code>Git:MaxFileBytes</code> (default 5 MiB)
+        Reading or writing a file larger than the size limit (default 5 MiB)
         fails with <code>file exceeds max size (…)</code> or
         <code>content exceeds max size (…)</code>.
       </dd>
@@ -89,8 +89,8 @@
         username of whoever the commit runs as — yours from the page, and
         <code>workflow-runner</code> for a workflow step, because that is the name the worker
         runs under. Only when there is no username at all does it fall back to
-        <code>Git:DefaultAuthorName</code> (default <code>FlowWeaver</code>). The email is
-        <code>Git:DefaultAuthorEmail</code> (default <code>flowweaver@localhost</code>)
+        the default author name (<code>FlowWeaver</code>). The email is
+        the default author email (<code>flowweaver@localhost</code>)
         unless <code>author_email</code> is given; there is no username-derived email.
       </dd>
     </dl>
@@ -102,13 +102,9 @@
       <li>scp style <code>user@host:path</code></li>
     </ul>
     <p>
-      <code>http://</code>, <code>git://</code> and <code>file://</code> are rejected. The form
-      lets <code>http://</code> through, but the server then refuses it. The message depends
-      on which call you made: registering a repository answers
-      <code>url must be https:// (ssh and git:// are not supported)</code>, while editing an
-      existing one answers the shorter <code>url must be https://</code>. Both come from the
-      same check, and despite either wording SSH <em>is</em> supported; only plain HTTP and
-      <code>git://</code> are not.
+      <code>http://</code>, <code>git://</code> and <code>file://</code> are rejected by the
+      server (see <a href="#errors">Errors and recovery</a> for the messages). SSH URLs are
+      accepted.
     </p>
 
     <h3>How authentication is chosen</h3>
@@ -198,9 +194,8 @@
       <li>To check write access: open a harmless file, <strong>Edit</strong>, change it, <strong>Commit…</strong> with push on, then confirm the commit on the remote.</li>
     </ol>
     <Callout tone="warning" title="Confirm the push on the remote">
-      After <strong>Commit</strong> with push on, the page shows <em>Committed and pushed</em>
-      even if the push failed. The server still reports success because the local commit
-      worked. Check the remote, or click <strong>Push</strong> in the header: that shows
+      A commit with push on reports success (<em>Committed and pushed</em>) when the local
+      commit succeeds, whatever the push result. To confirm the push, check the remote or click <strong>Push</strong> in the header: that shows
       <em>Pushed</em> or <em>Push: &lt;reason&gt;</em>.
     </Callout>
   </section>
@@ -245,11 +240,11 @@
     </ul>
     <p>
       The step fails when <code>ok</code> is false: a pull with conflicts
-      (<code>message</code> <code>Conflicts</code>), or a push rejected by the remote. As in
-      the UI, a <code>write_file</code> or <code>commit</code> with <code>push: true</code>
-      <strong>succeeds even if the push failed</strong>. The failure only appears in
-      <code>message</code> (<code>committed · push failed: …</code>). Branch on the message,
-      or use a separate <code>push</code> step, which does fail.
+      (<code>message</code> <code>Conflicts</code>), or a push rejected by the remote. A
+      <code>write_file</code> or <code>commit</code> with <code>push: true</code> succeeds
+      when the commit does; the push result is in <code>message</code>
+      (<code>committed · pushed</code> or <code>committed · push failed: …</code>). To make a
+      failed push fail the run, use a separate <code>push</code> step.
     </p>
     <p>
       If nothing changed, <code>write_file</code> and <code>commit</code> succeed with
@@ -320,7 +315,7 @@
       <dd>
         Add branch names one at a time with <strong>Enter</strong> or <strong>+</strong>.
         Matching is <strong>exact and case-sensitive</strong>. Wildcards such as
-        <code>release/*</code> are <em>not</em> expanded, despite the placeholder.
+        <code>release/*</code> are <em>not</em> expanded.
       </dd>
       <dt>Auto-pull on push</dt><dd>On by default. Pulls the pushed branch before the workflow starts. A pull failure does not stop the workflow from starting.</dd>
       <dt>Enabled</dt><dd>A disabled webhook rejects deliveries (HTTP 403).</dd>
@@ -427,14 +422,14 @@
     </ul>
   </section>
 
-  <section>
+  <section id="errors">
     <h2>Errors and recovery</h2>
     <table>
       <thead><tr><th>Message</th><th>Cause</th><th>Recovery</th></tr></thead>
       <tbody>
         <tr><td><code>Name and URL are required.</code></td><td>An empty field in the dialog.</td><td>Fill both.</td></tr>
         <tr><td><code>URL must be https://… or an SSH form (git@host:path or ssh://…).</code></td><td>The form rejected the URL shape.</td><td>Use HTTPS or an SSH form.</td></tr>
-        <tr><td><code>url must be https:// (ssh and git:// are not supported)</code> on register, or <code>url must be https://</code> on edit</td><td>The server rejected the URL, typically <code>http://</code>. The two messages are the same check worded differently.</td><td>Switch to <code>https://</code>, or use an SSH form — which is accepted despite the longer message.</td></tr>
+        <tr><td><code>url must be https:// (ssh and git:// are not supported)</code> on register, or <code>url must be https://</code> on edit</td><td>The server accepts only <code>https://</code> and SSH URLs; typically the URL was <code>http://</code>.</td><td>Switch to <code>https://</code> or an SSH form.</td></tr>
         <tr><td><code>a repository with that name already exists</code> (409)</td><td>Duplicate name.</td><td>Choose another name.</td></tr>
         <tr><td><code>auth_credential_id not found</code></td><td>The credential was deleted.</td><td>Pick another credential.</td></tr>
         <tr><td><code>SSH URL requires a credential with auth_method='key' and a private key</code> / <code>SSH URL needs a key credential</code></td><td>An SSH URL without a key credential.</td><td>Link a key credential.</td></tr>
@@ -468,7 +463,6 @@
     <ul>
       <li>No dedicated connection test; use <strong>Pull</strong>.</li>
       <li>No merge or conflict-resolution UI, and no diff view on the page (the diff API exists for the agent).</li>
-      <li>A commit with push on reports success even when the push failed.</li>
       <li>Branch filters are exact names; no wildcards.</li>
       <li>One shared working copy per repository; branch switches affect everyone.</li>
       <li>Several server replicas can corrupt a working copy if they operate on it at the same time.</li>

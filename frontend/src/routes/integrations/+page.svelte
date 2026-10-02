@@ -58,7 +58,7 @@
     health_expected: string;
     tls_skip_verify: boolean;
     allow_private_network: boolean;
-    // S13.3: justification text submitted with the audit row when the
+    // Justification text submitted with the audit row when the
     // SSRF guard opt-out is toggled. Empty when the form first loads;
     // the user fills it in when they flip the checkbox.
     allow_private_network_initial: boolean;
@@ -237,7 +237,7 @@
       });
       return;
     }
-    // S13.3: when AllowPrivateNetwork is being TOGGLED ON, demand a
+    // When AllowPrivateNetwork is being TOGGLED ON, demand a
     // reason. When toggled OFF or unchanged, no reason is required —
     // the audit row still lands but with reason=null.
     const togglingOn = f.allow_private_network && !f.allow_private_network_initial;
@@ -516,7 +516,7 @@
     }
   }
 
-  // FR-015/FR-016 — Test-action workspace. Clicking Play on an action
+  // Test-action workspace. Clicking Play on an action
   // row opens a dialog with a JSON textarea for synthetic input and
   // fires the /api/integration-test/action/{id} endpoint (no step_run
   // persisted). Operator role gates the endpoint server-side, so

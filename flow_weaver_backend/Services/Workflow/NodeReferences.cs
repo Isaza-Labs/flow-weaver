@@ -446,7 +446,7 @@ public static class NodeReferences
     /// <para>
     /// A workflow created here is born with a start and an end whose NODE id is
     /// the sentinel itself. An imported graph carries its own, and the exporting
-    /// product is free to call them anything — Nashira writes
+    /// product is free to call them anything — one writes
     /// <c>{"id":"start","snippet_id":"__start__"}</c>, which is valid: the engine
     /// has always identified a sentinel by <c>snippet_id</c>.
     /// </para>

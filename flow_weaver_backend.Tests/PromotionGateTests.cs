@@ -198,14 +198,32 @@ public class PromotionGateTests
     }
 
     // The approver must be a second person — self-approval defeats the review.
-    [Fact]
-    public async Task TheApproverMustDifferFromThePromoter()
+    // The promoter is the authenticated caller ("tester" in FakeUser).
+    [Theory]
+    [InlineData("tester")]
+    [InlineData(" Tester ")]
+    public async Task TheApproverMustDifferFromThePromoter(string approvedBy)
     {
         using var f = new Fixture();
         var id = f.SeedWorkflow(environment: "qa");
 
         var result = await f.Build().PromoteAsync(
-            id, Promote("production", approvedBy: "alice", promotedBy: "alice"), default);
+            id, Promote("production", approvedBy: approvedBy, promotedBy: null), default);
+
+        Assert.Equal(400, StatusOf(result));
+        Assert.Single(f.Db.Set<WorkflowModel>());
+    }
+
+    // A client-sent promoted_by cannot stand in for the caller: naming someone
+    // else there must not let the caller approve their own promotion.
+    [Fact]
+    public async Task AClientSentPromoterCannotBypassTheTwoPersonRule()
+    {
+        using var f = new Fixture();
+        var id = f.SeedWorkflow(environment: "qa");
+
+        var result = await f.Build().PromoteAsync(
+            id, Promote("production", approvedBy: "tester", promotedBy: "alice"), default);
 
         Assert.Equal(400, StatusOf(result));
         Assert.Single(f.Db.Set<WorkflowModel>());
@@ -471,13 +489,13 @@ public class PromotionGateTests
 
         var version = await f.Db.Set<WorkflowVersionModel>().SingleAsync();
         Assert.Equal(id, version.WorkflowId);
-        Assert.Equal("alice", version.PromotedBy);
+        // The authenticated caller is recorded, not the client-sent name.
+        Assert.Equal("tester", version.PromotedBy);
         Assert.Equal("adds the ACL step", version.ChangeSummary);
         Assert.True(version.PromotedAt > DateTime.UtcNow.AddMinutes(-1));
     }
 
-    // Without an explicit promoter the acting user is recorded, so the audit
-    // trail is never blank.
+    // The acting user is recorded, so the audit trail is never blank.
     [Fact]
     public async Task TheActingUserIsRecordedWhenNoPromoterIsGiven()
     {

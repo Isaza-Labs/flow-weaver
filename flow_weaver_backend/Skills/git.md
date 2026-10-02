@@ -18,8 +18,9 @@ Three concepts the user will conflate, keep them straight:
 Critical rules:
 
 - A repo must be **registered** before any tool works. Registration is a
-  one-time setup the user does in **Build → Git repos**, OR via the agent
-  with `git_create_webhook` plus an admin's HTTPS-PAT credential.
+  one-time setup the user does in **Build → Git repos**. The agent can
+  only register a repo it creates: `git_create_remote_repository` creates
+  a NEW GitHub repo with an HTTPS-PAT credential and auto-registers it.
 - The `repository_id` you pass to every other tool is the UUID from
   `git_list_repositories` — NOT the URL, NOT the name.
 - Auth is delegated to the **Credentials** catalog. HTTPS uses a
@@ -292,7 +293,7 @@ the UI's file browser at `/integrations/git/{id}` — surface that link.
 | Error | Likely cause | Action |
 |---|---|---|
 | `auth_credential_id not found` | Credential was deleted or soft-deleted | Tell the user to recreate the credential and re-link the repo. |
-| `ssh clone failed: Permission denied (publickey)` | Public key not added to the Git provider | Tell the user to add the public half of the credential to their GitHub/GitLab account. We don't have it; tell them to extract from the credential or generate a new keypair. |
+| `ssh clone failed: Permission denied (publickey)` | Public key not added to the Git provider | Tell the user to add the public half of the credential to their GitHub/GitLab account. You can't read the key; tell them to extract from the credential or generate a new keypair. |
 | `ssh clone failed: Host key verification failed` | StrictHostKeyChecking flagged a fingerprint change | Investigate; could be MITM or legitimate host migration. Don't auto-bypass. |
 | `passphrase-protected SSH keys are not supported` | Credential's private key has a passphrase | Tell the user to re-import a key without a passphrase, or switch the repo to HTTPS+PAT. |
 | `git operation failed: 403 Forbidden` (HTTPS) | PAT expired or lacks scope | Tell the user to rotate the PAT in `/credentials` with `repo` scope (GitHub) / `read_repository`+`write_repository` (GitLab). |
@@ -315,5 +316,5 @@ fenced block — they'll forward it to whoever runs the Git provider.
 - ❌ Inventing a `repository_id`. Always run `git_list_repositories`
   first if you don't have an exact UUID in the conversation context.
 - ❌ Promoting webhook setup as fully automatic. The user MUST paste
-  URL + secret into the provider's UI; we don't have credentials to
+  URL + secret into the provider's UI; FlowWeaver has no credentials to
   install webhooks remotely.

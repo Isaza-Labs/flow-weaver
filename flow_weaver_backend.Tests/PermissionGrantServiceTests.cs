@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace flow_weaver_backend.Tests;
 
-// Phase 3 of the RBAC-granular refactor (plan_rbac_granular.md): the management
+// Phase 3 of the RBAC-granular refactor: the management
 // API for permission grants — CRUD, capability validation against the
 // catalogue, the built-in read-only guard, and subject assignment.
 public class PermissionGrantServiceTests

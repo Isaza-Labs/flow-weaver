@@ -44,7 +44,7 @@ public class UpdateSnippet
     [JsonPropertyName("logic_diagram_mermaid")]
     public string? LogicDiagramMermaid { get; set; }
 
-    // S13.6 — see CreateSnippet for semantics. PATCH-style: omit to keep,
+    // See CreateSnippet for semantics. PATCH-style: omit to keep,
     // pass null to clear the override and fall back to handler default,
     // pass one of the three values to set.
     [JsonPropertyName("idempotency")]

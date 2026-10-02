@@ -1,7 +1,7 @@
 namespace flow_weaver_backend.Services.Permission.Catalog;
 
 // The single source of truth for every granular capability the system can
-// enforce. This is phase 0 of the RBAC-granular refactor (plan_rbac_granular.md):
+// enforce. This is phase 0 of the RBAC-granular refactor:
 // it introduces NO runtime behaviour on its own — later phases consume it
 //   • the resolver (IEffectivePermissions) checks a caller's grants against it,
 //   • the [HasPermission] attribute names a Key,

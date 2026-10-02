@@ -13,7 +13,7 @@ using Microsoft.Extensions.Options;
 
 namespace flow_weaver_backend.Controllers;
 
-// Load-test scaffolding (NFR-004 / TC-FW-065): bulk-seed synthetic devices +
+// Load-test scaffolding: bulk-seed synthetic devices +
 // a pool + a representative per-device ping workflow, so a staging box can be
 // driven to 50/250/1000/5000 devices and its p95 / throughput / error-rate
 // curves read from /api/admin/metrics/slo. ONLY usable when Simulation:Enabled

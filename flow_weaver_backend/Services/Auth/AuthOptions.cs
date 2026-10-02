@@ -25,7 +25,7 @@ public class JwtOptions
 
     public bool IsKnownDefaultKey() => !string.IsNullOrEmpty(Key) && KnownDefaultKeys.Contains(Key);
 
-    // S12.3: shared between Program.cs and the boot integration tests
+    // Shared between Program.cs and the boot integration tests
     // so the rule lives in exactly one place. Throws when:
     //   • the section was missing entirely (jwt is null),
     //   • the key is empty or shorter than 32 chars,

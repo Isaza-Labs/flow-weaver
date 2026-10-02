@@ -12,7 +12,7 @@ using WorkflowModel = flow_weaver_backend.Models.Workflow;
 
 namespace flow_weaver_backend.Tests;
 
-// Traceability: B-02 (TC-FW-B02) — RBAC on the API surface. When per-resource
+// RBAC on the API surface. When per-resource
 // granular gating is ON and the caller holds no grant, mutating a workflow is
 // denied. WorkflowService.AuthorizeAsync consults IResourcePermissionService
 // and returns 403 (missing_editor_grant for edit, missing_owner_grant for

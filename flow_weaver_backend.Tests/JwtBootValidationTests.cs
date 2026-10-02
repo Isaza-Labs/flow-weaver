@@ -2,7 +2,7 @@ using flow_weaver_backend.Services.Auth;
 
 namespace flow_weaver_backend.Tests;
 
-// S12.3: integration-style coverage of the boot guard called from
+// Integration-style coverage of the boot guard called from
 // Program.cs. The validator runs before the host is built, so we don't
 // need WebApplicationFactory to exercise it — invoking the static method
 // with the same inputs Program.cs feeds it covers every branch.

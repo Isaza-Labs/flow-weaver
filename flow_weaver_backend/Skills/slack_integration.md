@@ -6,8 +6,7 @@ snippet for exactly this — **use it; do not build a python/rest snippet.**
 
 ## Default: the native `slack_message` snippet
 
-FlowWeaver ships a built-in snippet of type **`slack_message`** (seeded per
-— it **already exists**, so reference it, don't create a new one). Find it
+FlowWeaver ships a built-in snippet of type **`slack_message`** (seeded on every deployment) — it **already exists**, so reference it, don't create a new one). Find it
 in the snippet list by type/name `slack_message` and add it as a workflow node.
 
 - **Inputs** (the node's `config_overrides`):

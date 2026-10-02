@@ -2,14 +2,14 @@ using flow_weaver_backend.Services.Git;
 
 namespace flow_weaver_backend.Tests;
 
-// Traceability: B-06 (TC-FW-B06) — path-traversal hardening. GitService's
+// Path-traversal hardening. GitService's
 // NormalizePath rejects `..`/`.` segments so a template-supplied repo path
 // can't escape the configured repo dir, and IsSshUrl/allow-list keeps the clone
 // transport to https/ssh only.
 //
-// NOTE: this covers the Git repo-path guard specifically. B-06's prompt-
+// NOTE: this covers the Git repo-path guard specifically. The prompt-
 // construction / skill-file read-path variant is a separate call site and is
-// still an open gap (see the traceability note).
+// not covered here.
 public class GitPathTraversalTests
 {
     [Theory]

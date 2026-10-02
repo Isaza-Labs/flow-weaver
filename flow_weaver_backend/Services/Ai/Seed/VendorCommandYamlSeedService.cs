@@ -6,7 +6,7 @@ using VendorCommandModel = flow_weaver_backend.Models.VendorCommand;
 
 namespace flow_weaver_backend.Services.Ai.Seed;
 
-// S14.3: walks Skills/vendors/*.yaml and seeds the vendor_commands table
+// Walks Skills/vendors/*.yaml and seeds the vendor_commands table
 // for vendors that the in-code DefaultVendorCommandsSeedService does not
 // cover. Lets product add new vendors by dropping a YAML file in the
 // repo without recompiling.

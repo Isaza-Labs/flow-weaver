@@ -37,6 +37,7 @@ public class VendorCommandService : IVendorCommand
             ["huawei_vrp"] = "huawei",
             ["fortinet"] = "fortinet",
             ["paloalto_panos"] = "paloalto",
+            ["f5_tmsh"] = "f5",
             ["mikrotik_routeros"] = "mikrotik",
             ["linux"] = "linux",
             ["generic"] = "generic",

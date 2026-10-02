@@ -79,7 +79,7 @@
         </tr>
         <tr>
           <td><code>slack_message</code></td>
-          <td>Posts a message to a Slack channel (<code>chat.postMessage</code>). Native built-in: the bot token is a deployment secret (<code>Slack:BotToken</code> / <code>SLACK_BOT_TOKEN</code>), and each node sets <code>channel</code> + <code>text</code> in its config. Slack returns <code>ok=false</code> (not an HTTP error) on failure — branch on <code>output.ok</code>.</td>
+          <td>Posts a message to a Slack channel (<code>chat.postMessage</code>). Native built-in: the bot token is a deployment secret (<code>SLACK_BOT_TOKEN</code> in <code>deploy/.env</code>), and each node sets <code>channel</code> + <code>text</code> in its config. Slack returns <code>ok=false</code> (not an HTTP error) on failure — branch on <code>output.ok</code>.</td>
           <td><code>{'{ "channel": "#alerts", "text": "…" }'}</code>.</td>
         </tr>
         <tr>
@@ -97,7 +97,7 @@
     </p>
     <ul>
       <li><code>ssh</code> — run one or many commands on a device over SSH (Netmiko), with vendor-aware prompt and paging handling. Target mode <code>per_device</code>.</li>
-      <li><code>report</code> — build a downloadable HTML/CSV/XLSX/PDF document; downstream nodes read <code>{'{{ steps.X.output.base64 }}'}</code> and <code>{'{{ steps.X.output.filename }}'}</code>.</li>
+      <li><code>report</code> — build a downloadable HTML/CSV/XLSX/PDF document; downstream nodes read <code>{'{{ steps.X.output.base64 }}'}</code> and <code>{'{{ steps.X.output.filename }}'}</code> (to attach it to an email, pass those as an attachment's <code>content_base64</code> and <code>file_name</code>).</li>
       <li><code>mcp_call</code> — call a tool on a registered <a href="/docs/admin/mcp-servers">MCP server</a>; dropped from the palette's <em>MCP</em> section.</li>
     </ul>
     <p>Three terms are easy to mix up:</p>
@@ -385,9 +385,8 @@
     </p>
 
     <Callout tone="admin" title="Admin-only, by design">
-      Only an <strong>admin</strong> can turn network-enabled on, and an admin
-      can no longer edit a snippet that is already network-enabled without the
-      admin role either. The flag relaxes a security boundary, so it is gated
+      Only an <strong>admin</strong> can turn network-enabled on, and a
+      non-admin cannot edit a snippet that is already network-enabled. The flag relaxes a security boundary, so it is gated
       end-to-end on the backend — the UI toggle simply mirrors that. Operators
       and viewers see a read-only notice when it is on.
     </Callout>
@@ -516,31 +515,12 @@
       <code>integration_not_authored</code> before any credential is handed out. A
       subflow only passes on the ids written in its subflow node.
     </Callout>
-    <p>The check mirrors what the handler itself reads, key for key:</p>
-    <ul>
-      <li>
-        It looks at <strong>one object only</strong> — the payload's
-        <code>input</code> object when it has one, the payload itself otherwise,
-        never both. A key in the object the handler ignores is ignored here too,
-        so the step never fails over a value no script can reach. The matching
-        config entry has to sit in the same place: a key under
-        <code>input</code> is compared against the config's <code>input</code>
-        object, a top-level key against the config's top level.
-      </li>
-      <li>
-        A value counts as authored when the node's config holds the same key with
-        the same value as a plain string — byte for byte, and with no
-        <code>{'{{'}</code> in it. A subflow child also accepts a key it inherited
-        from its parent's subflow node, because that input was already filtered
-        by this same rule.
-      </li>
-      <li>
-        Only entries the handler would act on are considered: the value must be a
-        non-blank string. A bare <code>_integration_id</code> key, with nothing
-        before the underscore, leaves an empty handle that the handler skips, so
-        it grants nothing and is not checked.
-      </li>
-    </ul>
+    <p>
+      Write <code>&lt;handle&gt;_integration_id</code> as a literal string (no
+      <code>{'{{'}</code>) in the node's config, at the same level the script reads
+      it from (the top level, or under <code>input</code>). A subflow child also
+      accepts an id written in the parent's subflow node.
+    </p>
   </section>
 
   <section>

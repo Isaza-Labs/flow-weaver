@@ -6,7 +6,7 @@ namespace flow_weaver_backend.Models;
 // never returns plaintext after creation; rotation means writing a new
 // Value.
 //
-// Secrets resolve via the netora-style pattern
+// Secrets resolve via the pattern
 //   ${secret:<source>:<id>:<field>}
 // where <source> = "secret" resolves to this table by Name, and other
 // sources (credential, integration, ai_provider) plug into SecretResolver

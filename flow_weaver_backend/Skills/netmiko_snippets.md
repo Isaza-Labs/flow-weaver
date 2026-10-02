@@ -162,8 +162,8 @@ set_output({"command": command, "length": len(command), "script_chars": len(body
 
 Diagram: `flowchart TD\n in([config_overrides.script]) --> c[drop comments and blank lines] --> e[base64 of UTF-16LE] --> chk{over 8191 chars?}\n chk -->|yes| f([step FAILS])\n chk -->|no| out([command])`
 
-The node's `config_overrides.script` holds the PowerShell. This is the audit that
-`scripts/snippet_ssh.py` ran, trimmed so it fits the limit. It reads KBs from
+The node's `config_overrides.script` holds the PowerShell. This example is a Windows patch
+audit trimmed to fit the limit. It reads KBs from
 four sources because `Get-HotFix` alone misses modern cumulative updates:
 
 ```powershell

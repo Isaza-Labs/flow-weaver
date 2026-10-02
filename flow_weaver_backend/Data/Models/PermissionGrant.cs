@@ -5,7 +5,7 @@ namespace flow_weaver_backend.Models;
 // A granular permission grant: binds a set of subjects (users) to a set of
 // catalogue capabilities, optionally scoped by ABAC conditions (environment /
 // device / resource). This is the object an admin authors "like a policy" and
-// assigns to users (plan_rbac_granular.md §3). A caller's effective
+// assigns to users. A caller's effective
 // permissions = the union of the grants they are a subject of, each evaluated
 // against the current call context.
 //

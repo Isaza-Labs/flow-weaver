@@ -4,7 +4,7 @@ using flow_weaver_backend.Services.Ai.Tools;
 
 namespace flow_weaver_backend.Tests;
 
-// FR-037 / TC-FW-063 (DEF-005) — the classification-coverage guard. Iterates the
+// The classification-coverage guard. Iterates the
 // EXACT set of tool handlers registered into the ToolRegistry at startup
 // (AgentToolHandlers.All, the single source of truth Program.cs also uses) and
 // contrasts every one against PermissionClassifier.Matrix and ToolCapabilityMap.
@@ -130,7 +130,7 @@ public class ToolClassificationCoverageTests
             + "side-effecting action must not run without a confirmation tier.");
     }
 
-    // The two tools TC-FW-063 flagged as unclassified must now be explicitly
+    // The two tools once flagged as unclassified must now be explicitly
     // present in BOTH systems — pins the fix so a future edit can't quietly drop
     // them back to the fallback.
     [Theory]

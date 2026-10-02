@@ -5,7 +5,7 @@
 
 <DocLayout
   title="Integrations"
-  lead="External REST systems your workflows and the AI agent can call. Each integration bundles a base URL, credentials, a catalogue of discoverable actions, and optional prompt skills and API specs for the assistant."
+  lead="External REST systems your workflows and the AI agent can call. Each integration bundles a base URL, credentials, a catalog of discoverable actions, and optional prompt skills and API specs for the assistant."
 >
   <Callout tone="where" title="Where to find it">
     URL: <a href="/integrations"><code>/integrations</code></a>.
@@ -146,19 +146,27 @@
 
     <h3>Expanded content</h3>
     <p>
-      Three sections stacked vertically inside the expanded card:
+      Four sections stacked vertically inside the expanded card:
     </p>
     <ol>
       <li>
         <strong>Action buttons</strong> — <em>Health check</em> (green,
-        heart-rate icon) and <em>Delete</em> (red, trash icon).
+        heart-rate icon), <em>Permissions</em> (per-integration role grants;
+        see <a href="/docs/permissions">Permissions</a>) and <em>Delete</em>
+        (red, trash icon).
       </li>
       <li>
         <strong>Edit integration</strong> — an inline form for name, base URL,
-        auth method + fields, and the TLS-skip checkbox.
+        auth method + fields, health-check path, the TLS-skip checkbox and the
+        private-network toggle.
       </li>
       <li>
-        <strong>Actions</strong> — the discovered action catalogue (see below).
+        <strong>Skills &amp; specs</strong> — <em>Load skill</em> and
+        <em>Load spec</em> buttons that attach a prompt skill or an OpenAPI
+        spec to this integration.
+      </li>
+      <li>
+        <strong>Actions</strong> — the discovered action catalog (see below).
       </li>
     </ol>
   </section>
@@ -184,10 +192,17 @@
       <dt>Base URL</dt><dd>Full origin + optional path prefix. Actions concatenate their <code>path</code> onto this URL.</dd>
       <dt>Auth method</dt><dd>Select from the methods above. The field row on the right re-renders to show the right inputs.</dd>
       <dt>Token / Username / Password / API key / Token URL + Client ID + Client secret + Scope</dt><dd>Secret fields for the chosen method. Type is <code>password</code> so values are masked.</dd>
+      <dt>Health check path (optional) / Expected status</dt><dd>Explicit probe for the <a href="#health-check">health check</a>. The path must be relative.</dd>
       <dt>Skip TLS verification</dt><dd>Checkbox.</dd>
+      <dt>Allow private-network targets</dt><dd>Allows the integration to reach 10/8, 172.16/12 and 192.168/16 addresses (for example an internal NetBox or AWX). Loopback and cloud metadata addresses stay blocked. Changing it asks for a reason (required when enabling), which is recorded in the audit log.</dd>
     </dl>
     <p>
       The <em>Save</em> button writes the new config. No confirmation dialog.
+    </p>
+    <p>
+      There is no separate detail page: a link to <code>/integrations/&lt;id&gt;</code>
+      (used, for example, in import warnings) opens this list with that
+      integration expanded.
     </p>
   </section>
 
@@ -198,8 +213,7 @@
       using the configured credentials. When the integration has credentials,
       the check also tries to <strong>verify them</strong> — reachability alone
       is not enough: many services (NetBox among them) answer 200 on their root
-      to anyone, so a revoked token used to show as "healthy" while every real
-      API call failed 403. The checker probes the API root derived from the
+      to anyone, whatever the token. The checker probes the API root derived from the
       integration's registered actions and compares authenticated vs anonymous
       responses. The result updates both the <code>status</code> field and the
       dot colour on the row header. Outcomes:
@@ -225,15 +239,15 @@
     <ul>
       <li>The integration is removed.</li>
       <li>All its discovered actions are removed too.</li>
-      <li>Scoped prompt skills and API specs stay in the catalogue but lose their link to this integration (rebind them manually if needed).</li>
+      <li>Scoped prompt skills and API specs stay in the catalog but lose their link to this integration (rebind them manually if needed).</li>
       <li>Any workflow node still referencing one of this integration's actions will fail to resolve at run time until the node is repointed.</li>
     </ul>
   </section>
 
   <section>
-    <h2>Actions catalogue</h2>
+    <h2>Actions catalog</h2>
     <p>
-      The third section inside an expanded row. A <strong>DataTable</strong> listing
+      The last section inside an expanded row. A table listing
       every registered action for this integration.
     </p>
 
@@ -244,15 +258,15 @@
         <tr><td>Method</td><td>HTTP method. Badge colour: GET=green, POST=blue, PUT/PATCH=yellow, DELETE=red.</td></tr>
         <tr><td>Path</td><td>Monospace path relative to the integration's <code>base_url</code>. Path parameters appear in <code>{'{curly}'}</code> braces.</td></tr>
         <tr><td>Name</td><td>Human-readable operation name (from the OpenAPI <code>operationId</code> or equivalent).</td></tr>
-        <tr><td>Category</td><td>Grouping hint from the OpenAPI <code>tags</code> — used to organise the workflow editor palette.</td></tr>
+        <tr><td>Category</td><td>Grouping hint from the OpenAPI <code>tags</code> — used to organize the workflow editor palette.</td></tr>
         <tr><td>Actions</td><td>Test (play icon) and Delete (trash).</td></tr>
       </tbody>
     </table>
 
-    <h3>Empty catalogue</h3>
+    <h3>Empty catalog</h3>
     <p>
       When no actions are registered yet, the section shows the message
-      <em>"No actions yet. Upload an OpenAPI spec via the integration's New bundle flow to discover actions."</em>
+      <em>"No actions yet. Click Load spec above to attach an OpenAPI spec and materialize its operations as actions."</em>
     </p>
   </section>
 
@@ -302,8 +316,8 @@
       audit log. They exist purely for inspection and iteration.
     </Callout>
     <Callout tone="admin" title="Role gate">
-      The test endpoint is gated at the backend to the <code>operator</code>
-      role. Viewers see the button but get a 403 error.
+      Testing an action needs <code>integration.test</code> (Operator and
+      Admin by default). Viewers see the button but get a 403 error.
     </Callout>
   </section>
 
@@ -344,9 +358,10 @@
     <h3>Tab 3 — Specs</h3>
     <p>
       OpenAPI/YAML specs the agent can inspect. Uploading a spec is also how you
-      populate the Actions catalogue for this integration — the backend parses
-      the spec server-side after creation and emits one <code>IntegrationAction</code>
-      row per path+method.
+      populate the Actions catalog for this integration — the backend parses
+      the spec after creation and creates one action per path+method. Later,
+      <em>Load spec</em> on the expanded card does the same for an existing
+      integration.
     </p>
     <ul>
       <li>Upload <code>.yaml</code> or <code>.yml</code> files.</li>
@@ -356,7 +371,7 @@
 
     <h3>Submit</h3>
     <p>
-      All three tabs post together as a single <em>bundle</em> request. On success:
+      All three tabs are saved together in a single request. On success:
     </p>
     <ul>
       <li>The new integration appears in the list.</li>
@@ -379,8 +394,8 @@
   <section>
     <h2>Role differences</h2>
     <ul>
-      <li><strong>Viewer</strong> — read integrations and the action catalogue. Test button is visible but the endpoint rejects the call with 403.</li>
-      <li><strong>Operator</strong> — full CRUD + test actions.</li>
+      <li><strong>Viewer</strong> — read integrations and the action catalog. The Test and Health check buttons are visible but the server rejects the call with 403.</li>
+      <li><strong>Operator</strong> — full CRUD, health checks, test actions, and attaching skills and specs to an integration (New integration dialog or expanded card). The standalone AI skills and AI specs pages are admin-only.</li>
       <li><strong>Admin</strong> — same as operator.</li>
     </ul>
   </section>

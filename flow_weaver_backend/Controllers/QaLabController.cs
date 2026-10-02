@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace flow_weaver_backend.Controllers;
 
-// FR-021: the QA lab dashboard. Aggregates every qa-environment
+// The QA lab dashboard. Aggregates every qa-environment
 // workflow with the status of its last run and whether it would be
 // eligible for promotion to production right now (needs a completed
 // run within the last 48h per PromotionService).

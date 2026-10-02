@@ -4,7 +4,7 @@ using flow_weaver_backend.Services.Identity;
 
 namespace flow_weaver_backend.Services.Ai.Tools.Handlers;
 
-// FR-002 / FR-003: formal intake step. The agent invokes this BEFORE
+// Formal intake step. The agent invokes this BEFORE
 // create_workflow_plan so the user gets specific clarifying questions
 // when the prompt is missing context. Everything returned is
 // deterministic — the LLM phrases the questions in natural language,

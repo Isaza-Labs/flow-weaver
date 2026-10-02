@@ -45,7 +45,7 @@
       <li>
         A webhook fires the workflow in its <strong>current environment</strong>.
         The environment checks a manual run gets when it is queued apply here too.
-        For example, a <code>qa</code> workflow only resolves QA-lab devices. See
+        For example, a <code>qa</code> workflow only reaches devices and pools that allow <code>qa</code>. See
         <a href="/docs/workflows">Workflows</a>.
       </li>
       <li>
@@ -69,7 +69,7 @@
         <tr><td><code>schedule</code></td><td>A cron expression in a timezone, fired by the scheduler.</td><td><strong>Schedule</strong> button → <code>/workflows/{'{id}'}/schedules/new</code></td></tr>
         <tr><td><code>webhook</code></td><td>A signed <code>POST</code> to the trigger's public URL.</td><td><strong>Webhook</strong> button (dialog)</td></tr>
         <tr><td><code>manual</code></td><td>Nothing automatic. The row is shown as "Run from UI / API".</td><td><strong>Manual</strong> button (dialog)</td></tr>
-        <tr><td><code>event</code></td><td>Nothing yet. Event triggers can be saved but are <strong>not dispatched</strong>.</td><td><strong>Event</strong> button (dialog)</td></tr>
+        <tr><td><code>event</code></td><td>Nothing. Event triggers can be saved but are <strong>not dispatched</strong>.</td><td><strong>Event</strong> button (dialog)</td></tr>
       </tbody>
     </table>
     <p>
@@ -281,8 +281,8 @@
         latest status value if there is one, or <strong>enabled</strong>. For
         webhooks the status value is one of <code>webhook_dispatched</code>,
         <code>webhook_rejected</code>, <code>webhook_backpressure</code> or
-        <code>webhook_failed</code>. All of them are shown in the same green
-        badge, so read the text, not the colour.
+        <code>webhook_failed</code>. Every status value uses the same green
+        badge; read the text to tell them apart.
       </dd>
       <dt>Created</dt><dd>Creation date and time.</dd>
       <dt>Actions</dt>
@@ -301,7 +301,7 @@
     <p>
       For a webhook, an info box explains that a public POST endpoint and an HMAC
       secret are generated, and that the secret is shown only once. For an event,
-      a warning says event triggers aren't dispatched yet.
+      a warning says event triggers are not dispatched.
       <strong>Create trigger</strong> saves the trigger, which starts
       <strong>enabled</strong>.
     </p>
@@ -341,8 +341,8 @@
         <code>X-FlowWeaver-Token</code>.
       </li>
       <li>
-        <strong>Set the targets</strong> if the workflow acts on devices. There is
-        no UI for this yet, so call the trigger API with a bearer access token of a
+        <strong>Set the targets</strong> if the workflow acts on devices. The UI does
+        not set webhook targets; call the trigger API with a bearer access token of a
         user who has <code>trigger.manage</code>:
         <pre><code>{`curl -sS -X PUT "https://<FLOWWEAVER_HOST>/api/WorkflowTrigger/<TRIGGER_ID>" \\
   -H "Authorization: Bearer <ACCESS_TOKEN>" \\
@@ -469,9 +469,8 @@ curl -sS -X POST "$URL" \\
         <code>backpressure</code>, <code>error</code>), with the source IP, user
         agent, whether the request was signed, and the body size. The body itself
         is not logged. Two kinds of request leave no audit row at all: those the
-        rate limiter rejects, and those over the 1 MiB body limit — the size check
-        answers <code>413</code> and returns before the row is written, so don't
-        go looking for an oversized delivery in the audit log. Creating, updating,
+        rate limiter rejects, and those over the 1 MiB body limit (answered with
+        <code>413</code> before the row is written). Creating, updating,
         rotating and deleting a trigger are audited too. The secret never appears
         in any log.
       </li>
@@ -544,7 +543,6 @@ curl -sS -X POST "$URL" \\
       </li>
       <li>No timestamp or replay protection, and no idempotency key.</li>
       <li>Rotating a secret is instant; there is no grace period for the old one.</li>
-      <li>The <strong>Status</strong> badge is green for every status value, including <code>webhook_rejected</code> and <code>webhook_failed</code>.</li>
       <li>Only one run per request, and the response doesn't wait for the run to finish.</li>
       <li>Event triggers are stored but never dispatched.</li>
     </ul>

@@ -158,8 +158,7 @@
       </li>
       <li>
         <strong>Wheels only by default</strong>
-        (<code>Python:PipOnlyBinary=true</code>, set through
-        <code>PYTHON_PIP_ONLY_BINARY</code> in the Docker deployment). pip never
+        (<code>PYTHON_PIP_ONLY_BINARY=true</code> in the Docker deployment). pip never
         builds source distributions, so no packaging code runs during install. A
         package with no wheel for the worker's platform fails. An operator can turn
         this off for a whole deployment. It can't be changed per package.
@@ -379,7 +378,7 @@ def run(ctx):
   <section>
     <h2>Empty and loading states</h2>
     <dl>
-      <dt>Loading</dt><dd>A spinner labelled <em>"Loading modules…"</em>.</dd>
+      <dt>Loading</dt><dd>A spinner labeled <em>"Loading modules…"</em>.</dd>
       <dt>Load error</dt><dd>An error card with a retry button.</dd>
       <dt>No entries</dt>
       <dd>
@@ -419,8 +418,8 @@ def run(ctx):
     </table>
     <p>
       <strong>Stuck in <code>pending</code>:</strong> no worker is installing.
-      Installation only runs in a worker-mode process (<code>WorkerOnly</code> /
-      <code>--worker</code>) on Linux, and it is disabled on other hosts. Check that
+      Installation only runs in the worker process (the <code>worker</code>
+      service of the Docker deployment) on Linux, and it is disabled on other hosts. Check that
       the worker is running and look in its log for
       <code>PythonPackageProvisioner started</code>.
     </p>
@@ -446,8 +445,8 @@ def run(ctx):
     <ul>
       <li>
         <strong>Removing an entry doesn't uninstall the package.</strong> Its files
-        stay in the shared <code>site</code> directory. Nothing cleans them up
-        today, although a comment in the server code says a cleanup sweep does.
+        stay in the shared <code>site</code> directory, and FlowWeaver doesn't
+        delete them.
         The module still can't be imported once the entry is gone.
       </li>
       <li>You can't edit an entry. To change the spec or version, remove it and add it again.</li>

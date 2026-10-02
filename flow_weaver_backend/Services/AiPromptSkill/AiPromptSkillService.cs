@@ -19,7 +19,7 @@ public class AiPromptSkillService : IAiPromptSkill
     // Matches the filenames we shipped as defaults (base.md, awx.md, …)
     // plus operator-invented names using letters, digits, underscore,
     // hyphen. The .md suffix is enforced — it keeps the UI consistent
-    // with the netora-style convention and blocks obvious misuse like
+    // with the skill-file convention and blocks obvious misuse like
     // dropping in a .yaml on the wrong endpoint.
     private static readonly Regex NamePattern =
         new(@"^[a-zA-Z0-9_\-]+\.md$", RegexOptions.Compiled);

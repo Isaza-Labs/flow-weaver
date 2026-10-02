@@ -57,7 +57,7 @@ public sealed class IntegrationActionHandler : ISnippetHandler
         var integration = await _integrations.FindActiveByIdAsync(integrationId, ct);
         if (integration is null) return Fail($"integration {integrationId} not found");
 
-        // S15.1 — block dispatch when the integration is still waiting
+        // Block dispatch when the integration is still waiting
         // for credentials (typical state right after the import wizard
         // auto-creates it). Surfacing a clear error here beats a 401 from
         // the upstream system or a confusing HTTPS handshake failure.
@@ -227,7 +227,7 @@ public sealed class IntegrationActionHandler : ISnippetHandler
             // The catalogued verb is the evidence, and only a call that succeeded can
             // have changed anything.
             //
-            // Nashira also consults an explicit `ReadOnly` flag on the catalogued action
+            // Other engines also consult an explicit `ReadOnly` flag on the catalogued action
             // and trusts it over the verb; this product's IntegrationAction carries no
             // such column, so the verb is all the evidence there is. Recorded rather than
             // papered over — the two handlers agree on every action whose flag matches its

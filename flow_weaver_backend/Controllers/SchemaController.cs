@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace flow_weaver_backend.Controllers;
 
-// FR-007: formal publication of the canonical workflow JSON schema.
+// Formal publication of the canonical workflow JSON schema.
 // Unauthenticated on purpose — integrators (CI, external pipelines,
 // docs sites) need to fetch the schema without credentials. The schema
 // is already shipped publicly in the open source drop, so exposing it

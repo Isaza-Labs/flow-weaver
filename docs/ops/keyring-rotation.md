@@ -10,6 +10,7 @@ database, including:
 - `WorkflowTrigger.EncryptedSecret` and `GitWebhook.EncryptedSecret`
 - `EmailChannel.EncryptedPassword`
 - `McpServer.AuthConfigEncrypted`
+- `Integration.AuthConfig` (jsonb envelope; tokens, passwords and OAuth secrets of every integration)
 - `MessagingChannel.EncryptedBotToken`, `EncryptedSigningSecret`,
   `EncryptedAppToken`
 - `AIProvider.EncryptedApiKey`
@@ -51,7 +52,7 @@ encrypted columns cannot be decrypted.
 2. Move existing keyring aside: `mv /keyring /keyring-old-$stamp`.
 3. Start backend; it generates a fresh key.
 4. Re-enter every encrypted value (credentials, named secrets, trigger and
-   webhook secrets, channel tokens, provider keys). FlowWeaver has no job that
+   webhook secrets, integration auth, channel tokens, provider keys). FlowWeaver has no job that
    re-encrypts existing ciphertext under the new key, so forced rotation is a
    destructive event: values encrypted under the moved-aside keyring can no
    longer be decrypted.

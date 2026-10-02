@@ -98,17 +98,13 @@ target is recorded `skipped`.
 A node with no incoming edges is not exempt: once the walk has stopped, nothing further is
 dispatched.
 
-Before 2026-08-29 none of this was true — a failure stopped only what sat behind a `success`
-edge, and everything else carried on. A workflow relying on that keeps working only if you
-pass `"stop_on_failure": false` when starting the run, which is something a caller now has to
-ask for.
+To let independent branches keep running after a failure, the caller has to pass
+`"stop_on_failure": false` when starting the run; it is never the default.
 
 A `conditional` edge only fires out of a node that SUCCEEDED. It is a
 `success` edge with a question attached, so a failed source answers it before
-the expression is ever read. (Until 2026-08-29 the expression was evaluated
-regardless, so `1 == 1` on an edge out of a crashed step fired it — and the
-`failure` edge beside it fired too, meaning a run could take both the
-compensation branch and the happy branch out of the same failed node.)
+the expression is ever read: `1 == 1` on an edge out of a failed step does
+not fire, so a run never takes both the compensation and the happy branch.
 
 If `condition` is missing or empty on a `conditional` edge, the runtime
 fails with `conditional edge A->B requires a non-empty condition` —
@@ -213,8 +209,9 @@ Names (`"netbox-list-devices"`) and placeholder GUIDs
 Resolve in the same ONE-PLAN as the create:
 
 1. `fw_integrations:list_integrations` → pick `integration_id`.
-2. `fw_integrations:list_palette_actions(integration_id=...)` → pick
-   `integration_action_id`.
+2. `fw_integrations:list_palette_actions` (flat list across integrations;
+   filter by `integration_id`) → take the action's `id` and put it in
+   `config_overrides.action_id`.
 3. Plug into `config_overrides`:
 
 ```json
@@ -280,7 +277,7 @@ for the discover-before-call discipline.
 `list_workflows`, `get_workflow`, `create_workflow`, `update_workflow`,
 `delete_workflow`, `run_workflow`, `promote_workflow`,
 `rollback_workflow`, `clone_workflow`, `diff_workflow`, `export_workflow`,
-`list_versions`, `list_triggers` / `create_trigger`.
+`list_versions`, `list_workflow_triggers` / `create_workflow_trigger`.
 
 Prefer `get_workflow_details` (dedicated tool) over `get_workflow` when
 explaining or editing — it returns the exact shape used by
@@ -539,7 +536,7 @@ satisfy — split into variants. Naming: append the mode
 | classify           | `e97bbd7c-…` | `per_device` | `per_device` | n/a | `list_snippets(type=python_snippet)` | reuse |
 | create-netbox      | `NEW`        | —            | `per_device` | n/a | — | **CREATE** `integration_action_per_device` |
 | aggregate-results  | `fb055e02-…` | `once`       | `once`       | ✗ — existing body produces a generic table; user asked for `Workflow: X \| Device: Y \| Status: ...` per line | `get_snippet(fb055e02-…)` | **CREATE** variant |
-| send-summary-email | `d555a060-…` | `once`       | `once`       | n/a | `list_snippets(type=email_send)` | reuse |
+| send-summary-email | `5c1e9a2b-…` | `once`       | `once`       | n/a | `list_snippets(type=email_send)` | reuse |
 
 Hard rules:
 
@@ -551,7 +548,8 @@ Hard rules:
    `output_schema`) against the Step 1 contract. ✓ only after a real
    compare; ✗ → CREATE.
 4. **Same UUID MUST NOT appear in two rows with different required
-   modes** — the d555a060 anti-pattern.
+   modes**: one snippet cannot be both `once` and `per_device` in the same
+   workflow; create a variant instead.
 
 #### GUID resolution table (for every `integration_action` node)
 
@@ -677,7 +675,7 @@ a `failure` edge** — that's the canonical `notify-failure` wiring. A node
 reached by an `always` edge gets empty strings (they still resolve, so
 the step doesn't fail; the alert just won't name a step). `run.owner_email`
 is empty when the run's starter has no email on file, which makes the
-send fail at the integration — set the recipient explicitly via
+`email_send` step fail — set the recipient explicitly via
 `input` for unattended workflows if that matters.
 
  The executor re-scans the
@@ -758,7 +756,7 @@ Smell test: if the answer to *"is `'-'` an acceptable value to show the
 user in this field?"* is no, `default` is the wrong tool. Fix the
 reference or fix the producer.
 
-Real incident: a `report` node's four stat tiles pointed at fields the
+Example: a `report` node's four stat tiles pointed at fields the
 aggregator never emitted (`total` / `online` / `offline` /
 `generated_at`, against an aggregator producing `counts.*`). Three
 carried `| default('0')` and rendered a clean, plausible report claiming
@@ -780,12 +778,12 @@ honest reference the workflow would have kept emitting zeros forever.
 sanitised at the runner: ANSI CSI/OSC sequences and C0 control chars
 (except `\t \n \r`) are removed before the value reaches downstream
 templates. Useful for Nokia SR-OS / Cisco IOS-XR with paging / `screen`
-sessions where escape codes used to leak into NetBox custom_fields and
+sessions whose escape codes would otherwise leak into NetBox custom_fields and
 email bodies. The raw bytes are preserved under `stdout_raw` and
 `results[i].output_raw` for forensic use. Set `preserve_ansi: true` in
 the SSH node's `config_overrides` to disable stripping.
 
-## Subflows (FR-025)
+## Subflows
 
 Embed a workflow as a single node:
 
@@ -831,11 +829,10 @@ parent — bind every value via this payload.
 So a child step's output is read as
 `{{ steps.backup-all.output.steps.<child-node>.<field> }}`.
 
-**This changed on 2026-08-29.** It used to be the steps map alone at the top
-level — `{{ steps.backup-all.output.<child-node>.<field> }}`, one level
-shallower. **A template written against the old shape must gain `.steps`.**
-The new shape also lets you branch on the child's verdict, which the old one
-could not express at all: `{{ steps.backup-all.output.final_state }}`.
+**Child outputs live under `.steps`.** A template like
+`{{ steps.backup-all.output.<child-node>.<field> }}` (without `.steps`) does
+not resolve. You can also branch on the child's verdict:
+`{{ steps.backup-all.output.final_state }}`.
 
 **Reversibility crosses the boundary.** The subflow node inherits the
 STRICTEST idempotency tier of whatever the child actually executed. A child

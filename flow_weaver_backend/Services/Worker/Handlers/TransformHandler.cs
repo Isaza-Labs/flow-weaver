@@ -20,7 +20,7 @@ public sealed class TransformHandler : ISnippetHandler
 
     public Task<SnippetResult> ExecuteAsync(SnippetRequest request, CancellationToken ct)
     {
-        // Nashira spells a transform's projection `mapping`; it is the same
+        // Older bundles spell a transform's projection `mapping`; it is the same
         // JMESPath multiselect hash this engine reads from `expression`
         // (snippets/SPEC.md `transform`).
         var input = PayloadAliases.Normalize(request.SnippetType, request.InputPayload);

@@ -3,7 +3,8 @@
 Every `discover_operations` → `operation_detail` → `execute_operation`
 triplet is **three** LLM round-trips per API you need to use. A workflow
 that spans NetBox + email + Infoblox can easily hit 9-12 round-trips
-just during discovery, and the 60s chat deadline stops being roomy.
+just during discovery, and every round-trip spends the turn's chat deadline
+(`AiChat:StreamDeadlineSeconds`, default 240 s).
 These rules keep the turn fast and fit the one-plan contract.
 
 ## Rule 1 — Narrow the search first, then inline details
@@ -26,8 +27,7 @@ discover_operations({
 If the result exceeds 5, the response tells you exactly that
 (`details_skipped_reason: "result set (N) exceeds inline cap (5); narrow
 the search and retry"`). **Narrow the query.** Do NOT fall back to a
-separate `operation_detail` call for each — that's the pattern we're
-trying to kill.
+separate `operation_detail` call for each.
 
 ## Rule 2 — Don't re-discover what's already in context
 
@@ -60,7 +60,7 @@ Good:
 ```
 discover_operations(api="netbox", keyword="devices",        include_details=true)
 discover_operations(api="netbox", keyword="interfaces",     include_details=true)
-discover_operations(api="email",  keyword="send",           include_details=true)
+discover_operations(api="fw_email", keyword="send",           include_details=true)
 ```
 
 Each narrow+typed call returns 1-3 ops with inline schemas. Three tool

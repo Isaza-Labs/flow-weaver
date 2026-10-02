@@ -3,7 +3,7 @@ using flow_weaver_backend.Services.Engine;
 
 namespace flow_weaver_backend.Tests;
 
-// Traceability: FR-025 (TC-FW-025) — the subflow-safety half. A workflow that
+// The subflow-safety half. A workflow that
 // references itself (directly or transitively) through subflow nodes must be
 // rejected before any child run / ParentRunId link is created, and a subflow
 // pointing at a non-existent workflow must fail loudly.

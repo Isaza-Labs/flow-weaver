@@ -72,8 +72,8 @@ namespace flow_weaver_backend.Tests.Conformance;
 //
 // That is the whole point. Everything the contract fixes about a subflow (the tier that
 // crosses the boundary, the error codes, the output shape) lives in that path, so scripting
-// the node's ANSWER would assert nothing about any of it. Nashira's adapter makes the same
-// choice for the same reason.
+// the node's ANSWER would assert nothing about any of it.
+// Other adapters should make the same choice for the same reason.
 //
 // A child declared `unresolved` gets no workflow row seeded, because "the child does not
 // exist" is exactly what the product is supposed to notice.

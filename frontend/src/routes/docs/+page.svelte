@@ -30,8 +30,8 @@
     { href: '/docs/credentials', label: 'Credentials', description: 'SSH/NETCONF authentication material.', icon: KeyRound },
     { href: '/docs/qa-lab', label: 'QA lab', description: 'Promotion readiness and QA-scoped runs.', icon: FlaskConical },
     { href: '/docs/ai', label: 'AI', description: 'Chat, providers, agents, skills, API specs.', icon: Bot },
-    { href: '/docs/vendor-commands', label: 'Vendor commands', description: 'The CLI catalogue that validates SSH commands (admin).', icon: Terminal },
-    { href: '/docs/policies', label: 'Policies', description: 'Guardrails and approval gates (admin).', icon: Shield },
+    { href: '/docs/vendor-commands', label: 'Vendor commands', description: 'The CLI catalog that validates SSH commands.', icon: Terminal },
+    { href: '/docs/policies', label: 'Policies', description: 'Guardrails and approval gates (authored by admins).', icon: Shield },
     { href: '/docs/permissions', label: 'Permissions', description: 'Capability grants and per-resource access (admin).', icon: KeySquare },
     { href: '/docs/admin/python-packages', label: 'Python packages', description: 'Extra imports for Python snippets (admin).', icon: Package },
     { href: '/docs/admin', label: 'Administration', description: 'Users, audit, traces, artifacts, secrets, SLOs, settings (admin).', icon: Users },
@@ -64,17 +64,19 @@
   </section>
 
   <section>
-    <h2>How this manual is organised</h2>
+    <h2>How this manual is organized</h2>
     <p>
-      Sections in the left nav mirror the app's own sidebar:
+      The left nav follows the app sidebar's groups (Build, Integrate,
+      Operate, Govern, Intelligence) and adds administration, account and
+      reference sections:
     </p>
     <ul>
       <li><strong>Build</strong> — the pieces you author: workflows (and importing them, triggers, subflows), snippets, Git repositories.</li>
       <li><strong>Integrate</strong> — connections to outside systems: integrations, vendor commands, MCP servers, messaging channels, email.</li>
       <li><strong>Operate</strong> — what you run and against what: runs, schedules, devices, pools, credentials, QA lab.</li>
-      <li><strong>Govern</strong> — admin-only guardrails: policies, permissions, Python packages.</li>
+      <li><strong>Govern</strong> — guardrails: policies, permissions, Python packages; the app's sidebar shows this group to admins only.</li>
       <li><strong>Intelligence</strong> — the AI assistant and its configuration.</li>
-      <li><strong>Administration</strong> — admin-only system management.</li>
+      <li><strong>Administration</strong> — admin-only system management: users, audit, traces, artifacts, secrets, SLOs, settings.</li>
       <li><strong>Account</strong> — password, session and themes.</li>
       <li><strong>Reference</strong> — screens and roles, troubleshooting, glossary.</li>
     </ul>
@@ -117,8 +119,9 @@
     </Callout>
     <Callout tone="admin" title="Admin only">
       Features protected by the <code>admin</code> role carry this box. If you
-      don't have the role, the feature is hidden from your sidebar and the URL
-      will bounce you back to the dashboard.
+      don't have the role, the feature is hidden from your sidebar. Opening an
+      <code>/admin/…</code> URL sends you back to the dashboard; on other
+      screens the server refuses the actions you aren't allowed to take.
     </Callout>
     <Callout tone="warning" title="Heads up">
       Destructive, irreversible, or high-blast-radius actions are flagged in this

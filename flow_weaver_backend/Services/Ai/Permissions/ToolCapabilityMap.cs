@@ -1,7 +1,7 @@
 namespace flow_weaver_backend.Services.Ai.Permissions;
 
-// Maps each agent tool to the granular capability that authorizes it
-// (plan_rbac_granular.md §6.3). In RbacMode=granular the ToolDispatcher gates a
+// Maps each agent tool to the granular capability that authorizes it.
+// In RbacMode=granular the ToolDispatcher gates a
 // tool call on the caller holding this capability; an UNMAPPED tool is
 // default-denied. In RbacMode=legacy the dispatcher keeps the PermissionClassifier
 // role matrix instead. The autonomy tier (human_only) and the mutation budget
@@ -43,7 +43,7 @@ public static class ToolCapabilityMap
             ["list_apis"] = "aicatalog.read",
             ["discover_operations"] = "aicatalog.read",
             ["operation_detail"] = "aicatalog.read",
-            // Import-assist tools (TC-FW-063): read-only analysis / draft
+            // Import-assist tools: read-only analysis / draft
             // generation, no persistence. Explicit mappings so they aren't
             // default-denied in granular mode.
             ["analyze_foreign_workflow"] = "workflow.read",

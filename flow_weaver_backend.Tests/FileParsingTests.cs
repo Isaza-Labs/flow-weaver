@@ -7,8 +7,8 @@ using flow_weaver_backend.Utils.Report.Exporters;
 namespace flow_weaver_backend.Tests;
 
 // This product could generate a spreadsheet, a PDF and a Word document and could
-// not read any of them. `FileParsingService` is ported from Nashira so the two
-// parse a file the same way rather than two ways.
+// not read any of them. `FileParsingService` follows the shared contract so
+// engines parse a file the same way rather than two ways.
 //
 // The fixtures are files THIS product writes, through its own exporters. Parsing a
 // hand-rolled sample would prove the parser reads that sample; parsing what the

@@ -630,7 +630,7 @@
       <div class="flex gap-2">
         <Input
           bind:value={hookBranchDraft}
-          placeholder="main, release/*"
+          placeholder="main, release-1.2"
           onkeydown={(e: KeyboardEvent) => { if (e.key === 'Enter') { e.preventDefault(); addHookBranch(); } }}
         />
         <IconButton icon={Plus} label="Add" onclick={addHookBranch} />

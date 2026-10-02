@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.DataProtection.XmlEncryption;
 
 namespace flow_weaver_backend.Services.Security.Kms;
 
-// S13.4: bridges IKmsKeyWrapper into ASP.NET Core's DataProtection
+// Bridges IKmsKeyWrapper into ASP.NET Core's DataProtection
 // machinery. DataProtection calls Encrypt() with a `<descriptor>`
 // XElement when persisting a new key; we serialise it, hand the bytes
 // to the wrapper, and produce an XElement that holds the wrapped

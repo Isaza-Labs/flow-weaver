@@ -37,7 +37,7 @@ public enum LegacyTier
 // Capabilities are CODE-DEFINED: each one maps to a real enforcement point in
 // the codebase, so they are never created from the UI. A PermissionGrant
 // references them by Key; the grant is the thing an admin authors and assigns
-// to users (see plan_rbac_granular.md §3).
+// to users.
 public sealed record Capability(
     string Key,
     string Domain,

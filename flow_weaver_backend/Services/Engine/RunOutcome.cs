@@ -11,7 +11,7 @@ public sealed record RunOutcome(
 /// <summary>One step's contribution to the outcome, in execution order.</summary>
 public sealed record StepOutcome(string NodeId, bool Failed, bool Changed, IdempotencyKind Tier);
 
-// The run outcome rule, ported from Nashira's WorkflowExecutor so the two products compute
+// The run outcome rule, shared with the reference engine so both compute
 // the same three answers from the same evidence (`workflow-v1/run-outcome`).
 //
 // A pure function over the step list, deliberately: it is the part a conformance vector
@@ -30,7 +30,7 @@ public static class RunOutcomeCalculator
         // Deduplication is this product's addition and it is not cosmetic: a `per_device`
         // node fans out into one step_run per device, so the same node id arrives several
         // times. A plan naming it once per device would read as several separate reversals
-        // of separate things. Nashira has one execution per node and so never meets this.
+        // of separate things. An engine with one execution per node never meets this.
         var changedReversible = new List<string>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
 
@@ -65,7 +65,7 @@ public static class RunOutcomeCalculator
     }
 
     // Reversible = can be automatically rolled back (idempotent replay or compensation).
-    // Same predicate as Nashira's `Idempotency.IsReversible`.
+    // Same predicate as the contract's `Idempotency.IsReversible`.
     public static bool Reversible(IdempotencyKind kind) => kind != IdempotencyKind.NonReversible;
 
     public static string ToWire(IdempotencyKind kind) => kind switch

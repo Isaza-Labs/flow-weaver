@@ -30,7 +30,7 @@ public class Snippet : BaseModel
     public JsonElement RetryPolicy { get; set; } = default;
     public string? CreatedBy { get; set; }
 
-    // S13.6: explicit override of the handler's IdempotencyKind. When
+    // Explicit override of the handler's IdempotencyKind. When
     // null the handler's DefaultIdempotency applies. Authors set this
     // when they know the snippet is, for example, a verifiably read-only
     // integration_action even though the handler defaults to

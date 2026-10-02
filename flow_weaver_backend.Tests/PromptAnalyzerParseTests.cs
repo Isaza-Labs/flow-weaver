@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace flow_weaver_backend.Tests;
 
-// Traceability: FR-002 (TC-FW-002) — prompt-sufficiency evaluation.
+// Prompt-sufficiency evaluation.
 // The LLM call itself is non-deterministic and lives behind IAiProvider, so
 // PromptAnalyzer.Parse is the traceable seam: it turns a raw JSON verdict into
 // a PromptAnalysis and owns the contract-relevant behavior — fence tolerance,

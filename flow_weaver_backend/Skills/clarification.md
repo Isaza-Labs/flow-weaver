@@ -1,4 +1,4 @@
-# Skill: intake — ask before planning (FR-002 / FR-003)
+# Skill: intake — ask before planning
 
 Before calling `create_workflow_plan` or `create_workflow`, the agent
 **must** call `evaluate_prompt_sufficiency` with the user's
@@ -6,10 +6,9 @@ description. This tool deterministically checks whether the request
 has enough context (targets, required keys, name collisions,
 production scope) and returns a concrete list of ambiguities.
 
-This prevents what happened with `auditv01110`, where the agent
-assumed the scope, assembled a workflow, and the
-`dns-reconciliation-audit` returned an empty scaffold because nobody
-asked which devices were meant to be audited.
+Skipping it leads to workflows built on assumed scope: for example, an
+audit workflow that returns an empty result because nobody asked which
+devices were meant to be audited.
 
 ## When to call the tool
 
@@ -138,7 +137,9 @@ evaluate_prompt_sufficiency({
 
 **Agent (internal):** re-runs `evaluate_prompt_sufficiency` with
 `proposed_target_pools: ["core-routers"]` and the updated description.
-Now `sufficient: true` → continues with `create_workflow_plan`.
+Now `sufficient: true` → continues with ONE plan that calls
+`fw_workflows:create_workflow` (draft; `create_workflow_plan` is only for
+qa / production).
 
 ## Anti-pattern
 

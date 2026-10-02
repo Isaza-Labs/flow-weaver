@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace flow_weaver_backend.Tests;
 
-// TC-FW-066 — the device-usage report (GET /api/admin/metrics/devices). The
+// The device-usage report (GET /api/admin/metrics/devices). The
 // commercial "managed device" definition is a pending product decision, so the
 // report stays neutral: it exposes the raw breakdown + a count per candidate
 // definition, each reproducible by a direct DB query. These tests pin that the
@@ -81,7 +81,7 @@ public class DeviceUsageReportTests
     [Fact]
     public async Task Each_candidate_matches_a_direct_db_query()
     {
-        // The whole point of TC-FW-066: the report IS the query. Reproduce each
+        // The whole point: the report IS the query. Reproduce each
         // candidate's documented WHERE directly and assert it equals the report.
         using var db = NewDb(nameof(Each_candidate_matches_a_direct_db_query));
         Seed(db, true, false, true, "reachable", false);

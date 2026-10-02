@@ -857,7 +857,7 @@ public sealed class GitService : IGitService
         return await SshGitCli.PushAsync(repoPath, branchName, auth.PrivateKeyPem, auth.Passphrase, _logger, ct);
     }
 
-    // internal (InternalsVisibleTo) so the B-06 path-traversal guard can be
+    // internal (InternalsVisibleTo) so the path-traversal guard can be
     // asserted directly. Rejects `..`/`.` segments; normalizes separators and
     // strips leading/trailing slashes.
     internal static string NormalizePath(string? path)

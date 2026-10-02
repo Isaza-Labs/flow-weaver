@@ -73,15 +73,10 @@
       <dt>Name</dt>
       <dd>
         The lookup key. It must match
-        <code>^[a-z0-9](?:[a-z0-9_-]{'{1,62}'}[a-z0-9])?$</code>: lowercase
-        letters, digits, hyphens and underscores, starting and ending with a
-        letter or digit, up to 64 characters. Read the pattern literally, because
-        it is stricter than the error message's "2–64 chars" suggests: a
-        <strong>single</strong> character is accepted (<code>x</code>), then
-        nothing until <strong>three</strong>. A two-character name can never
-        match — the optional second half needs at least one interior character
-        plus the closing letter or digit — so <code>db</code> is refused while
-        <code>dbx</code> and <code>db1</code> are fine. Names are unique and
+        <code>^[a-z0-9][a-z0-9_-]{'{0,62}'}[a-z0-9]$</code>: 2 to 64
+        lowercase letters, digits, hyphens and underscores, starting and ending
+        with a letter or digit (<code>db</code> and <code>netbox-token</code> are
+        fine; <code>x</code> and <code>-db</code> are not). Names are unique and
         <strong>immutable</strong>.
       </dd>
       <dt>Description</dt>

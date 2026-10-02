@@ -1,4 +1,4 @@
--- Pre-deploy check for the multi-tenancy removal (see company_remove.md).
+-- Pre-deploy check for the multi-tenancy removal (see deploy/README.md).
 --
 -- Eleven unique indexes used to be scoped by CompanyId. The RemoveMultiTenancy
 -- migration collapses each to its remaining columns, so any value that was only

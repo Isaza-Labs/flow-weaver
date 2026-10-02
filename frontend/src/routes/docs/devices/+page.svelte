@@ -17,7 +17,7 @@
     <p>
       A <strong>device</strong> is the atomic target a workflow can dispatch
       work against — typically a network element (router, switch, firewall)
-      but any SSH/NETCONF/REST-addressable host works. Devices carry:
+      but any SSH- or REST-addressable host works. Devices carry:
     </p>
     <ul>
       <li>Identity (<em>name</em>, <em>IP address</em>).</li>
@@ -157,7 +157,7 @@
     <h3>Empty states</h3>
     <ul>
       <li><strong>No devices at all</strong> — big empty state with a <em>Server</em> icon and an <em>Add device</em> button.</li>
-      <li><strong>Filter matches nothing</strong> — empty state with a <em>Clear filter</em> button that resets <code>nameFilter</code>.</li>
+      <li><strong>Filter matches nothing</strong> — empty state with a <em>Clear filter</em> button that empties the search box.</li>
     </ul>
   </section>
 
@@ -166,8 +166,7 @@
     <Callout tone="info">
       The header checkbox selects every row <em>currently visible</em>. With a
       search filter active, selecting 3 out of 500 means "these 3", not
-      "every row". This mirrors how GitHub and Linear handle
-      bulk selection under active filters.
+      "every row".
     </Callout>
     <p>
       A <em>N selected</em> suffix appears in the footer line and the
@@ -198,7 +197,9 @@
       <code>allow_production</code> with a single PUT. A lit (green) icon means
       that environment is allowed; a muted one means it is not. No dialog. A run
       resolves its targets against the environment of the workflow being run and
-      drops every device that doesn't allow it.
+      drops every device that doesn't allow it. This applies to every
+      environment, <code>draft</code> included. A new device allows
+      <code>draft</code> and <code>production</code> but not <code>qa</code>.
     </p>
     <p>
       Any combination is valid. Ticking only <code>production</code> gives you
@@ -244,7 +245,7 @@
     <h2>Role differences</h2>
     <ul>
       <li><strong>Viewer</strong> — list and browse devices.</li>
-      <li><strong>Operator</strong> — full CRUD, QA toggle, bulk assign.</li>
+      <li><strong>Operator</strong> — full CRUD, environment toggles, bulk assign.</li>
       <li><strong>Admin</strong> — same as operator.</li>
     </ul>
   </section>

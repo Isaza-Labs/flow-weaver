@@ -5,7 +5,7 @@
 
 <DocLayout
   title="AI chat"
-  lead="The full conversation UI with the assistant. Streams responses via Server-Sent Events, renders tool calls as collapsible cards, and accepts deep-link context from any other page."
+  lead="The full conversation UI with the assistant. Streams responses as they are generated, renders tool calls as collapsible cards, and accepts deep-link context from any other page."
 >
   <Callout tone="where" title="Where to find it">
     URL: <a href="/ai/chat"><code>/ai/chat</code></a>.
@@ -83,7 +83,7 @@
       <dt>Assistant</dt>
       <dd>
         Left-aligned. Bot avatar on the left. Tool-call cards (if any) render
-        above the text. The text body uses <strong>ChatMarkdown</strong> for
+        above the text. The text body is rendered as Markdown for
         rich formatting (code blocks, lists, links). While streaming, a
         blinking caret shows at the end of the text.
       </dd>
@@ -107,7 +107,7 @@
       a link must point at one of this app's <em>resource</em> pages
       (<code>/workflows</code>, <code>/runs</code>, <code>/snippets</code>,
       <code>/devices</code>, …), and any origin in the href is discarded in
-      favour of your own. Anything else — an external URL, a
+      favor of your own. Anything else — an external URL, a
       <code>javascript:</code> href, a route that acts rather than displays
       like <code>/logout</code> — renders as plain text. The model is
       untrusted input, and a markdown link is the cheapest phishing vector
@@ -143,7 +143,7 @@
 
     <h3>Timeout and errors</h3>
     <ul>
-      <li>If the stream hits its deadline (configurable via <code>AiChat__StreamDeadlineSeconds</code>, default 2&nbsp;min), a warning alert reports the limit and suggests a narrower prompt.</li>
+      <li>If the stream hits its deadline (configurable via <code>AI_STREAM_DEADLINE_SECONDS</code> in the deploy <code>.env</code>, default 240&nbsp;seconds), a warning alert reports the limit and suggests a narrower prompt.</li>
       <li>Per-message errors (e.g. <code>no_provider</code>) render as error alerts with a link to configure the provider.</li>
     </ul>
   </section>
@@ -192,7 +192,7 @@
   <section>
     <h2>Deep-link entry points</h2>
     <p>
-      The chat recognises three query parameters when the page mounts:
+      The chat recognizes four query parameters when the page mounts:
     </p>
 
     <h3><code>?fix=&lt;json&gt;</code></h3>
@@ -238,10 +238,9 @@
   </section>
 
   <section>
-    <h2>Streaming internals</h2>
+    <h2>How a reply streams in</h2>
     <p>
-      The client holds one <code>AbortController</code> per in-flight send.
-      Events arrive over SSE:
+      A reply arrives as a sequence of events:
     </p>
     <dl>
       <dt>conversation</dt><dd>First event. Delivers the conversation id so follow-up messages land in the same thread.</dd>
@@ -254,7 +253,7 @@
     </dl>
     <p>
       Once the stream ends (or the user clicks Stop), the thread scrolls to
-      the bottom and the conversations sidebar refreshes after 500 ms so
+      the bottom and the conversations sidebar refreshes so
       brand-new threads appear without a manual reload.
     </p>
   </section>

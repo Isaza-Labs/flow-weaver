@@ -34,8 +34,8 @@ public class StepRun : BaseModel
     // under a model that had no such signal, and inventing one for them would fabricate
     // history. Null reads as "not recorded", which is what it is.
     //
-    // Nashira holds the same signal in memory for the length of a run because its executor
-    // runs the nodes itself. This product's steps run in a separate worker process, so the
+    // An engine that runs the nodes itself can hold the signal in memory for the length
+    // of a run. This product's steps run in a separate worker process, so the
     // flag has to survive the trip back — hence a column here and none there.
     public bool? ChangedState { get; set; }
 

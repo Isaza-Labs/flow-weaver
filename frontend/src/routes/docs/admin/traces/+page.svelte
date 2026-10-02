@@ -5,7 +5,7 @@
 
 <DocLayout
   title="Traces"
-  lead="Application-level action trail. Every critical handler (AI chat, tool dispatch, auth login, workflow enqueue, ...) writes a row here via ITraceLogger. Geared for live debugging."
+  lead="Application-level action trail. Every critical handler (AI chat, tool dispatch, auth login, workflow enqueue, ...) writes a row here. Geared for live debugging."
 >
   <Callout tone="where" title="Where to find it">
     URL: <a href="/admin/traces"><code>/admin/traces</code></a>.
@@ -35,7 +35,7 @@
     </dl>
     <Callout tone="info">
       Every trace row carries a <strong>request_id</strong> that also appears
-      in the Serilog structured logs. Copy the id from a row to pivot to
+      in the backend's structured logs. Copy the id from a row to pivot to
       <code>docker logs</code> for the full backend stack trace.
     </Callout>
   </section>
@@ -102,7 +102,7 @@
     </p>
     <ul>
       <li>Timestamp.</li>
-      <li>Category, coloured by kind.</li>
+      <li>Category, colored by kind.</li>
       <li>Action string.</li>
       <li>Status badge (ok/failed/timeout).</li>
       <li>Duration in milliseconds.</li>
@@ -122,7 +122,7 @@
     <p>
       The copy-to-clipboard button on the request id puts
       <code>request_id=abc-123</code> on your clipboard in the exact shape
-      Serilog uses, so you can paste-search a log file directly.
+      the backend logs use, so you can paste-search a log file directly.
     </p>
   </section>
 
@@ -137,7 +137,7 @@
   <section>
     <h2>Related chapters</h2>
     <ul>
-      <li><a href="/docs/admin">Admin dashboard</a> — summarises the same stream as charts.</li>
+      <li><a href="/docs/admin">Admin dashboard</a> — health charts for the queue, runs and sign-ins.</li>
       <li><a href="/docs/admin/audit">Audit log</a> — the compliance-oriented sibling.</li>
     </ul>
   </section>

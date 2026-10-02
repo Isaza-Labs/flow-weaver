@@ -78,7 +78,7 @@ public class WorkflowProductionImmutabilityTests
     [Fact]
     public async Task Deleting_a_production_workflow_is_blocked_with_409()
     {
-        // FR-019: a soft-delete mutates the production artifact, so DeleteAsync
+        // A soft-delete mutates the production artifact, so DeleteAsync
         // must refuse it with the same 409 production_immutable as UpdateAsync.
         using var db = NewDb(nameof(Deleting_a_production_workflow_is_blocked_with_409));
         var wf = SeedWorkflow(db, "production");

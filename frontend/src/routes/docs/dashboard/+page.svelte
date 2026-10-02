@@ -15,7 +15,7 @@
   <section>
     <h2>Purpose</h2>
     <p>
-      The dashboard is a read-only overview. It answers three questions at the
+      The dashboard is an overview. It answers three questions at the
       top of your day:
     </p>
     <ul>
@@ -24,44 +24,71 @@
       <li>What has actually been running, and did it succeed?</li>
     </ul>
     <p>
-      It does not let you modify anything — every card is a shortcut into the
-      screen where the action lives.
+      It doesn't let you modify any data; the only thing you can change here
+      is your own list of <em>Quick access</em> shortcuts. Every card is a
+      shortcut into the screen where the action lives.
     </p>
   </section>
 
   <section>
     <h2>Layout</h2>
     <p>
-      Under the page header you'll see up to three stacked blocks, in this order:
+      Under the page header you'll see four stacked blocks, in this order:
     </p>
     <ol>
+      <li><strong>Quick access</strong> — your pinned shortcuts.</li>
       <li><strong>Stats row</strong> — four counter tiles.</li>
-      <li><strong>Job queue</strong> — one row of status pills with counts (hidden when the queue is empty).</li>
+      <li><strong>Job queue</strong> — one row of job states with counts.</li>
       <li><strong>Recent runs</strong> — up to eight rows, newest first.</li>
     </ol>
     <p>
-      While the page is loading, a spinner replaces the whole content area. If
+      While the page is loading, placeholder skeletons stand in for the stats
+      and run list; Quick access is shown either way. If
       any of the underlying endpoints fails, an error card with a
       <em>Retry</em> button appears instead.
     </p>
   </section>
 
   <section>
+    <h2>Quick access</h2>
+    <p>
+      A row of shortcuts to the screens you use most. By default:
+      Workflows, Runs, Schedules and Devices.
+    </p>
+    <ul>
+      <li>
+        <em>Edit</em> switches the row into edit mode: move a shortcut up or
+        down, remove it, or pick a new one from <em>Add a shortcut…</em>
+        (entries are labeled with their sidebar group). <em>Done</em> leaves
+        edit mode.
+      </li>
+      <li>Admin-only destinations are offered to admins only.</li>
+      <li>
+        With no shortcuts pinned the row shows <em>No shortcuts pinned.</em>
+        with an <em>Add some</em> link.
+      </li>
+    </ul>
+    <p>
+      Shortcuts are saved per browser, not per account.
+    </p>
+  </section>
+
+  <section>
     <h2>Stats row</h2>
     <p>
-      Four <code>StatCard</code> tiles, each a link to the matching section:
+      Four counter tiles, each a link to the matching section:
     </p>
     <dl>
       <dt>Devices</dt>
       <dd>
         Count of active devices. Clicking the tile opens
-        <a href="/devices"><code>/devices</code></a>. Coloured with the primary
+        <a href="/devices"><code>/devices</code></a>. Colored with the primary
         accent.
       </dd>
       <dt>Workflows</dt>
       <dd>
         Count of active workflows (drafts + production). Clicking opens
-        <a href="/workflows"><code>/workflows</code></a>. Coloured with the
+        <a href="/workflows"><code>/workflows</code></a>. Colored with the
         success accent.
       </dd>
       <dt>Total runs</dt>
@@ -73,35 +100,38 @@
       <dd>
         Count of prompt skills installed for the assistant. Clicking opens
         <a href="/ai/skills"><code>/ai/skills</code></a>. Warning-tone accent.
+        Prompt skills are admin-only, so for other roles this tile shows 0.
       </dd>
     </dl>
     <Callout tone="info">
-      Each counter is the <code>total</code> field returned from the matching
-      list endpoint queried with <code>limit=1</code>, so a full record scan is
-      never performed on the dashboard.
+      Each counter is the total the server reports for that list; the
+      dashboard doesn't load the records.
     </Callout>
   </section>
 
   <section>
     <h2>Job queue</h2>
     <p>
-      A single card that lists every distinct job status currently in the engine
-      queue along with its count. Statuses include <code>pending</code>,
-      <code>running</code>, <code>completed</code>, <code>failed</code>,
-      <code>retrying</code>, and any other state your engine emits.
+      A single card that counts the jobs in the work queue by state. These
+      are jobs, not runs. The four states are always listed, with 0 when no
+      job is in that state:
     </p>
+    <ul>
+      <li><code>pending</code> — waiting for a worker.</li>
+      <li><code>claimed</code> — picked up by a worker.</li>
+      <li><code>completed</code></li>
+      <li><code>failed</code></li>
+    </ul>
     <p>
-      The card is <strong>hidden entirely</strong> when the queue is empty (no
-      jobs across any status), so an idle system keeps a cleaner layout. When
-      shown, each pill uses the same <code>StatusBadge</code> colour palette used
-      elsewhere in the app, followed by a monospace tabular count.
+      Each state uses the same badge colors as elsewhere in the app, followed
+      by a monospace tabular count.
     </p>
   </section>
 
   <section>
     <h2>Recent runs</h2>
     <p>
-      A list of the eight most recent <strong>WorkflowRun</strong> rows, newest
+      A list of the eight most recent workflow runs, newest
       first. Each row is a clickable link that opens
       <code>/runs/{'{id}'}</code> (the run detail page).
     </p>
@@ -114,9 +144,9 @@
         to showing the truncated run id.
       </li>
       <li><strong>Run id</strong> — first 8 hex characters of the GUID, in a monospace font.</li>
-      <li><strong>Trigger</strong> — the source of the run (e.g. <code>manual</code>, <code>cron</code>, the name of a scheduled trigger). Shown only when non-empty.</li>
+      <li><strong>Trigger</strong> — the source of the run (<code>manual</code>, <code>schedule</code>, <code>webhook</code> or <code>subflow</code>). Shown only when non-empty.</li>
       <li><strong>Relative time</strong> — e.g. “3 min ago”. Hidden on very narrow screens to keep rows single-line.</li>
-      <li><strong>Status badge</strong> — the final or current status (<code>running</code>, <code>completed</code>, <code>failed</code>, etc).</li>
+      <li><strong>Status badge</strong> — the final or current status (<code>pending</code>, <code>running</code>, <code>completed</code>, <code>failed</code> or <code>cancelled</code>).</li>
       <li><strong>Arrow</strong> — a right-pointing chevron that brightens on hover to hint at the link.</li>
     </ul>
 
@@ -127,14 +157,16 @@
 
     <h3>Empty state</h3>
     <p>
-      When no run has ever executed, you'll see an
-      <code>EmptyState</code> card with an inbox icon and the message
+      When no run has ever executed, you'll see a card with an inbox icon,
+      the message
       <em>“No runs yet — Workflow executions will appear here once you run one.”</em>
+      and a <em>Run a workflow</em> button that opens
+      <a href="/workflows"><code>/workflows</code></a>.
     </p>
   </section>
 
   <section>
-    <h2>Behaviour and refresh</h2>
+    <h2>Behavior and refresh</h2>
     <ul>
       <li>
         The dashboard loads once on mount. There is <strong>no auto-refresh</strong>
@@ -146,10 +178,6 @@
         If you want to see updated counts or recent runs, navigate away and back,
         or reload.
       </li>
-      <li>
-        All fetches run in parallel via <code>Promise.all</code>, so the page
-        should feel instant on a healthy backend.
-      </li>
     </ul>
   </section>
 
@@ -159,7 +187,9 @@
       The dashboard is visible to every authenticated user regardless of role.
       Counts reflect what the backend returns for your scope — they are
       not filtered by user. The stats, queue, and recent runs shown are the
-      same whether you're an admin or a viewer.
+      same whether you're an admin or a viewer, with two exceptions: the AI
+      skills tile shows 0 to anyone who isn't an admin, and admin-only
+      destinations don't appear in Quick access.
     </p>
   </section>
 

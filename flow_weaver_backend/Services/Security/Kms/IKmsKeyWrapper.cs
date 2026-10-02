@@ -1,8 +1,8 @@
 namespace flow_weaver_backend.Services.Security.Kms;
 
-// S13.4: provider-neutral wrap/unwrap surface for the DataProtection
+// Provider-neutral wrap/unwrap surface for the DataProtection
 // keyring. The default `NoOpKmsKeyWrapper` is a passthrough — the
-// keyring stays plaintext on disk, matching pre-S13.4 behavior. The
+// keyring stays plaintext on disk, matching the default behavior. The
 // AWS implementation (`AwsKmsKeyWrapper`) calls KMS Encrypt/Decrypt
 // through the AWS SDK; an Azure / Vault provider would slot in here
 // without touching call sites.

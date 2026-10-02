@@ -12,5 +12,5 @@
   "expected": { "result": false },
   "equivalence": "exact",
   "oracle_commit": "fw@1a11ea3",
-  "notes": "The condition adapter never passes a device view to the evaluator, which is the section 9 rule; in Nashira the rule lives at the call site (WorkflowExecutor.EvaluateCondition passes deviceContext: null). executor.conditional.device_reference_does_not_fire covers the same rule end to end through the DAG walk."
+  "notes": "The condition adapter never passes a device view to the evaluator, which is the section 9 rule; an implementation may instead enforce it at the call site by passing no device context. executor.conditional.device_reference_does_not_fire covers the same rule end to end through the DAG walk."
 }

@@ -7,5 +7,5 @@
   "expected": { "http_status": 412, "code": "simulation_missing" },
   "equivalence": "exact",
   "oracle_commit": "fw@95fc69e",
-  "notes": "Skipped by Nashira until the promotion gate exists (Phase 5.5)."
+  "notes": "An implementation without a promotion gate skips this vector."
 }

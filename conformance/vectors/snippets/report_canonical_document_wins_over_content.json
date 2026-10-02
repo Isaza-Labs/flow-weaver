@@ -2,7 +2,7 @@
   "id": "snippets.report.canonical_document_wins_over_content",
   "family": "snippets",
   "contract_version": "1.1.0-draft",
-  "description": "report: document is canonical (FW's structured shape) and content is the Nashira markdown alias. With both present the canonical one wins. Preferring the alias also discarded document.stats and document.sections[].tables, which is where the tables a csv or xlsx export carries actually live — so the step could refuse with not_supported for having no table when it had several.",
+  "description": "report: document is canonical (FW's structured shape) and content is the markdown alias. With both present the canonical one wins. Preferring the alias also discarded document.stats and document.sections[].tables, which is where the tables a csv or xlsx export carries actually live — so the step could refuse with not_supported for having no table when it had several.",
   "input": {
     "type": "report",
     "input": {

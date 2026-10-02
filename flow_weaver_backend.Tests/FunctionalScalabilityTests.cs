@@ -17,9 +17,9 @@ using WorkflowModel = flow_weaver_backend.Models.Workflow;
 
 namespace flow_weaver_backend.Tests;
 
-// Traceability: NFR-004 / TC-FW-030 — "functional scalability for new tasks and
+// "functional scalability for new tasks and
 // integrations: adding capability does NOT degrade existing workflows; the
-// catalog supports growth". Per Requirement.md §5, NFR-004 is satisfied by the
+// catalog supports growth". This is satisfied by the
 // DI plug-in model for `ISnippetHandler` (task types) and `IWorkflowExporter`
 // (export formats) — i.e. FUNCTIONAL extensibility, not a raw load test. This
 // suite pins the "additive, isolated, non-degrading, gracefully-degrading"
@@ -39,7 +39,7 @@ namespace flow_weaver_backend.Tests;
 // entries within SLA" / load-and-capacity dimension (hundreds/thousands of
 // synthetic devices, throughput thresholds) — that is dedicated performance
 // engineering on a separate staging environment with SLA thresholds defined by
-// the product owner, per the TC-FW-030 blocker note.
+// the product owner.
 public class FunctionalScalabilityTests
 {
     private static AppDbContext NewDb(string name) =>

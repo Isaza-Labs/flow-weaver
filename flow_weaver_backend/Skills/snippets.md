@@ -102,8 +102,7 @@ fall back to `python_snippet`. Tell the user and offer
 OpenAPI spec). `python_snippet` is for genuine custom logic, never a
 workaround for a missing integration.
 
-A single REST GET/POST written as a hand-rolled `python_snippet` is the
-anti-pattern we're correcting.
+Never write a single REST GET/POST as a hand-rolled `python_snippet`.
 
 ## Transform handler limits (HARD RULES)
 

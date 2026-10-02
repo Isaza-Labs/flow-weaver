@@ -31,12 +31,13 @@
         asks for nothing else beyond your password.
       </dd>
       <dt>Password</dt>
-      <dd>Minimum 8 characters. Set or change it from the user menu (see below).</dd>
+      <dd>Must satisfy the server's password policy: by default at least 12 characters, with upper- and lower-case letters, a digit and a symbol. Change it from the user menu (see below).</dd>
     </dl>
 
     <Callout tone="info" title="Forgot password?">
-      There is no self-service reset flow. Ask an admin to set a new
-      password for you from <a href="/admin/users"><code>/admin/users</code></a>.
+      There is no password-reset flow: not self-service, and not from the
+      Users screen, which sets a password only when it creates an account.
+      Contact your FlowWeaver administrator.
     </Callout>
   </section>
 
@@ -76,7 +77,7 @@
       <li><strong>Help</strong> — Documentation (this manual).</li>
     </ul>
     <p>
-      The active entry shows a primary-colour accent bar on its left edge and a
+      The active entry shows a primary-color accent bar on its left edge and a
       faint ring on its background pill. Matching is longest-prefix, so
       <code>/workflows/abc</code> still highlights <em>Workflows</em>.
     </p>
@@ -196,7 +197,7 @@
         <tr>
           <td><code>operator</code></td>
           <td>Day-to-day builder. Can create/edit/delete workflows, subflows, snippets, integrations, devices, pools, and credentials.</td>
-          <td>Same as viewer plus write access to all Build, Integrate and Operate screens.</td>
+          <td>Same as viewer plus write access on Workflows, Subflows, Snippets, Integrations, Schedules, Devices, Device pools and Credentials, and on Vendor commands by URL. Git write operations, MCP servers, messaging and email channel configuration, and Artifacts stay admin-only.</td>
         </tr>
         <tr>
           <td><code>admin</code></td>
@@ -207,19 +208,19 @@
     </table>
 
     <Callout tone="admin" title="Hidden is not the same as blocked">
-      The client-side guard in <code>+layout.svelte</code> redirects non-admins away
+      The browser redirects non-admins away
       from <code>/admin/*</code> only. The other admin-only screens —
       <code>/policies</code>, <code>/permissions</code>, <code>/vendor-commands</code>,
       <code>/email</code> — are hidden from the sidebar rather than guarded in the
       browser; deep-linking to one loads the page and the server decides what its
       calls may do. Of those four, only <code>/permissions</code> is genuinely
       admin-only. The other three are admin-only in the sidebar, not on the
-      server: reading the vendor-command catalogue, the corporate policies
+      server: reading the vendor-command catalog, the corporate policies
       (<code>/policies</code> and <code>/policies/audit</code>) and the email
       channel list are all viewer-level capabilities, so a viewer who deep-links
       to one gets a working page with real data — only the write actions on it
       (authoring a policy, configuring a channel) are refused. Operators can go
-      further and manage catalogue entries under <code>/vendor-commands</code>.
+      further and manage catalog entries under <code>/vendor-commands</code>.
       The role check that matters happens on the server, every time.
     </Callout>
   </section>
@@ -351,7 +352,7 @@
       <dt>/settings/password</dt>
       <dd>Change your own password.</dd>
       <dt>/policies</dt>
-      <dd>Guardrails and approval gates. Admin only.</dd>
+      <dd>Guardrails and approval gates. Admins author them; every role can read them by opening the URL.</dd>
       <dt>/permissions</dt>
       <dd>Granular capability grants assigned to users, optionally scoped to an environment, device or resource. Admin only. See <a href="/docs/permissions">Permissions</a>.</dd>
       <dt>/admin</dt>

@@ -25,11 +25,11 @@ device-scoped):
 {
   "to": "noc@example.com",
   "cc": ["oncall@example.com"],
-  "subject": "Backup finished on {{ device.name }}",
+  "subject": "Backup finished: {{ run.workflow_name }}",
   "body": "{{ steps.backup.output.summary }}",
   "attachments": [
     { "file_name": "report.pdf",
-      "content_base64": "{{ steps.report.output.content_base64 }}",
+      "content_base64": "{{ steps.report.output.base64 }}",
       "content_type": "application/pdf" }
   ]
 }
@@ -135,7 +135,7 @@ email per format, and do NOT force the user to pick one:
 
 ```json
 {
-  "to": "example@net.co",
+  "to": "ops@example.com",
   "subject": "Inventory sync — 2026-07-16",
   "body": "Attached in PDF, Excel and CSV.",
   "attachments": [
@@ -153,11 +153,10 @@ drop the largest format if you'd exceed it.
 
 ## Base URL + auth
 
-Lives on the internal network. Reach it via `execute_operation` against
-`fw_email`; base URL and headers are configured in
-`/integrations`. No auth on this microservice today; when an admin
-fronts it with a gateway, the `Integration` row picks up the auth
-config and prompts don't change.
+Reach it via `execute_operation` against `fw_email`. The base URL and
+auth come from the Integration the `fw_email` spec is linked to (set on
+the spec in `/ai/specs`; the Integration is configured in
+`/integrations`), never from the prompt.
 
 ## Hard rules
 
@@ -226,16 +225,16 @@ User: notify ops@example.com that the sync finished
 
 **Report delivery (the pairing flow)**
 ```
-User: generate a PDF with the workflows and send it to example@net.co
+User: generate a PDF with the workflows and send it to ops@example.com
 → generate_report({ format: "pdf", document: { title: "Workflow list — ...", sections: [...] } })
 → tool_result: { report_artifact_id: "2f5b1c8e-...", filename: "workflow-list-20260421153000.pdf", ... }
 → execute_operation(fw_email:send_with_attachment, {
-    to: "example@net.co",
+    to: "ops@example.com",
     subject: "Workflow list",
     body: "PDF attached with the current workflows.",
     attachments: [{ filename: "<filename>", content_base64: "${report:2f5b1c8e-...}" }]
   })
-→ "Done — sent the PDF (workflow-list-20260421153000.pdf) to example@net.co."
+→ "Done — sent the PDF (workflow-list-20260421153000.pdf) to ops@example.com."
 ```
 
 ## What NOT to do

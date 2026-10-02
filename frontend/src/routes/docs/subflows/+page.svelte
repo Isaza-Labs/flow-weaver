@@ -213,10 +213,10 @@
       <code>{'{{ steps.<subflow node>.output.steps.<child node>.<field> }}'}</code> or check
       <code>{'{{ steps.<subflow node>.output.status }}'}</code>.
     </p>
-    <Callout tone="warning" title="Output shape changed">
-      Older versions put the child's step map at the top level
-      (<code>output.&lt;child node&gt;</code>). Templates written that way need
-      <code>.steps</code> inserted before the child node id.
+    <Callout tone="warning" title="Include .steps">
+      The child's step map is under <code>output.steps</code>, not at the top
+      level of <code>output</code>: <code>output.&lt;child node&gt;</code> does
+      not resolve.
     </Callout>
     <p>
       The step succeeds when the child run completes. A failed or cancelled child makes the

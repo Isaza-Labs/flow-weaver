@@ -2,8 +2,8 @@ namespace flow_weaver_backend.Services.Worker.Handlers;
 
 // The one place both HTTP-shaped handlers ask "did this request mean to write?".
 //
-// Copied verbatim from Nashira's CoreHandlers.cs — same name, same rule, same
-// namespace shape — because it is the change signal's definition for HTTP, not
+// Same name, same rule and same shape as the reference engine's —
+// because it is the change signal's definition for HTTP, not
 // either product's opinion about it. A handler that can read the verb can MEASURE
 // its own effect instead of deferring to the author.
 //

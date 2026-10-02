@@ -314,7 +314,7 @@ public class WorkflowImportController : ControllerBase
             ? await _db.Database.BeginTransactionAsync(ct)
             : null;
 
-        // S13.5 — per-resource gating only blocks REPLACE on an existing
+        // Per-resource gating only blocks REPLACE on an existing
         // workflow. Importing as a new row is a create, which the global
         // Operator policy already authorises. Replace soft-deletes the
         // target, so it takes the same owner grant DELETE /api/Workflow does.

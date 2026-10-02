@@ -61,8 +61,7 @@ Run this order for any ssh node, before `create_workflow` /
    warning. If the catalog genuinely lacks a real command, propose adding
    it via `/api/vendor-command` — do not ship an unvalidated guess.
 
-Jumping straight to step 4 (guess, then validate) is the behaviour we're
-moving away from: the validator's "did you mean" is Levenshtein, so it
+Do not jump straight to step 4 (guess, then validate): the validator's "did you mean" is Levenshtein, so it
 catches typos, not wrong-dialect commands. `show lldp neighbors` →
 `show system lldp neighbor` is too far apart to be suggested, so the
 guess fails silently with an echoed command and no output.
@@ -194,7 +193,7 @@ The runner sanitises every command's output before returning it: ANSI
 CSI escape sequences (`\x1b[0m`, `\x1b[23D`, etc.), OSC payloads, and
 C0 control chars (except `\t \n \r`) are stripped from `output`. This
 matters for vendors that always emit ANSI — Nokia SR-OS, Cisco IOS-XR
-with paging, anything wrapped by `screen` — where the raw bytes used to
+with paging, anything wrapped by `screen` — where the raw bytes would otherwise
 contaminate downstream consumers (NetBox custom_fields, email bodies,
 Slack messages) with cursor-move codes that render as garbage.
 
@@ -344,9 +343,16 @@ When `Device.ExpectedSshHostKeyFingerprint` is set
 connect. Mismatch → step fails with
 `host key mismatch for <host>: expected X, got Y`.
 
-When null: soft-TOFU connect, observed fingerprint reported as
-`host_key_fingerprint`. Admin hardens by pasting it via
-`PATCH /api/device/{id}`. Nothing is auto-pinned.
+When null: trust on first use. The connect accepts the presented key and
+reports it as `host_key_fingerprint`; for a step that targets a device
+row, that fingerprint is then pinned on the device automatically, so later
+connects presenting a different key fail. An existing pin is never
+overwritten, and ad-hoc hosts (no device row) are never pinned. Admins can
+turn this off (`Ssh:AutoPinHostKeyOnFirstUse=false`, for labs that re-key
+between runs); unpinned devices then stay unpinned until someone sets
+`expected_ssh_host_key_fingerprint` (device edit dialog or
+`fw_inventory:update_device`, i.e. `PUT /api/device/{id}`). After a
+legitimate re-key, setting it to `""` lets the next connect re-pin.
 
 ## Plan-time command validation (`vendor_commands` catalog)
 
@@ -430,11 +436,18 @@ persist-report (target_mode=once):
     document:
       title: "Running-config snapshot"
       sections:
-        - heading: "Running config"
-          kind: "keyvalue"
-          items:
-            - { key: "stdout", value: "{{ steps.ssh-backup.output.results[1].output }}" }
+        - title: "Running config"
+          tables:
+            - headers: ["Device", "Status", "Config"]
+              rows:
+                - - "{{ steps.ssh-backup.output.devices[0].device }}"
+                  - "{{ steps.ssh-backup.output.devices[0].status }}"
+                  - "{{ steps.ssh-backup.output.devices[0].results[1].output }}"
 ```
+
+`persist-report` is `once` and its producer is `per_device`, so it reads
+`output.devices[N]`, not `output.results`. Sections carry `title`,
+`tables` and `callouts`.
 
 ## Structured output (`use_structured`)
 
@@ -476,8 +489,9 @@ Templates use it defensively:
 
 ## When NOT to use `ssh`
 
-- Device exposes REST/NETCONF/gNMI → prefer `integration_action` or
-  `netconf`. Structured output beats CLI parsing.
+- Device exposes a REST API → prefer `integration_action`. Structured
+  output beats CLI parsing. (The `netconf` snippet type is a stub that
+  fails at run time; don't use it.)
 - Idempotent config push to many devices → prefer `ansible_playbook`.
 - Multi-step workflows with commit/rollback semantics → write a
   `python_snippet` that owns the Netmiko session and implements

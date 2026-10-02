@@ -55,8 +55,8 @@ public sealed class WorkflowBundle
     public const string KindMarker = "flow_weaver.workflow_bundle";
 
     /// <summary>
-    /// Markers this build will parse. The wire format is shared with Nashira,
-    /// which adopted it rather than forking it; a bundle stamped with its own
+    /// Markers this build will parse. The wire format is shared with other engines
+    /// that adopted it rather than forking it; a bundle stamped with an older
     /// marker must still be readable here or half the point of the format is
     /// gone.
     /// </summary>
@@ -284,7 +284,7 @@ public sealed class BundleSnippet
     public string? Idempotency { get; set; }
 
     // Canonical shape (execution/SPEC.md §3): max_retries,
-    // initial_delay_seconds, backoff, max_delay_seconds. The legacy Nashira
+    // initial_delay_seconds, backoff, max_delay_seconds. The legacy
     // shape (max_attempts, delay_seconds, backoff) is accepted on read and
     // translated — see RetryPolicyTranslation.
     [JsonPropertyName("retry_policy")]

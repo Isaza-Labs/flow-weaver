@@ -613,7 +613,7 @@ public sealed class SshHandler : ISnippetHandler
             _logger.LogWarning(
                 "ssh.host_key.unpinned device_id={DeviceId} host={Host} fingerprint={Fingerprint} "
                 + "— auto-pin is off (Ssh:AutoPinHostKeyOnFirstUse=false); this device accepts any host key. "
-                + "Pin it via PATCH /api/device/{DeviceId} expected_ssh_host_key_fingerprint.",
+                + "Pin it via PUT /api/device/{DeviceId} expected_ssh_host_key_fingerprint.",
                 id, host, observed, id);
             return;
         }

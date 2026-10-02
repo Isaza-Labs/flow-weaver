@@ -1,7 +1,7 @@
 namespace flow_weaver_backend.Services.Permission;
 
-// Rollout switch for the granular RBAC HTTP layer
-// (plan_rbac_granular.md §6.1). In `legacy` mode a [HasPermission("cap")] gate
+// Rollout switch for the granular RBAC HTTP layer.
+// In `legacy` mode a [HasPermission("cap")] gate
 // reproduces the capability's legacy tier (Admin/Operator/Viewer), so migrating
 // controllers to the attribute changes nothing. Flip to `granular` to
 // enforce the actual permission grants via IEffectivePermissions.

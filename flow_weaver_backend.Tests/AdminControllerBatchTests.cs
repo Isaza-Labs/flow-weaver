@@ -293,19 +293,21 @@ public class AdminControllerBatchTests
         Assert.Empty(f.Db.Secrets);
     }
 
-    // KNOWN INCONSISTENCY: the rejection message says "2–64 chars", but the
-    // regex (`^[a-z0-9](?:[a-z0-9_-]{1,62}[a-z0-9])?$`) makes the tail group
-    // optional, so a single character is accepted. Pinned as-is — the name is
-    // only required to be URL/host-header safe, which one char already is.
-    [Fact]
-    public async Task Secrets_ASingleCharacterNameIsAcceptedDespiteTheMessage()
+    // Names are 2–64 chars, matching the rejection message.
+    [Theory]
+    [InlineData("a", false)]
+    [InlineData("db", true)]
+    [InlineData("-db", false)]
+    [InlineData("netbox-token", true)]
+    public async Task Secrets_NameLengthMatchesTheMessage(string name, bool accepted)
     {
         using var f = new SecretsFixture();
 
         var result = await f.Build().Create(
-            new CreateSecretRequest { Name = "a", Value = "v" }, default);
+            new CreateSecretRequest { Name = name, Value = "v" }, default);
 
-        Assert.IsType<CreatedAtActionResult>(result.Result);
+        if (accepted) Assert.IsType<CreatedAtActionResult>(result.Result);
+        else Assert.IsNotType<CreatedAtActionResult>(result.Result);
     }
 
     [Fact]

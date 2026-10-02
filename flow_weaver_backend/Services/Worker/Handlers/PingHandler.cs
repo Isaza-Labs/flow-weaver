@@ -163,7 +163,7 @@ public sealed class PingHandler : ISnippetHandler
 
         return new SnippetResult
         {
-            // A reachability probe reads; it never mutates. Same verdict as Nashira's.
+            // A reachability probe reads; it never mutates. Same verdict as the contract.
             Change = StepChange.Unchanged,
             Success = success,
             Output = output,

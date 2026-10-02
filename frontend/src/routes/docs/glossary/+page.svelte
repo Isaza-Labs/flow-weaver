@@ -53,7 +53,7 @@
       </dd>
       <dt>config_overrides</dt>
       <dd>
-        The per-node settings of a workflow node. They customise a snippet for
+        The per-node settings of a workflow node. They customize a snippet for
         that node without changing the snippet, and may contain
         <code>{'{{ … }}'}</code> templates.
       </dd>
@@ -87,7 +87,7 @@
       <dt>integration</dt>
       <dd>
         A connection to an external REST system: base URL, authentication and a
-        catalogue of actions. See <a href="/docs/integrations">Integrations</a>.
+        catalog of actions. See <a href="/docs/integrations">Integrations</a>.
       </dd>
       <dt>MCP server</dt>
       <dd>
@@ -213,7 +213,7 @@
       </dd>
       <dt>vendor command</dt>
       <dd>
-        A catalogue entry describing a CLI command for a device platform, used to
+        A catalog entry describing a CLI command for a device platform, used to
         find and validate SSH commands. See
         <a href="/docs/vendor-commands">Vendor commands</a>.
       </dd>

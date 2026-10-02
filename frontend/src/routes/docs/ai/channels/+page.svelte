@@ -40,10 +40,9 @@
       <li>The provider posts the reply back into the originating thread.</li>
     </ol>
     <p>
-      The conversation is persisted as an <code>AIConversation</code> with
-      <code>Source</code> set to the provider and an
-      <code>ExternalThreadId</code>, so a follow-up message continues the same
-      thread instead of starting fresh.
+      The conversation is stored with the provider as its source and the
+      external thread id, so a follow-up continues the same thread instead of
+      starting fresh.
     </p>
   </section>
 
@@ -58,9 +57,10 @@
       <dt>Linked user's role</dt>
       <dd>
         Every turn runs as the <strong>real internal user</strong> linked to
-        the external identity (<code>MessagingIdentityLink.LinkedUserId</code>),
-        never a fixed "channel role". An unlinked sender is denied (when
-        <code>require_linked_user</code> is on, which is the default).
+        the external identity, never a fixed "channel role". An unlinked
+        sender never runs the agent: with <code>require_linked_user</code> on
+        (the default) the bot answers with an account-linking prompt; with it
+        off the message is rejected silently.
       </dd>
       <dt>Channel ceiling (max_role)</dt>
       <dd>
@@ -72,23 +72,23 @@
       </dd>
       <dt>Same enforcement point</dt>
       <dd>
-        The effective role is bound onto the request scope and the existing
-        <code>ToolDispatcher</code> gate reads it from there. A viewer asking the
+        The turn goes through the same tool permission check as the web chat.
+        A viewer asking the
         Slack bot to run an admin-only tool gets the same 403 it would get in
         the web chat.
       </dd>
     </dl>
     <Callout tone="admin" title="No escalation by transport">
       There is no path by which arriving through a channel raises your
-      privileges. The role math lives in <code>MessagingRoles.Effective</code>
-      and only ever takes the <em>more restrictive</em> of the two inputs.
+      privileges. The effective role is always the <em>more restrictive</em>
+      of the two inputs.
     </Callout>
   </section>
 
   <section>
     <h2>Account linking (self-service)</h2>
     <p>
-      The first time an unrecognised external user messages the bot, FlowWeaver
+      The first time an unrecognized external user messages the bot, FlowWeaver
       issues a single-use, ~15-minute, hashed link token and the bot DMs a
       link. The flow is self-service — no admin has to wire identities by hand:
     </p>
@@ -143,7 +143,7 @@
         <code>app_id</code> and optionally takes <code>tenant_id</code>;
         WhatsApp takes <code>phone_number_id</code> and
         <code>verify_token</code>; Slack and Telegram need nothing. The form
-        renders these as labelled inputs for the selected provider — there is no
+        renders these as labeled inputs for the selected provider — there is no
         JSON to hand-write — with a <em>JSON</em> tab as an escape hatch and an
         <em>Add field</em> editor for providers whose config is open-ended.
       </dd>
@@ -164,9 +164,20 @@
       <dt>max_role</dt>
       <dd>The privilege ceiling described above. Empty = no ceiling.</dd>
       <dt>require_linked_user</dt>
-      <dd>When on (default), unlinked senders are refused with a link prompt.</dd>
+      <dd>
+        When on (default), an unlinked sender gets an account-linking prompt
+        instead of an answer. When off, the message is rejected silently.
+        Either way the agent never runs for an unlinked sender.
+      </dd>
       <dt>allowed_external_ids</dt>
       <dd>Optional allow-list of external user IDs that may talk to the channel.</dd>
+      <dt>allow_unsigned</dt>
+      <dd>
+        Off by default. When on, deliveries without verification material are
+        accepted instead of refused with 401: Slack, Telegram and WhatsApp when
+        the channel has no signing secret stored; Teams when the request has no
+        Bearer token. For local testing only.
+      </dd>
       <dt>enabled</dt>
       <dd>Master switch. Disabled channels ignore inbound traffic.</dd>
     </dl>
@@ -195,12 +206,11 @@
         <code>app_token</code> field. No Request URL is needed.
       </li>
       <li>
-        <code>SlackSocketModeHostedService</code> reconciles enabled Socket-Mode
-        channels every 30&nbsp;s, opens one WSS per channel via
-        <code>apps.connections.open</code>, acknowledges each envelope, and
-        reconnects with backoff. Inbound socket events skip HMAC verification
-        (the WebSocket itself is the trust boundary) via
-        <code>ReceiveVerifiedAsync</code>.
+        The backend checks enabled Socket-Mode channels every 30&nbsp;s, opens
+        one WebSocket per channel via <code>apps.connections.open</code>,
+        acknowledges each envelope, and reconnects with backoff. Inbound socket
+        events skip HMAC verification: the WebSocket itself is the trust
+        boundary.
       </li>
     </ul>
     <Callout tone="info" title="Where the agent actually runs">
@@ -209,8 +219,8 @@
       the standard split deployment (an API container plus a worker-only
       container) the shared <code>jobs</code> queue means a socket event the
       worker receives is still answered by the API container, which holds the
-      full tool set. If a turn ever comes back with "no tools enabled", that is
-      the symptom of the agent running where the registry is empty.
+      full tool set. A turn that comes back with "no tools enabled" means the
+      agent ran in a process without the tool registry.
     </Callout>
   </section>
 
@@ -262,9 +272,8 @@
       field names, so it gets its own walkthrough. The bot is an
       <strong>Azure Bot</strong> resource backed by a Microsoft Entra app
       registration; FlowWeaver speaks the Bot Framework protocol directly, with
-      no Azure-hosted bot code in between. Every step below has been validated
-      against a real deployment, including the error messages you will see when
-      a step is skipped.
+      no Azure-hosted bot code in between. Where skipping a step produces a
+      specific error message, the step quotes it.
     </p>
     <p>
       You will need: an Azure subscription with permission to create resources,
@@ -321,7 +330,7 @@
       </li>
       <li>
         <strong>Client secrets → + New client secret</strong>. Give it a
-        recognisable description and an expiry (24 months is the maximum).
+        recognizable description and an expiry (24 months is the maximum).
       </li>
       <li>
         Copy the <strong>Value</strong> column — not <em>Secret ID</em>, which
@@ -394,12 +403,13 @@
         goes to the shared <code>botframework.com</code> authority and fails
         with 401. Only a legacy multi-tenant bot may leave it empty.
       </dd>
-      <dt>Require linked account / Allow unsigned</dt>
+      <dt>Require linked account / Allow unsigned deliveries</dt>
       <dd>
         Keep the defaults (on / off). <em>Require linked account</em> off does
         not open access — it silently rejects unknown senders instead of sending
-        them the self-service linking prompt. <em>Allow unsigned</em> on
-        disables JWT verification and must never be set outside local testing.
+        them the self-service linking prompt. <em>Allow unsigned deliveries</em>
+        on accepts activities that carry no Bearer JWT; a token that is present
+        is still verified. Never set it outside local testing.
       </dd>
     </dl>
 
@@ -654,10 +664,9 @@
       </li>
     </ol>
     <p>
-      <code>TeamsRelayHostedService</code> reconciles enabled Teams channels
-      every 30&nbsp;s, opens one listener per configured channel, and reopens
-      with backoff if the control channel drops — the same shape as
-      <code>SlackSocketModeHostedService</code>. The channel's details panel
+      The backend checks enabled Teams channels every 30&nbsp;s, opens one
+      Relay listener per configured channel, and reopens with backoff if the
+      control channel drops — the same pattern as Slack Socket Mode. The channel's details panel
       stops advertising the webhook URL once a Relay string is set, because that
       URL is no longer what Azure should be pointed at. If both the API and a
       worker replica run the service, each opens a listener against the same
@@ -668,12 +677,12 @@
     <Callout tone="admin" title="Why anonymous senders are the right setting">
       Turning Relay client authorization <em>on</em> makes the Relay consume the
       request's <code>Authorization</code> header as its own SAS token — which
-      would eat the Bot Framework JWT before it ever reaches us. Leaving it off
+      would eat the Bot Framework JWT before it reaches FlowWeaver. Leaving it off
       costs nothing: unlike Socket Mode, this path does <strong>not</strong> take
       the transport as proof. The relayed request goes through the same
-      <code>ReceiveAsync</code> as the public webhook, so issuer, audience,
+      verification as the public webhook, so issuer, audience,
       signature and the <code>serviceurl</code> claim are all still verified. The
-      JWT is the guard, and it always was. (If you do want Relay-level auth as
+      JWT is the guard. (If you do want Relay-level auth as
       well, pass the SAS token as an <code>sb-hc-token</code> query parameter on
       the messaging endpoint instead — the Relay strips it before forwarding and
       leaves <code>Authorization</code> alone.)
@@ -776,7 +785,7 @@
       <li>
         <strong>Dedupe</strong> — every inbound event is keyed by
         <code>channel + provider_event_id</code>; a redelivered event is
-        recognised and skipped.
+        recognized and skipped.
       </li>
       <li>
         <strong>At-most-once agent turn</strong> — the inbound row is the

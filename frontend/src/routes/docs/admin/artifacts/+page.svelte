@@ -5,7 +5,7 @@
 
 <DocLayout
   title="Artifacts"
-  lead="Every generated document, organised by origin: Reports come out of workflow runs, Exports are produced without a workflow — by the agent in chat or a direct API call. This is the audit view: who created what, when, and from which prompt or run."
+  lead="Every generated document, organized by origin: Reports come out of workflow runs, Exports are produced without a workflow — by the agent in chat or a direct API call. This is the audit view: who created what, when, and from which prompt or run."
 >
   <Callout tone="where" title="Where to find it">
     List: <a href="/admin/artifacts"><code>/admin/artifacts</code></a> ·
@@ -21,8 +21,8 @@
     <h2>Concept</h2>
     <p>
       Certain tools and workflow steps produce <strong>document
-      artefacts</strong> — HTML, CSV, XLSX or PDF files derived from queries
-      the agent or a workflow step ran. Each lands in the artefact store with
+      artifacts</strong> — HTML, CSV, XLSX or PDF files derived from queries
+      the agent or a workflow step ran. Each lands in the artifact store with
       a metadata row recording its origin. The view splits them by that
       origin:
     </p>
@@ -74,7 +74,7 @@
         exports, or the workflow / run / trigger for reports.</li>
       <li>An inline preview (HTML, PDF, first rows of CSV).</li>
       <li>A <em>Download</em> button that streams the file from the backend
-        artefact store directly — no intermediate base64 in the browser.</li>
+        artifact store directly — no intermediate base64 in the browser.</li>
     </ul>
   </section>
 
@@ -82,13 +82,14 @@
     <h2>Delivering a document by email</h2>
     <p>
       Ask the agent in <a href="/docs/ai/chat">chat</a> to "email me the
-      report" and it generates the file, then attaches it through the
-      <code>fw_email</code> integration. The attachment is passed <strong>by
-      reference</strong>, not by value: the agent writes
-      <code>{'${report:<report_artifact_id>}'}</code> into the attachment and
-      the backend splices in the file bytes at send time. The model never
-      carries the base64 blob, so attachments no longer arrive truncated or
-      empty.
+      report" and it generates the file, then sends it with an operation of
+      the shipped <code>fw_email</code> API spec (through
+      <code>execute_operation</code>); the spec delivers only once bound to an
+      integration whose base URL points at your email gateway. The attachment
+      is passed <strong>by reference</strong>, not by value: the agent writes
+      <code>{'${report:<report_artifact_id>}'}</code> into
+      <code>content_base64</code> and the backend replaces it with the file's
+      base64 when the call is sent. The model never carries the base64 blob.
     </p>
     <Callout tone="success" title="Several formats in one email">
       Ask for "PDF and Excel" — or "all formats" — and you get a single email

@@ -5,7 +5,7 @@ using flow_weaver_backend.Services.Identity;
 
 namespace flow_weaver_backend.Services.Ai.Constructor;
 
-// FR-002 / FR-003: ask an LLM whether the user's prompt contains enough
+// Ask an LLM whether the user's prompt contains enough
 // information to build a workflow. If not, surface clarifying questions
 // the chat agent can echo verbatim before calling create_workflow_plan.
 //

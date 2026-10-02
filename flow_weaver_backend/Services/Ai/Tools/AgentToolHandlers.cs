@@ -7,7 +7,7 @@ namespace flow_weaver_backend.Services.Ai.Tools;
 // ToolRegistry at startup (see Program.cs). Kept here — not inline in
 // Program.cs — so the classification-coverage test iterates the EXACT set that
 // gets registered: adding a handler to this list is what makes the tool
-// callable, and the test (ToolClassificationCoverageTests, FR-037 / TC-FW-063)
+// callable, and the test (ToolClassificationCoverageTests)
 // then forces an explicit PermissionClassifier.Matrix + ToolCapabilityMap entry
 // for it. Order is irrelevant.
 public static class AgentToolHandlers
@@ -72,7 +72,7 @@ public static class AgentToolHandlers
         // to v1 + lists missing dependencies. Read-only; the chat user
         // is redirected to /workflows/import to commit.
         typeof(AnalyzeForeignWorkflowHandler),
-        // Reads a file into structured data. Ported from Nashira; its byte source
+        // Reads a file into structured data. Its byte source
         // is a stored report artifact rather than a conversation attachment,
         // because this product has no attachments and does have artifacts.
         typeof(ParseFileHandler),

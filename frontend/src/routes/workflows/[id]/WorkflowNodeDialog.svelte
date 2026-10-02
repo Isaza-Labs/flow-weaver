@@ -362,7 +362,7 @@
     const fields: (keyof Snippet)[] = [
       'name', 'description', 'code', 'script_language',
       'target_mode', 'max_parallel', 'timeout_seconds',
-      // S13.6 follow-up: per-snippet rollback policy override.
+      // Per-snippet rollback policy override.
       'idempotency',
       // python_snippet interactive-SSH sandbox flag (admin-gated).
       'network_enabled',
@@ -543,7 +543,7 @@
     {#if tab === 'node'}
       <div class="space-y-3">
         {#if isSubflow}
-          <!-- S14.1: subflow picker. Selecting a subflow stamps three
+          <!-- Subflow picker. Selecting a subflow stamps three
                keys onto config_overrides:
                  subflow_id          → workflow_id of the chosen subflow
                  subflow_name        → display name (cached for diffs)
@@ -1029,7 +1029,7 @@
           {/if}
         {/if}
 
-        <!-- S13.6 follow-up: rollback policy override per snippet. The
+        <!-- Rollback policy override per snippet. The
              handler's DefaultIdempotency is the floor — picking a
              weaker value here is ignored by the analyzer when the
              handler ships NonReversible. See docs/handlers.md and

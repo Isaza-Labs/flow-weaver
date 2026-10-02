@@ -29,7 +29,7 @@
   let outputSchemaText = $state('{}');
   let retryPolicyText = $state('{}');
   let logicDiagramMermaid = $state('');
-  // S13.6 follow-up: rollback policy override. Empty string = inherit
+  // Rollback policy override. Empty string = inherit
   // the handler default; the analyzer floors it to the handler's
   // DefaultIdempotency when the handler is stricter.
   let idempotency = $state<'' | 'idempotent' | 'requires_compensation' | 'non_reversible'>('');
@@ -339,7 +339,7 @@
               {/if}
             {/if}
 
-            <!-- S13.6 follow-up: rollback policy override. Empty value
+            <!-- Rollback policy override. Empty value
                  inherits the handler's DefaultIdempotency. The
                  WorkflowRollbackAnalyzer floors any softening here to
                  the handler's value when the handler is stricter. -->

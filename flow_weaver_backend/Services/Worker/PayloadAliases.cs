@@ -148,7 +148,7 @@ public static class PayloadAliases
                 // A leftover, not an override: the canonical key beside it is the answer.
                 if (IsRedundant(payload, redundant, prop.Name)) continue;
 
-                // `mapping` is the Nashira spelling of a JMESPath multiselect
+                // `mapping` is the older-bundle spelling of a JMESPath multiselect
                 // hash: `{ "<out>": "<path>" }` IS `{out: path}`.
                 if (isTransform && Is(prop.Name, "mapping"))
                 {

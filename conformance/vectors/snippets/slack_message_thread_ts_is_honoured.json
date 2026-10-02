@@ -12,5 +12,5 @@
   },
   "equivalence": "subset",
   "oracle_commit": "fw@fe07550",
-  "notes": "Asserts the OUTBOUND CALL, not the step output, because the two are indistinguishable when this fails: a reply flattened to the root of the channel returns ok:true with the same fields. Which transport an implementation needs in order to honour the key is its own business — Nashira has two and only one of them can thread, so its adapter reaches for that one; the oracle has a single transport and its adapter does nothing special. A vector naming a transport would be a vector describing one product's plumbing."
+  "notes": "Asserts the OUTBOUND CALL, not the step output, because the two are indistinguishable when this fails: a reply flattened to the root of the channel returns ok:true with the same fields. Which transport an implementation needs in order to honour the key is its own business — an implementation with two transports, only one of which can thread, has its adapter reach for that one; the oracle has a single transport and its adapter does nothing special. A vector naming a transport would be a vector describing one product's plumbing."
 }

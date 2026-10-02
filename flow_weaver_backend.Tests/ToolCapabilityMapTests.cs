@@ -3,7 +3,7 @@ using flow_weaver_backend.Services.Permission.Catalog;
 
 namespace flow_weaver_backend.Tests;
 
-// Phase 5 of the RBAC-granular refactor (plan_rbac_granular.md): the agent tool
+// Phase 5 of the RBAC-granular refactor: the agent tool
 // gate. Guards that every classified tool has a capability mapping (so a new
 // tool can't silently become default-denied in granular mode) and that every
 // mapping points at a real catalogue capability.

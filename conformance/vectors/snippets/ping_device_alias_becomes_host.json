@@ -2,7 +2,7 @@
   "id": "snippets.ping.device_alias_becomes_host",
   "family": "snippets",
   "contract_version": "1.1.0-draft",
-  "description": "ping: host is canonical (Flow Weaver is the oracle for payload keys), device is the Nashira alias.",
+  "description": "ping: host is canonical (Flow Weaver is the oracle for payload keys), device is an accepted alias.",
   "input": { "type": "ping", "input": { "device": "core-1", "count": 3, "timeout_ms": 500 } },
   "expected": { "normalized_input": { "host": "core-1", "count": 3, "timeout_ms": 500 } },
   "equivalence": "exact",

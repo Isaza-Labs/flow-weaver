@@ -4,7 +4,7 @@ using flow_weaver_backend.Services.Engine;
 
 namespace flow_weaver_backend.Tests;
 
-// Traceability: FR-009 (TC-FW-009) / NFR-005 (TC-FW-031) — the execution engine
+// The execution engine
 // never invokes an LLM. Rather than instrument a run, we assert the structural
 // precondition that makes an LLM call impossible: no type under
 // flow_weaver_backend.Services.Engine has a compile-time dependency

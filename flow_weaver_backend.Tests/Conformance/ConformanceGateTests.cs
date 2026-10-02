@@ -8,7 +8,7 @@ namespace flow_weaver_backend.Tests.Conformance;
 // Being the oracle is the reason for this gate, not an exemption from it. Until this file
 // existed, nothing in this repository could tell the difference between changing the product
 // and changing the contract — a divergence here does not violate the specification, it
-// silently redefines it, and Nashira goes red for a decision nobody made.
+// silently redefines it, and other engines go red for a decision nobody made.
 //
 // Two rules make the gate mean something:
 //
@@ -39,8 +39,8 @@ public class ConformanceGateTests
     // This is the half of the gate that protects a REPORTING family. "No new failures" is not
     // the same promise as "these many behaviours are still checked": an adapter that started
     // answering null for half its family would report zero failures and zero passes, and a
-    // gate watching only failures would call that green. Nashira's gate has carried floors
-    // from the start; this one was watching failures alone.
+    // gate watching only failures would call that green. A gate needs
+    // floors as well as failures.
     //
     // Raising a floor is routine and expected — it is how progress is locked in. LOWERING one
     // is a contract decision that has to be argued in the change that lowers it.

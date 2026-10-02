@@ -8,45 +8,32 @@ ASP.NET Core 10 backend for FlowWeaver — a network-automation platform. It man
 
 ### Models vs DTOs
 
-- **Models** (`Database/Models/`): EF Core entities. Used only for persistence. They do **not** carry `[JsonPropertyName]` attributes because they are never serialized to HTTP responses directly.
-- **DTOs** (`Database/DTos/<Entity>/`): the HTTP contract. Every inbound/outbound payload goes through a DTO. DTOs own all `[JsonPropertyName]`, validation attributes, and snake_case JSON mapping.
+- **Models** (`Data/Models/`): EF Core entities. Used only for persistence. They do **not** carry `[JsonPropertyName]` attributes because they are never serialized to HTTP responses directly.
+- **DTOs** (`Data/DTos/<Entity>/`): the HTTP contract. Every inbound/outbound payload goes through a DTO. DTOs own all `[JsonPropertyName]`, validation attributes, and snake_case JSON mapping.
 
 This separation keeps persistence concerns out of the API surface, prevents accidental leakage of sensitive fields (e.g. encrypted blobs), and lets the DB schema evolve independently from the public contract.
 
 ### Folder layout
 
 ```
-Database/
-  Models/
-    BaseModel.cs           # IsActive, CreatedAt, UpdatedAt
-    Device.cs
-    InventorySource.cs
-    Credential.cs          # stores encrypted secrets as byte[]
-  DTos/
-    Device/
-      CreateDevice.cs
-      UpdateDevice.cs
-      DeleteDevice.cs
-      ListDevice.cs
-      DeviceResponse.cs
-    InventorySource/
-      CreateInventorySource.cs
-      UpdateInventorySource.cs
-      InventorySourceResponse.cs
-    Credential/
-      CreateCredential.cs
-      UpdateCredential.cs
-      CredentialResponse.cs    # public — no secrets
-      CredentialFull.cs        # internal — decrypted secrets
-      DeviceCredentials.cs     # runtime service payload
-      DeviceInfo.cs            # job payload with embedded credentials
-Services/
-  Interfaces/
-    Credential/
-      ICredentialEncryptionService.cs
-  Credential/
-    CredentialEncryptionService.cs
+Data/
+  Db/                   # AppDbContext + EF Core migrations
+  Models/               # EF Core entities
+  DTos/<Entity>/        # HTTP contract, one folder per entity
+  Repositories/
+  Schemas/              # workflow.v1.schema.json
+Controllers/
+Services/<Domain>/      # one folder per domain (Device, Workflow, Engine, Ai, …)
+Services/Interfaces/
+BackgroundServices/
+Exceptions/
+Skills/                 # agent prompt skills (+ vendors/ CLI catalogs)
+Specs/                  # OpenAPI specs the agent can call
+keyring/                # Data Protection key ring — git-ignored
 ```
+
+For example, credentials span `Data/Models/Credential.cs`,
+`Data/DTos/Credential/…` and `Services/Credential/CredentialEncryptionService.cs`.
 
 ---
 
@@ -82,7 +69,7 @@ inbound (webhook / socket)
 
 A channel can only **restrict** privileges, never widen them. Every turn runs as the **real internal user** linked to the external identity (`MessagingIdentityLink.LinkedUserId`), never a fixed channel role; an unlinked sender is denied. The effective role is `MessagingRoles.Effective(userRole, channel.MaxRole)` = `min(userRole, MaxRole)`, bound onto the request scope so the existing `ToolDispatcher` gate (which reads the caller's roles) enforces it exactly as on the web. A viewer cannot run an admin tool from Slack any more than from the browser.
 
-> **Granular RBAC (see `docs/permissions.md`).** The coarse 3-tier model is being replaced by capability-based **permission grants** (env/device/resource-conditioned), enforced identically on web (`[HasPermission]`), the agent (`ToolCapabilityMap`), and messaging — where `channel.MaxRole` becomes a **capability ceiling** that intersects the user's grants and rides the agent's HTTP self-call via a `cap_ceiling` claim. The application-wide `rbac_mode` (`legacy` default) gates the rollout; `admin` bypasses; everyone else is default-deny.
+> **Granular RBAC (see `docs/permissions.md`).** Besides the coarse 3-tier model, FlowWeaver supports capability-based **permission grants** (env/device/resource-conditioned), enforced identically on web (`[HasPermission]`), the agent (`ToolCapabilityMap`), and messaging — where `channel.MaxRole` becomes a **capability ceiling** that intersects the user's grants and rides the agent's HTTP self-call via a `cap_ceiling` claim. The application-wide `rbac_mode` setting selects the model: `legacy` (default) or `granular`. `admin` bypasses every check; in `granular` mode everyone else is default-deny.
 
 ### Account linking (self-service)
 
@@ -132,7 +119,7 @@ Flow-weaver is an **MCP client**: register external Model Context Protocol serve
 | Workflow | `McpCallHandler` (`Type => "mcp_call"`, `RequiresCompensation`) |
 | RBAC | caps `mcpserver.read/manage`, `mcp.read/execute`; `mcp.execute` conditionable by server **and** tool (`mcp_server`/`mcp_tool` dimensions) |
 
-See **`docs/mcp.md`** for the full guide and `plan_mcp.md` for the design.
+See **`docs/mcp.md`** for the full guide.
 
 ---
 
@@ -251,7 +238,7 @@ Every SSH session checks the device's key against `Device.ExpectedSshHostKeyFing
 
 `IUrlGuard` blocks loopback, RFC-1918, CGNAT (100.64/10), link-local + cloud metadata (169.254.169.254), the documentation/benchmarking ranges, multicast and reserved space, for IPv4 and IPv6 including IPv4-mapped forms — plus a scheme allowlist (http/https only). `Integration.AllowPrivateNetwork` / `McpServer.AllowPrivateNetwork` opens RFC-1918 for that one target and **never** opens loopback or the metadata IP.
 
-Redirects are the other half, and they used to be the hole: `HttpClient` follows them by default, so one `302 Location: http://169.254.169.254/…` from an allowed host bypassed the guard at every call site simultaneously. Clients that fetch influenced URLs are registered with `AddGuardedHttpClient`, which forces `AllowAutoRedirect = false` **and** installs `SsrfGuardingRedirectHandler`:
+Redirects are the other half: `HttpClient` follows them by default, so one `302 Location: http://169.254.169.254/…` from an allowed host would bypass the guard at every call site. Clients that fetch influenced URLs are registered with `AddGuardedHttpClient`, which forces `AllowAutoRedirect = false` **and** installs `SsrfGuardingRedirectHandler`:
 
 - Follows redirects itself, running `IUrlGuard` on every hop, capped at 5.
 - Strips `Authorization` / `X-API-Key` / `Cookie` on a cross-origin hop — otherwise answering 302 is enough to harvest an integration's bearer.
@@ -259,7 +246,7 @@ Redirects are the other half, and they used to be the hole: `HttpClient` follows
 
 Guarded clients: `rest_call`, `integration` / `integration-insecure`, `mcp` / `mcp-insecure`. Residual risk: DNS rebinding between the check and the connect (`Security:AllowInternalUrls=true` disables the guard entirely — development only).
 
-**Non-HTTP egress** (the SMTP relay behind `email_send`) uses `EnsureHostSafe(host)`, which applies the same address rules without a scheme. Do not fake a URL to reuse `EnsureSafe` — `EmailSender` used to pass a synthetic `smtp://host:port`, and it broke the moment the scheme allowlist landed.
+**Non-HTTP egress** (the SMTP relay behind `email_send`) uses `EnsureHostSafe(host)`, which applies the same address rules without a scheme. Do not fake a URL (e.g. `smtp://host:port`) to reuse `EnsureSafe`: the scheme allowlist rejects anything but http/https.
 
 ---
 
@@ -297,6 +284,7 @@ Sensitive credential fields (`Password`, `PrivateKey`) are **never** stored in p
 | `Credential.EncryptedPrivateKey` | `byte[]` | Same |
 | `Credential.Username` | `string` | Not sensitive; stored in clear |
 | `Credential.Extra` | `JsonElement` (`jsonb`) | Not encrypted by default — audit fields before persisting |
+| `Integration.AuthConfig` | `JsonElement` (`jsonb`) | Encrypted by an `AppDbContext` value converter (`IntegrationAuthCipher`): the column holds an envelope `{"$enc":"v1","ct":"…"}` and services always see plaintext. Rows written before encryption existed are encrypted at startup (`IntegrationAuthBackfill`) |
 
 ### Usage example
 
@@ -396,19 +384,13 @@ Follow these steps **before** going to production. Skipping any of them defeats 
 
 ### 1. Keep the key ring out of source control
 
-Add to the repo's `.gitignore`:
+The key ring directory (`DataProtection:KeyRingPath`, `./keyring` by default) holds the master keys, in plaintext unless a KMS provider is configured. It must never be committed: the root `.gitignore` excludes `keyring/`; exclude any other configured path the same way.
 
-```
-# Data Protection key ring — must NEVER be committed
-keyring/
-**/keyring/
-```
-
-Also exclude it from any Docker image, container registry, or CI artifact. If the keyring leaks, every encrypted credential in the DB is compromised.
+Also exclude it from any Docker image, container registry, or build artifact. If the keyring leaks, every encrypted credential in the DB is compromised; rotate it as described in `docs/ops/keyring-rotation.md`.
 
 ### 2. Switch key storage off the local filesystem
 
-Filesystem persistence is fine for development. In production, choose one of:
+Filesystem persistence is fine for development. One production option is built in: set `DataProtection:KmsProvider=aws-kms` with `DataProtection:Aws:KeyId` (and optionally `DataProtection:Aws:Region`) to wrap every persisted key with AWS KMS. The other options below require changing the Data Protection setup in `Program.cs`:
 
 - **Azure**: `.PersistKeysToAzureBlobStorage(...)` + `.ProtectKeysWithAzureKeyVault(...)`
 - **AWS**: store key ring in S3 with SSE-KMS, or use `Aws.DistributedCacheDataProtection` community package
@@ -437,7 +419,7 @@ Data Protection rotates keys automatically every 90 days. Old keys stay in the r
 
 - Do **not** log `CreateCredential`, `UpdateCredential`, `CredentialFull`, or `DeviceCredentials` instances directly.
 - The `ToString()` overrides on `CredentialFull` and `DeviceCredentials` already omit secrets — but structured logging frameworks (Serilog, etc.) will happily serialize every property. Configure destructuring policies to redact `Password`, `PrivateKey`, and any key in `Extra` that looks sensitive.
-- Review request logging middleware: by default ASP.NET Core does not log bodies, but any third-party middleware that does must be configured to skip `/credentials` endpoints.
+- Review request logging middleware: by default ASP.NET Core does not log bodies, but any third-party middleware that does must be configured to skip the `/api/credential` endpoints.
 
 ### 7. Lock down the `CredentialFull` path
 
@@ -446,7 +428,7 @@ Data Protection rotates keys automatically every 90 days. Old keys stay in the r
 - Never return them from a public controller action.
 - If a downstream service needs them (e.g. a job worker), transport over mTLS or a signed internal channel.
 
-### 8. Audit credential access — done
+### 8. Audit credential access
 
 Every decryption through `SecretResolver` emits a `secret.access` row into
 `trace_events`, carrying who (the user, or the bound automation identity),
@@ -467,29 +449,14 @@ Query it via `GET /api/admin/traces?action=secret.access`.
 
 ### 9. Authorization on credential endpoints
 
-- `POST /credentials` and `PUT /credentials/{id}` — admin-only.
-- `GET /credentials/{id}` — returns `CredentialResponse` (no secrets), authenticated users with the right role.
-- Any endpoint that exposes `CredentialFull` must be gated by a distinct, stricter policy (e.g. service-account-only).
+- `POST/PUT/DELETE /api/credential[/{id}]` require `credential.manage` (Operator tier in `legacy` mode).
+- `GET /api/credential` and `GET /api/credential/{id}` require `credential.read` (Viewer) and return `CredentialResponse` (no secrets).
+- No controller returns `CredentialFull`; any endpoint added to expose it must be gated by a stricter policy (e.g. service-account-only).
 
-### 10. Tests to add
+### 10. Tests worth keeping for any change to the encryption path
 
 - **Round-trip**: encrypt a known plaintext, decrypt, assert equality.
 - **Non-determinism**: encrypt the same plaintext twice, assert the two ciphertexts differ (Data Protection includes a random IV).
 - **Null handling**: `Encrypt(null)` and `Decrypt(null)` return `null`; `Encrypt("")` returns `null`.
 - **Tamper detection**: flip a byte in a ciphertext, assert `Decrypt` throws (HMAC should catch it).
 - **Response DTOs never contain secrets**: serialize `CredentialResponse` from a `Credential` that has encrypted fields, assert the JSON has no `password` or `private_key` key.
-
----
-
-## Next Steps
-
-In rough order:
-
-1. Add a DB context (`AppDbContext`) with `DbSet<Device>`, `DbSet<InventorySource>`, `DbSet<Credential>`.
-2. Install `EFCore.NamingConventions` and enable `UseSnakeCaseNamingConvention()` so DB columns are snake_case without `[Column]` attributes on every property.
-3. Create the initial EF migration (`dotnet ef migrations add Initial`).
-4. Wire up controllers for each entity: `DeviceController`, `InventorySourceController`, `CredentialController`.
-5. Implement the credential service (`CredentialService`) using the example above.
-6. ~~Add audit logging for credential reads.~~ Done — see **Production Hardening §8**.
-7. Add integration tests covering the encryption round-trip against a real PostgreSQL instance.
-8. Before deploying: complete every item in **Production Hardening** above.

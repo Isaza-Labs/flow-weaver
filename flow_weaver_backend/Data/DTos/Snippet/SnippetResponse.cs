@@ -62,7 +62,7 @@ public class SnippetResponse
     [JsonPropertyName("logic_diagram_mermaid")]
     public string? LogicDiagramMermaid { get; set; }
 
-    // S13.6: per-snippet idempotency override consumed by the rollback
+    // Per-snippet idempotency override consumed by the rollback
     // analyzer. Null = inherit the handler default. Allowed values:
     // "idempotent", "requires_compensation", "non_reversible".
     [JsonPropertyName("idempotency")]

@@ -31,7 +31,7 @@ namespace flow_weaver_backend.Tests.Conformance;
 // output, and only the outbound side tells them apart.
 //
 // Answering it needs each handler run against an intercepted transport, which is real
-// fixture work (Nashira's `NashiraAdapter.Probes.cs` is 250 lines of it). Returning the
+// fixture work. Returning the
 // vector's own probe payload back as the answer would produce twelve green vectors that
 // assert nothing — a vector that carries a payload and then checks that same payload has
 // those fields agrees with itself and can never fail.

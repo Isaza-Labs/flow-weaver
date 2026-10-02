@@ -2,7 +2,7 @@
   "id": "snippets.transform.canonical_expression_wins_over_mapping",
   "family": "snippets",
   "contract_version": "1.1.0-draft",
-  "description": "transform: expression is canonical (JMESPath, decided 2026-08-27 D1) and mapping is the Nashira alias. With both present the canonical one wins, so the alias is dropped and the JMESPath expression is what runs.",
+  "description": "transform: expression is canonical (JMESPath, decided 2026-08-27 D1) and mapping is the accepted alias. With both present the canonical one wins, so the alias is dropped and the JMESPath expression is what runs.",
   "input": {
     "type": "transform",
     "input": { "expression": "devices[?status=='active'].name", "mapping": { "n": "devices[0].name" } }

@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace flow_weaver_backend.Tests;
 
-// Phase 4 of the RBAC-granular refactor (plan_rbac_granular.md): the web
+// Phase 4 of the RBAC-granular refactor: the web
 // enforcement layer. Guards that controllers migrated off the legacy
 // Viewer/Operator policies, that every [HasPermission] names a real capability,
 // and that the handler reproduces legacy tiers (RbacMode=legacy) while honouring

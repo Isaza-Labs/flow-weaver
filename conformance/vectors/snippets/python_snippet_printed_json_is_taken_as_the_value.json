@@ -7,5 +7,5 @@
   "expected": { "output": { "total": 3 } },
   "equivalence": "fields-present",
   "oracle_commit": "fw@fe07550",
-  "notes": "The companion to python_snippet.portable_output_is_stdout_json, and the half that vector cannot see. That one asserts the output SHAPE, which an implementation satisfies merely by removing an envelope; this one asserts that a script written the oracle's way runs at all. Nashira's harness binds a result name and treats standard output as logs, so before this its answer to a printing script was empty while the shape vector passed."
+  "notes": "The companion to python_snippet.portable_output_is_stdout_json, and the half that vector cannot see. That one asserts the output SHAPE, which an implementation satisfies merely by removing an envelope; this one asserts that a script written the oracle's way runs at all. A harness that binds a result name and treats standard output as logs answers a printing script with nothing, while the shape vector still passes."
 }

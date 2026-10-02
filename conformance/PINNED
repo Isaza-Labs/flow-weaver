@@ -6,12 +6,10 @@
 contract_version: 1.1.0-draft
 oracle:           flow-weaver
 oracle_commit:    fw@fe07550
-copied_from:      netora/workflow-v1-conformance
-copied_on:        2026-08-29
 
 # SHA-256 over every vector and the schema, each preceded by its path, sorted by path.
 # The path is hashed too: a vector RENAMED into another family would otherwise not move it.
-digest:           e1fe45b5c46865d6f312ee5bc779c0880f72472dbe44c677f8f117a9dc83544d
+digest:           626d422bc93190b76d63340ce6e5b93b94a1956c3ed5b5deb1be5bbf24b22fc7
 
 # Per-family counts. The digest catches an edited file; these catch a deleted one, which a
 # digest over 'the files that are here' cannot.

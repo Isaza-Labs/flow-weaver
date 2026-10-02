@@ -14,7 +14,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace flow_weaver_backend.Controllers;
 
-// FR-015 / FR-016: operator's test bench for a registered integration
+// Operator's test bench for a registered integration
 // action. Fires the same HTTP call that an integration_action workflow
 // node would, but returns a detailed transcript instead of persisting a
 // step_run — ideal for validating a spec after upload, or confirming an

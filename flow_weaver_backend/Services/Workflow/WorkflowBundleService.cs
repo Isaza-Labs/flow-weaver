@@ -65,8 +65,8 @@ public sealed record ResolvedSubflow(BundleWorkflowDefinition Definition, JsonEl
 /// carried only GUIDs, the fuzzy matcher scored those GUID strings against
 /// integration names, matched nothing, and fell through to stubbing.
 ///
-/// A bundle from another FlowWeaver — or from Nashira, which adopted the same
-/// format — is not a foreign format. It resolves deterministically or it fails
+/// A bundle from another FlowWeaver — or from another engine that adopted
+/// the same format — is not a foreign format. It resolves deterministically or it fails
 /// with a list — never a guess.
 /// </remarks>
 public sealed class WorkflowBundleService(

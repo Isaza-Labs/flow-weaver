@@ -19,16 +19,18 @@
       moves through three environments:
     </p>
     <ol>
-      <li><strong>draft</strong> — edit freely, run against any target.</li>
-      <li><strong>qa</strong> — frozen graph, can only execute against QA-flagged devices or pools.</li>
-      <li><strong>production</strong> — locked; updates require clone → edit → promote again.</li>
+      <li><strong>draft</strong> — edit freely; runs reach the devices and pools that allow <code>draft</code> (new devices and pools do by default).</li>
+      <li><strong>qa</strong> — frozen graph; runs reach only the devices and pools that allow <code>qa</code> (off by default).</li>
+      <li><strong>production</strong> — locked; runs reach only the devices and pools that allow <code>production</code>. Updates require clone → edit → promote again.</li>
     </ol>
     <p>
       The QA lab is where you verify that a promoted workflow works safely in
       a constrained environment before flipping it into production. The
       production promotion gate is explicit: there must be a completed
       <em>qa</em> run of the same workflow within the last 48 hours, plus a
-      second approver on the promotion dialog.
+      second approver on the promotion dialog. The 48-hour rule is the default
+      policy <code>default.qa_to_production</code>; an admin can edit or replace
+      it under <a href="/docs/policies">Policies</a>.
     </p>
   </section>
 
@@ -65,10 +67,9 @@
     <Callout tone="warning">
       If <em>every</em> target you picked is filtered out, the run is refused
       with <code>409 no runnable targets in environment '…'</code> instead of
-      starting. Historically this was the usual reason a workflow that ran fine
-      in <code>draft</code> "didn't see the devices" in <code>qa</code>: before
-      the three toggles existed only qa filtered, so the same selection
-      resolved in draft and resolved to nothing in qa. A <em>partial</em> match
+      starting. This is the usual reason a workflow that ran fine in
+      <code>draft</code> finds no devices in <code>qa</code>: the selected
+      devices allow draft but not qa. A <em>partial</em> match
       still runs — a mixed pool exposing only the members that allow the
       environment is by design. The run dialog and the schedule form grey out
       the devices that don't allow the workflow's environment, so the case is
@@ -106,7 +107,7 @@
         <tr>
           <td>Last run</td>
           <td>
-            StatusBadge with the status of the most recent run. If the
+            A badge with the status of the most recent run. If the
             workflow has never been run, the cell shows <em>"never run"</em>.
           </td>
         </tr>
@@ -135,10 +136,9 @@
       <li>From the QA lab page, click <em>Open</em> on the workflow you want to validate.</li>
       <li>In the editor, click the green <em>Run</em> button in the toolbar.</li>
       <li>
-        In the <em>Run</em> dialog, pick one or more QA-flagged devices (or
-        pools). The engine will automatically filter out any non-QA targets if
-        the workflow's environment is <code>qa</code>, but picking only
-        QA-flagged rows keeps the dispatch tidy.
+        In the <em>Run</em> dialog, pick one or more devices that allow
+        <code>qa</code>. Devices that don't are greyed out, and the engine drops
+        any that slip through.
       </li>
       <li>Fire the run. The monitor page shows the live execution.</li>
       <li>
@@ -151,10 +151,10 @@
   <section>
     <h2>Promoting to production</h2>
     <ol>
-      <li>From the workflow list, switch to the <em>Draft</em> tab and find the <code>qa</code> workflow (it was cloned forward from draft at the first promotion).</li>
+      <li>From the workflow list, switch to the <em>QA</em> tab and find the workflow (the qa copy created when the draft was promoted).</li>
       <li>Click <em>Promote</em>. The dialog infers the next environment: since this workflow is already in qa, the target is <code>production</code>.</li>
       <li>Write a <em>Change summary</em> describing what is shipping.</li>
-      <li>Enter an <em>Approved by</em> identity different from the operator running the promotion. This is the second signature.</li>
+      <li>Enter an <em>Approved by</em> name: the second reviewer. The server refuses the promotion if it is the username of the user running it. This is the second signature.</li>
       <li>Submit. If the 48-hour QA run gate is not satisfied, the backend rejects the call and the dialog shows the error.</li>
     </ol>
   </section>
@@ -174,8 +174,8 @@
     <h2>Role differences</h2>
     <ul>
       <li><strong>Viewer</strong> — see the dashboard; cannot trigger runs.</li>
-      <li><strong>Operator</strong> — same as viewer, plus can run a QA workflow from the editor.</li>
-      <li><strong>Admin</strong> — same as operator. Promotion to production still requires the <em>Approved by</em> second-signer field so a single admin cannot push a production change by themselves.</li>
+      <li><strong>Operator</strong> — same as viewer, plus can run a QA workflow from the editor and promote it to production.</li>
+      <li><strong>Admin</strong> — same as operator. Promotion to production still requires the <em>Approved by</em> second-signer field, which can't be the admin's own username.</li>
     </ul>
   </section>
 

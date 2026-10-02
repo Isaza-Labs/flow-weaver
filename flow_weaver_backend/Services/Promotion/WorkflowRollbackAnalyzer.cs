@@ -163,7 +163,7 @@ public sealed class WorkflowRollbackAnalyzer
     /// </summary>
     /// <remarks>
     /// Extracted from this analyzer's own loop so the executor can score a finished run the
-    /// same way promotion scores a graph. Nashira's comment on the equivalent function is
+    /// same way promotion scores a graph. The reference engine's note on the equivalent function is
     /// the reason it is one function and not two: the two used to disagree there, and a run
     /// reported `rolled_back` for an email it could not unsend.
     ///

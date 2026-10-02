@@ -50,7 +50,7 @@
         works in a range of 1 to 90 days, and it <strong>clamps</strong> rather than rejects:
         a request for 0 or a negative number is computed over 1 day, and anything above 90
         over 90 days. The response reports the window it actually used, so read
-        <em>Window starts</em> rather than assuming your number was honoured.
+        <em>Window starts</em> rather than assuming your number was honored.
       </dd>
       <dt>Target</dt>
       <dd>
@@ -165,11 +165,11 @@
         does not reload; click <strong>Apply</strong>.
       </dd>
       <dt>Window starts … UTC</dt><dd>The first day included, as returned by the server.</dd>
-      <dt>Cards</dt><dd>One per indicator: coloured dot, label, value, and <em>target ≤ …</em> or <em>target ≥ …</em>.</dd>
-      <dt>How these are computed</dt><dd>A short reference card that summarises the four definitions above.</dd>
+      <dt>Cards</dt><dd>One per indicator: colored dot, label, value, and <em>target ≤ …</em> or <em>target ≥ …</em>.</dd>
+      <dt>How these are computed</dt><dd>A short reference card that summarizes the four definitions above.</dd>
     </dl>
 
-    <h3>Status colours</h3>
+    <h3>Status colors</h3>
     <table>
       <thead><tr><th>Dot</th><th>Lower is better</th><th>Higher is better</th></tr></thead>
       <tbody>
@@ -259,7 +259,7 @@
   <section>
     <h2>Empty and loading states</h2>
     <ul>
-      <li><strong>Loading:</strong> a spinner labelled <em>Loading SLOs…</em>.</li>
+      <li><strong>Loading:</strong> a spinner labeled <em>Loading SLOs…</em>.</li>
       <li><strong>No data for an indicator:</strong> value <code>—</code>, grey dot. The target is still shown.</li>
       <li><strong>Nothing ran at all:</strong> latency, error rate and promotion latency are grey; throughput is <code>0.00 jobs/hr</code> and red.</li>
     </ul>

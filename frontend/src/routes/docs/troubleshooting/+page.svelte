@@ -23,9 +23,9 @@
       <thead><tr><th>Symptom</th><th>Likely cause and fix</th></tr></thead>
       <tbody>
         <tr><td>Correct password is rejected after several attempts</td><td>The account is locked after repeated failures. An admin can check the <em>Auth</em> tab of the <a href="/docs/admin/audit">Audit log</a> for a <code>lockout</code> event.</td></tr>
-        <tr><td>Forgotten password</td><td>There is no self-service reset. Ask an admin to set a new one from <a href="/docs/admin/users">Users</a>.</td></tr>
-        <tr><td>Account cannot sign in at all</td><td>The account is disabled. An admin re-enables it in <a href="/docs/admin/users">Users</a>.</td></tr>
-        <tr><td>Every tab is suddenly signed out</td><td>A reused refresh token was treated as theft and all sessions were revoked. Sign in again; see <a href="/docs/account">Account &amp; session</a>.</td></tr>
+        <tr><td>Forgotten password</td><td>There is no password-reset flow, either self-service or on the <a href="/docs/admin/users">Users</a> screen. Contact your FlowWeaver administrator.</td></tr>
+        <tr><td>Account cannot sign in at all</td><td>The account was disabled or deleted. It no longer appears on the <a href="/docs/admin/users">Users</a> screen, which can't re-enable it.</td></tr>
+        <tr><td>Every tab is suddenly signed out</td><td>Your password was changed, or a reused refresh token was treated as theft and all sessions were revoked. Sign in again; see <a href="/docs/account">Account &amp; session</a>.</td></tr>
       </tbody>
     </table>
   </section>
@@ -55,7 +55,7 @@
         <tr><td><code>credential 00000000-… not found</code> or <code>credential not found</code></td><td>The device has no credential, or its credential was deleted. Assign one in <a href="/docs/devices">Devices</a> (bulk-assign works).</td></tr>
         <tr><td>SSH step fails with a host key mismatch</td><td>The device presented a different key than the pinned one. If the rotation is legitimate, clear the fingerprint on the device; the next connect re-pins it.</td></tr>
         <tr><td>An SSH step stops with a policy denial before a command runs</td><td>A policy with <code>ssh_command_regex</code> matched that command. See <a href="/docs/policies">Policies</a>.</td></tr>
-        <tr><td>An SSH step warns that a command is not in the catalogue</td><td>The <a href="/docs/vendor-commands">vendor command catalogue</a> has no entry for it on that platform. It is a warning only; the command still runs.</td></tr>
+        <tr><td>An SSH step warns that a command is not in the catalog</td><td>The <a href="/docs/vendor-commands">vendor command catalog</a> has no entry for it on that platform. It is a warning only; the command still runs.</td></tr>
       </tbody>
     </table>
   </section>

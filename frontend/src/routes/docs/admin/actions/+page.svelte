@@ -5,7 +5,7 @@
 
 <DocLayout
   title="Reusable actions (legacy)"
-  lead="A read-only view of the legacy skills database table. The page doesn't list the agent's tools, and nothing in FlowWeaver uses these rows today."
+  lead="A read-only view of the legacy skills database table. The page doesn't list the agent's tools, and nothing in FlowWeaver uses these rows."
 >
   <Callout tone="where" title="Where to find it">
     URL: <a href="/admin/actions"><code>/admin/actions</code></a>. The page isn't
@@ -21,13 +21,11 @@
   <section>
     <h2>Purpose</h2>
     <p>
-      Early versions of FlowWeaver stored "reusable AI actions" in a database table
-      called <code>skills</code>. When <code>/skills</code> was repurposed for
-      prompt skills, the old list moved to this page so its rows could still be
-      inspected. The page heading is <strong>Reusable actions</strong>, with the
-      subtitle <em>"Read-only view of the legacy skills table."</em>
+      The page heading is <strong>Reusable actions</strong>, with the subtitle
+      <em>"Read-only view of the legacy skills table."</em> FlowWeaver creates no
+      such rows; on most installations the list is empty.
     </p>
-    <Callout tone="warning" title="Not a tool catalogue">
+    <Callout tone="warning" title="Not a tool catalog">
       Neither the agent nor workflows read these rows. The agent's prompt-skill
       tools (<code>list_skills</code>, <code>load_skill</code>) read
       <em>prompt skills</em>, not this table. Nothing in the backend updates the

@@ -59,7 +59,7 @@
             <dd>
                 Fires a one-shot call to the provider using the stored key.
                 Per-row status appears inline while testing (spinner), then a
-                CheckCircle2 (OK) or XCircle (failed) icon. A toast holds the
+                check-mark (OK) or cross (failed) icon. A toast holds the
                 full error on failure.
             </dd>
             <dt>Edit</dt>

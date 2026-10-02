@@ -13,7 +13,7 @@ public interface IWorkflowSchemaValidator
     string CurrentSchemaVersion { get; }
 
     // Raw JSON of the embedded schema file — exposed so the schema
-    // publication endpoint (FR-007) can serve it verbatim without
+    // publication endpoint can serve it verbatim without
     // re-reading the embedded resource itself.
     string RawJson { get; }
 

@@ -390,8 +390,8 @@ public sealed class WorkerHostedService : BackgroundService
                     return new SnippetResult
                     {
                         // A handler that throws is a bug in the handler, not a workflow failure the
-                        // author can act on. Recorded as unchanged for the same reason Nashira's
-                        // `SnippetResult.Fail` is: a handler that mutated something and THEN threw
+                        // author can act on. Recorded as unchanged for the same reason the
+                        // contract's `SnippetResult.Fail` is: a handler that mutated something and THEN threw
                         // has to catch its own exception and say so, because nobody out here can.
                         // Never retryable: a bug does not fix itself on the next attempt.
                         Change = StepChange.Unchanged,

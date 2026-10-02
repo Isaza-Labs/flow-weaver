@@ -95,8 +95,8 @@
           <td>Bundle</td>
           <td>
             A JSON object whose <code>kind</code> is
-            <code>flow_weaver.workflow_bundle</code> (also accepted:
-            <code>nashira.workflow_bundle</code>, <code>netora.workflow_bundle</code>).
+            <code>flow_weaver.workflow_bundle</code> (some older format identifiers
+            are also accepted).
             This check runs <em>before</em> any other detector and ignores the
             format hint. Accepted <code>schema_version</code> values are
             <code>v2</code> and <code>v3</code>. The export writes <code>v3</code>.
@@ -300,10 +300,8 @@
         <tr>
           <td>Structural-duplicate threshold</td>
           <td>
-            Nominally a graph fingerprint similarity of 95% or more, but in
-            practice <strong>exact only</strong>: the fingerprint is a SHA-256
-            hash of the normalised graph, so the comparison returns either 100%
-            or 0%. The card never appears for a workflow that merely resembles
+            <strong>Exact match only</strong>: the comparison uses a hash of the
+            normalized graph, so it returns either 100% or 0%. The card never appears for a workflow that merely resembles
             the import, and the <strong>Match score</strong> is always 100%.
           </td>
         </tr>
@@ -366,10 +364,11 @@
         the existing workflow's id, history and environment. It saves the current
         state as a version, then overwrites nodes and edges and increments the
         version number.
-        <Callout tone="warning" title="Skip doesn't cancel on commit">
-          The server only acts on <strong>Update existing workflow</strong>. With
-          <strong>Skip — cancel import</strong> selected, <strong>Commit import</strong>
-          still creates a new workflow. To abandon an import, click
+        <Callout tone="warning" title="Skip and Commit import">
+          Of these options the server only acts on <strong>Update existing
+          workflow</strong>. With <strong>Skip — cancel import</strong>,
+          <strong>Commit import</strong> creates a new workflow, the same as
+          <strong>Import as new</strong>. To abandon an import, click
           <strong>Cancel</strong>.
         </Callout>
       </dd>
@@ -387,6 +386,9 @@
           <li><strong>Replace the existing workflow (requires owner grant)</strong>: deactivates the existing workflow and creates the import alongside it.</li>
           <li><strong>Keep existing — cancel this import</strong>: nothing is created. The result says "Import cancelled — kept existing workflow."</li>
         </ul>
+        For a bundle, only <strong>Keep existing — cancel this import</strong> is
+        applied. With any other choice, and whatever the duplicate card says, the
+        bundle is imported as a new workflow under its own name.
       </dd>
       <dt>Rollback risk</dt>
       <dd>
@@ -694,11 +696,7 @@ and import again.`}</code></pre>
       <li>
         For a bundle, the wizard's review doesn't show which snippets will be
         created or reused. That information arrives as notes after the commit.
-        The <strong>Rename</strong>, <strong>Replace</strong> and duplicate
-        choices have no effect. Only
-        <strong>Keep existing — cancel this import</strong> is honoured.
       </li>
-      <li><strong>Skip — cancel import</strong> on the duplicate card doesn't cancel. See the warning above.</li>
       <li>
         Mapping candidates are based on names, not endpoints, so two unrelated
         systems can score well. Check low percentages by hand.
@@ -707,7 +705,7 @@ and import again.`}</code></pre>
         Drafts live in the server's memory. A restart loses them, and a deployment
         with several API instances needs sticky sessions.
       </li>
-      <li>Missing vendor-command catalogues are detected but not shown in the wizard.</li>
+      <li>Missing vendor-command catalogs are detected but not shown in the wizard.</li>
     </ul>
   </section>
 

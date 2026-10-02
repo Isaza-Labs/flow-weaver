@@ -319,7 +319,7 @@ public static class SnippetKeyCatalog
     /// Excluded from <see cref="UnknownKeys"/> for the same reason, and the note it used to
     /// produce was wrong twice over: it called a contract-named key a possible typo, and it
     /// said "the handler ignores them" when the worker READS this one — and fails the step
-    /// when it is absent for a type that defers. Found by running a Nashira-authored bundle
+    /// when it is absent for a type that defers. Found by running an externally authored bundle
     /// through this product's import.
     /// </remarks>
     public const string ChangesKey = "changes";

@@ -33,7 +33,7 @@ public static class JobStatus
     public const string Failed = "failed";
 }
 
-// S15.1 — Integration health/availability status. Surfaced in the UI and
+// Integration health/availability status. Surfaced in the UI and
 // consulted by IntegrationActionHandler / WorkflowExecutor before any
 // outbound HTTP. `needs_config` means an admin or the import wizard
 // created the row but credentials are still missing; runs that touch

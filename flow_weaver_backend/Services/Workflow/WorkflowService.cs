@@ -168,7 +168,7 @@ public class WorkflowService : IWorkflow
         // back to config_overrides.device_type.
         var vendorResult = await _vendorCommandValidator.ValidateAsync(nodes, Array.Empty<Guid>(), default);
 
-        // FR-023: corporate guardrails. Evaluate before persisting so a
+        // Corporate guardrails. Evaluate before persisting so a
         // deny-rule stops the write at the API boundary instead of
         // leaving a half-committed workflow behind.
         var policyCtx = new PolicyEvaluationContext(
@@ -374,7 +374,7 @@ public class WorkflowService : IWorkflow
             wf.LastSimulationId = null;
         }
 
-        // FR-023: re-evaluate policies on structural updates. A rule
+        // Re-evaluate policies on structural updates. A rule
         // targeting `snippet_type: ssh` would otherwise allow someone to
         // edit a non-ssh workflow into an ssh one and bypass the block.
         if (structureChanged)

@@ -12,8 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace flow_weaver_backend.Controllers;
 
-// Public ingestion endpoint for `webhook`-type WorkflowTriggers (FR-027 /
-// TC-FW-061). PUBLIC — the caller (a third-party system, a CI job, curl) can't
+// Public ingestion endpoint for `webhook`-type WorkflowTriggers. PUBLIC — the caller (a third-party system, a CI job, curl) can't
 // authenticate with a JWT, so auth is the per-trigger HMAC secret validated by
 // the receiver. Distinct route from the JWT-authed trigger CRUD; the path here
 // is what users paste into their webhook sender.

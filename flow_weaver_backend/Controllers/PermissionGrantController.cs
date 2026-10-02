@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace flow_weaver_backend.Controllers;
 
-// Management API for granular permission grants (plan_rbac_granular.md phase 3).
+// Management API for granular permission grants.
 // Admin-only: authoring/assigning access is an administration action. The
 // grant-builder UI reads the capability catalogue from GET .../capabilities.
 //

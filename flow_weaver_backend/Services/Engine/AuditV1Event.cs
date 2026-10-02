@@ -6,7 +6,7 @@ namespace flow_weaver_backend.Services.Engine;
 /// One executed mutation, in the shared `audit.v1` shape.
 /// </summary>
 /// <remarks>
-/// Ported member-for-member from Nashira's record of the same name, because the shape IS the
+/// Matches the shared contract member for member, because the shape IS the
 /// contract: a conformance vector compares the event object WHOLE, so an engine that dropped
 /// a member or renamed one fails rather than quietly forking an interop format.
 ///

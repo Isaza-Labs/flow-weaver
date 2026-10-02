@@ -91,7 +91,7 @@ public sealed partial class FlowWeaverAdapter
     // to catch it.
     //
     // The addressable violations are emitted beside `valid` even though nothing asserts them
-    // yet, so this adapter and Nashira's answer the family in the same shape and a later
+    // yet, so every adapter answers the family in the same shape and a later
     // vector does not have to be written twice.
     private JsonElement Schema(JsonElement input)
     {

@@ -16,5 +16,5 @@
   },
   "equivalence": "fields-present",
   "oracle_commit": "fw@1a11ea3",
-  "notes": "fields-present compares the presence and TYPE of each name, never the numbers, which are a property of the probe and not of the contract. The earlier draft of this document specified an invented quartet (reachable/latency_ms/method/host) that the oracle never emitted; those four are Nashira extensions and are deliberately not asserted here."
+  "notes": "fields-present compares the presence and TYPE of each name, never the numbers, which are a property of the probe and not of the contract. The earlier draft of this document specified an invented quartet (reachable/latency_ms/method/host) that the oracle never emitted; those four are implementation extensions and are deliberately not asserted here."
 }

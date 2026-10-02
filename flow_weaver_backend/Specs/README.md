@@ -8,9 +8,12 @@ Examples:
 - `netbox.yaml`      → operations available under `netbox:*`
 - `servicenow.yaml`  → operations available under `servicenow:*`
 
-Each spec is parsed at startup into an in-memory index. After editing a
-spec on disk, hit `POST /api/ai/catalog/reload` to re-index without
-restarting the server.
+At startup every spec is synced into the database (a shipped spec an
+admin edited in the UI keeps the admin's version) and indexed in memory.
+After editing a spec on disk, use **Reseed from disk** on `/ai/specs`
+(`POST /api/admin/api-specs/reseed`, admin; it overwrites admin edits of
+shipped specs). `POST /api/ai/catalog/reload` only re-indexes what is
+already in the database.
 
 Minimal valid spec:
 

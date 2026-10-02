@@ -10,7 +10,7 @@ namespace flow_weaver_backend.Tests;
 //   1. StepChangeResolution — who gets to say whether a step changed anything.
 //   2. RunOutcomeCalculator — what the run reports once every step has said.
 //
-// Both are ports of Nashira's, so the tests are ports of Nashira's reasoning too. What they
+// Both follow the shared contract, so the tests follow its reasoning too. What they
 // are guarding is one specific regression: the old model had NO change signal here at all,
 // so anything that computed a "final state" would have been computing it from whether steps
 // succeeded. These tests exist to keep the answer measured.

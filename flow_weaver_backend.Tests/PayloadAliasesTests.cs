@@ -19,7 +19,7 @@ namespace flow_weaver_backend.Tests;
 // spelling accepted as an alias. Getting this wrong does not break the import —
 // it breaks the FIRST RUN, days later, on someone else's instance, with an
 // error that says a required key is missing while the node plainly carries it.
-// These are the cases that make a Nashira-authored workflow execute here.
+// These are the cases that make an externally authored workflow execute here.
 public class PayloadAliasesTests
 {
     private static SnippetRequest Req(string type, object input, Guid? deviceId = null, string? code = null)

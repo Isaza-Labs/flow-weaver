@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace flow_weaver_backend.Tests;
 
-// Phase 1 of the RBAC-granular refactor (plan_rbac_granular.md): the built-in
+// Phase 1 of the RBAC-granular refactor: the built-in
 // operator/viewer grants and the dual-write that mirrors User.Role into them.
 // These pin the "no behaviour change on migration" guarantee — after seeding,
 // every user holds exactly the capabilities their legacy role granted.

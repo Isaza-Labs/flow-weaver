@@ -10,7 +10,7 @@ using PolicyModel = flow_weaver_backend.Models.Policy;
 
 namespace flow_weaver_backend.Services.Policy;
 
-// FR-023: guardrail CRUD. Thin layer — the interesting
+// Guardrail CRUD. Thin layer — the interesting
 // logic lives in IPolicyEvaluator, which this service only writes rows
 // for. Enable/disable is a first-class toggle so admins can pause a
 // rule without losing its text.

@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace flow_weaver_backend.Tests;
 
-// Phase 0 of the RBAC-granular refactor (plan_rbac_granular.md). Locks the
+// Phase 0 of the RBAC-granular refactor. Locks the
 // capability catalogue's integrity and — crucially — guards COVERAGE: every
 // controller on the API surface must map to a domain the catalogue knows, so a
 // newly-added endpoint can't ship without a granular capability behind it.

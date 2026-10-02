@@ -17,15 +17,20 @@
     <p>
       A workflow is a directed acyclic graph (DAG) of <strong>nodes</strong> (calls
       to snippets or integration actions) connected by typed <strong>edges</strong>
-      (<em>success</em>, <em>failure</em>, or <em>always</em>). Every workflow
+      (<em>success</em>, <em>failure</em>, <em>always</em>, or <em>conditional</em>). Every workflow
       lives in one of three environments, each a more constrained copy of the
       previous one:
     </p>
     <ul>
-      <li><strong>draft</strong> — editable, safe to iterate, the default when you click <em>New workflow</em>.</li>
-      <li><strong>qa</strong> — promoted from draft. Runs only against pools flagged as <em>QA lab</em>.</li>
-      <li><strong>production</strong> — promoted from qa. Locked icon in the list; new changes require clone→edit→promote.</li>
+      <li><strong>draft</strong> — editable, safe to iterate, the default when you click <em>New workflow</em>. Runs reach only devices and pools that allow <code>draft</code> (new devices do by default).</li>
+      <li><strong>qa</strong> — promoted from draft. Runs reach only devices and pools that allow <code>qa</code> (off by default; see <a href="/docs/qa-lab">QA lab</a>).</li>
+      <li><strong>production</strong> — promoted from qa. Runs reach only devices and pools that allow <code>production</code>. New changes require clone→edit→promote.</li>
     </ul>
+    <p>
+      Promoting copies the workflow into the next environment. The copy appears
+      in that environment's tab and the source stays where it was. The qa and
+      production copies are locked (padlock icon).
+    </p>
     <p>
       Every workflow carries an <strong>input schema</strong> (JSON Schema for the
       <code>input</code> map you can pass at run time), a set of <strong>nodes</strong>
@@ -37,18 +42,19 @@
   <section>
     <h2>The list page</h2>
     <p>
-      Opens at <code>/workflows</code>. A <strong>PageHeader</strong> with title and
-      description, the <em>New workflow</em> button (only while the Draft tab is
-      active), and below it a row containing two <strong>Tabs</strong> and a
-      <strong>SearchInput</strong>.
+      Opens at <code>/workflows</code>. A header with title and description, the
+      <em>Import</em> and <em>New workflow</em> buttons (only while the Draft tab
+      is active), and below it three environment tabs and a search box.
     </p>
 
     <h3>Tabs</h3>
     <dl>
       <dt>Draft</dt>
-      <dd>Work-in-progress workflows. Shows the <em>Promote</em> action in each row.</dd>
+      <dd>Work-in-progress workflows. Rows show <em>Promote</em> (to qa) and <em>Edit</em>.</dd>
+      <dt>QA</dt>
+      <dd>Workflows promoted to qa. Rows show a padlock, <em>Promote</em> (to production), and <em>Clone</em>.</dd>
       <dt>Production</dt>
-      <dd>Locked workflows currently serving traffic. Rows show a padlock, a <em>Rollback</em> action, and <em>Clone to draft</em>.</dd>
+      <dd>Locked workflows currently serving traffic. Rows show a padlock, a <em>Rollback</em> action, and <em>Clone</em>.</dd>
     </dl>
     <p>
       Switching tabs resets the pagination to offset 0 and refetches with the
@@ -60,9 +66,9 @@
     <table>
       <thead><tr><th>Column</th><th>Meaning</th></tr></thead>
       <tbody>
-        <tr><td>Name</td><td>Workflow display name. Click it to open the editor. The padlock icon appears on production rows.</td></tr>
+        <tr><td>Name</td><td>Workflow display name. Click it to open the editor. The padlock icon appears on qa and production rows.</td></tr>
         <tr><td>Description</td><td>Free-text description. Truncated to one line; full width on hover.</td></tr>
-        <tr><td>Version</td><td>Production rows only. A green <code>v{'{n}'}</code> badge showing the current version.</td></tr>
+        <tr><td>Version</td><td>QA and Production tabs only. A green <code>v{'{n}'}</code> badge showing the current version.</td></tr>
         <tr><td>Nodes</td><td>Count of nodes in the DAG (sentinels included).</td></tr>
         <tr><td>Edges</td><td>Count of edges.</td></tr>
         <tr><td>Created</td><td>Creation date (short format).</td></tr>
@@ -72,7 +78,7 @@
 
     <h3>Row actions</h3>
     <dl>
-      <dt>Promote (Draft tab)</dt>
+      <dt>Promote (Draft and QA tabs)</dt>
       <dd>
         Opens the <strong>Promote dialog</strong>. Infers the next environment
         (<code>draft → qa</code>, <code>qa → production</code>). Production rows
@@ -87,8 +93,8 @@
       </dd>
       <dt>Rollback (Production tab)</dt>
       <dd>Opens the <strong>Rollback dialog</strong> with the version history.</dd>
-      <dt>Clone (Production tab)</dt>
-      <dd>Clones the production workflow back into a new draft entry and switches the active tab to Draft.</dd>
+      <dt>Clone (QA and Production tabs)</dt>
+      <dd>Clones the workflow back into a new draft entry and switches the active tab to Draft.</dd>
       <dt>Delete</dt>
       <dd>Red trash-can icon button. Confirms, then deletes the row.</dd>
     </dl>
@@ -122,7 +128,7 @@
   <section>
     <h2>Promote dialog</h2>
     <p>
-      Modal opened from a Draft row's <em>Promote</em> button. Its purpose is to
+      Modal opened from a Draft or QA row's <em>Promote</em> button. Its purpose is to
       document what changed between the two environments and, for production,
       capture a second approver.
     </p>
@@ -142,22 +148,28 @@
       <li>A <strong>Change summary</strong> textarea — required. Empty input
         disables the submit button.</li>
       <li>
-        <strong>Approved by</strong> — production promotions only. An explicit
-        second reviewer (not the operator submitting) must be named.
+        <strong>Approved by</strong> — production promotions only, required. Name
+        the second reviewer. The server rejects the promotion when this name is
+        your own username (compared ignoring case and surrounding spaces). The
+        value is recorded in the version history and the audit log.
       </li>
     </ul>
 
-    <Callout tone="warning" title="Production gate">
-      Production promotion additionally needs a completed QA run of the same
-      workflow within the last 48 hours. The <a href="/qa">QA lab</a> page tells
-      you whether each workflow is currently ready.
+    <Callout tone="warning" title="Promotion gates">
+      <code>draft → qa</code> needs a successful <em>Simulate</em> of the current
+      graph; any later structural edit means you have to simulate again.
+      <code>qa → production</code> additionally needs a completed qa run of the
+      same workflow within the last 48 hours. That rule is the default policy
+      <code>default.qa_to_production</code>, editable under
+      <a href="/docs/policies">Policies</a>. The <a href="/qa">QA lab</a> page
+      tells you whether each workflow is currently ready.
     </Callout>
 
     <h3>Behaviour</h3>
     <ul>
-      <li>Workflows already in <code>production</code> have no further step; clicking <em>Promote</em> just raises a toast saying "Nothing to promote".</li>
       <li>Cancel closes the dialog without side effects.</li>
-      <li>Promote posts to the backend; the list is refreshed on success.</li>
+      <li>Promote creates the copy in the target environment and refreshes the list. The source keeps its tab and its version number moves up by one.</li>
+      <li>A gate or policy that blocks the promotion shows its reason as an error; nothing is copied.</li>
     </ul>
   </section>
 
@@ -184,9 +196,15 @@
 
     <h3>Behaviour</h3>
     <p>
-      Clicking <em>Restore</em> prompts once for confirmation then replaces the
-      production graph with the chosen version. No new version record is created
-      — the rollback itself is a promotion event in the audit log.
+      Clicking <em>Restore</em> prompts once for confirmation, then creates a new
+      <strong>draft</strong> workflow from the chosen version's graph (change
+      summary <em>Rolled back to version N</em>). The production workflow is not
+      modified: promote the new draft through qa. The rollback is recorded in the
+      audit log.
+    </p>
+    <p>
+      Rollback is refused when the chosen version contains non-reversible steps;
+      the error lists them. Build a forward fix in a new draft instead.
     </p>
   </section>
 
@@ -194,8 +212,7 @@
     <h2>The workflow editor</h2>
     <p>
       The heart of FlowWeaver. Open any workflow from the list to reach it. It
-      uses <strong>SvelteFlow</strong> (xyflow) under the hood and is organised
-      into three regions: a <strong>palette</strong> on the left, a
+      is organized into three regions: a <strong>palette</strong> on the left, a
       <strong>canvas</strong> in the middle, and a <strong>toolbar</strong> across
       the top.
     </p>
@@ -273,14 +290,14 @@
       <li><strong>Click a node</strong> — opens the node dialog (see below). Sentinel <em>Start</em> / <em>End</em> nodes open the same dialog in read-only mode.</li>
       <li><strong>Drag between handles</strong> — creates a new edge. The default edge type is <code>success</code> (green, animated).</li>
       <li><strong>Right-click an edge</strong> — opens a context menu to switch the edge type or delete it.</li>
-      <li><strong>Select + Delete</strong> — removes nodes and connected edges. Sentinels are marked <code>deletable: false</code> so you cannot accidentally delete <em>Start</em> or <em>End</em>.</li>
+      <li><strong>Select + Delete</strong> — removes nodes and connected edges. The <em>Start</em> and <em>End</em> sentinels cannot be deleted.</li>
       <li><strong>Mouse wheel</strong> — zoom. <strong>Drag empty canvas</strong> — pan.</li>
       <li><strong>Controls widget</strong> (bottom-left) — buttons for zoom in/out, fit view, interaction lock.</li>
     </ul>
 
     <Callout tone="info" title="Auto-layout on first open">
       When a workflow arrives with every node stacked on the same coordinates
-      (common for AI-generated DAGs), the editor silently runs Dagre left-to-right
+      (common for AI-generated DAGs), the editor silently runs an automatic left-to-right
       layout before the first paint. Positions are not saved unless you click
       <em>Auto-layout → Save</em>.
     </Callout>
@@ -337,7 +354,7 @@
       </dd>
       <dt>Auto-layout</dt>
       <dd>
-        Re-runs Dagre left-to-right layout on the in-memory graph and shows a
+        Re-runs the automatic left-to-right layout on the in-memory graph and shows a
         toast. Your positions are <strong>not</strong> saved until you click
         <em>Save</em>.
       </dd>
@@ -408,9 +425,8 @@
     <p>
       Node-scope changes are <strong>deferred</strong> (applied when you click
       <em>Save workflow</em>). Service/schema changes are <strong>immediate</strong>
-      (they hit the snippet endpoint right away). The serviceMap is refreshed
-      in-place so other nodes using the same snippet pick up the new metadata
-      without a page reload.
+      (they are saved to the snippet right away). Other nodes using the same
+      snippet pick up the new metadata without a page reload.
     </p>
 
     <h3>Integration action nodes</h3>
@@ -455,8 +471,8 @@
       <strong>failure</strong> edge. Reached through an <code>always</code> edge they resolve to empty strings —
       the step still runs, the alert just can't name a step. <code>run.owner_email</code> is likewise empty when
       the run's starter has no email on file; for unattended workflows pass the recipient via <code>input</code>
-      instead. <code>run.url</code> needs the deployment's public frontend URL configured
-      (<code>Workflow__PublicBaseUrl</code>); without it you get a relative path.
+      instead. <code>run.url</code> is built from the deployment's public frontend URL
+      (<code>FRONTEND_ORIGIN</code> in <code>deploy/.env</code>); without it you get a relative path.
     </p>
     <p>Path syntax supports dotted property access and brackets — both numeric (<code>[0]</code>) and quoted string keys (<code>['router-1']</code>):</p>
     <pre><code>&#123;&#123; steps.ssh.output.results[0].output &#125;&#125;
@@ -525,19 +541,24 @@
 
     <h3>Runtime inputs</h3>
     <p>
-      Auto-generated from the workflow's <code>input_schema</code> via
-      <strong>JsonSchemaForm</strong>. Defaults are pulled from the schema itself.
+      A form generated from the workflow's <code>input_schema</code>. Defaults are pulled from the schema itself.
       Appears only when the input schema has properties.
     </p>
 
     <h3>Target devices</h3>
     <p>
-      A multi-select <strong>DevicePicker</strong>. Required only when at least
+      A multi-select device picker. Required only when at least
       one node in the workflow is <code>target_mode: per_device</code>. When the
       whole workflow is <code>target_mode: once</code> (Python, transform, REST
       without device context, etc.) the section is marked <em>optional</em> and a
       note explains that empty selection runs the workflow once without a device
       context.
+    </p>
+    <p>
+      Devices that don't allow the workflow's environment appear greyed out and
+      marked <em>no &lt;environment&gt;</em>. If every target is filtered out, the
+      run is rejected. The picker selects individual devices; to target a pool,
+      pass <code>target_pools</code> to the run API or through a webhook.
     </p>
 
     <h3>Submitting</h3>
@@ -631,8 +652,8 @@
     <h2>Role differences</h2>
     <ul>
       <li><strong>Viewer</strong> — can open the list and the editor in read-only mode.</li>
-      <li><strong>Operator</strong> — full CRUD on draft, run and promote to qa.</li>
-      <li><strong>Admin</strong> — same as operator plus promotion to production. In practice, the approval flow means a production promotion requires <em>two</em> distinct identities anyway.</li>
+      <li><strong>Operator</strong> — full CRUD on draft, run, promote (to qa and to production), clone and rollback.</li>
+      <li><strong>Admin</strong> — same as operator. Every production promotion requires an <em>Approved by</em> name other than the submitter's own username, whatever the submitter's role.</li>
       <li>With <a href="/docs/permissions">granular permissions</a> enabled, access to a single workflow can be narrowed further from <code>/workflows/{'{id}'}/permissions</code>.</li>
     </ul>
   </section>

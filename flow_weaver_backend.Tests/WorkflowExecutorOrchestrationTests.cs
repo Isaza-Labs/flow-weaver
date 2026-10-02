@@ -550,7 +550,7 @@ public class WorkflowExecutorOrchestrationTests
     // The rule: the walk stops at the first failed node WHOSE FAILURE IS NOT CONSUMED BY A
     // `failure` EDGE. The order of those two clauses is the whole feature — a guard that
     // checks "failed and stopping" before asking the graph disables every compensation node
-    // in the product, which is what happened in Nashira when it was written that way.
+    // in the product, which is what happens when it is written that way.
     //
     // So the tests come in pairs: one that the stop happens, one that compensation still
     // runs. If the second kind regresses, the guard is in the wrong order, and it regresses
@@ -1162,7 +1162,7 @@ public class WorkflowExecutorOrchestrationTests
         Assert.Empty(db.StepRuns.Where(s => s.WorkflowRunId == run.WorkflowRunId).ToList());
     }
 
-    // FR-021 fail-fast. The selection that works in draft resolves to
+    // QA-lab fail-fast. The selection that works in draft resolves to
     // nothing in qa when no device carries the QA lab flag; the run must
     // say so rather than fan out to zero devices.
     [Fact]

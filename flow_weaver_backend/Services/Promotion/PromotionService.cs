@@ -102,7 +102,12 @@ public class PromotionService : IPromotionService
             return Err<WorkflowResponse>(400, "promotion to production requires approved_by");
         }
 
-        if (target == "production" && req.ApprovedBy == req.PromotedBy)
+        // The promoter is whoever is authenticated on this request. A client-sent
+        // promoted_by is honoured only when there is no authenticated caller, so
+        // nobody can satisfy the two-person rule by naming someone else here.
+        var promotedBy = (_caller.IsAuthenticated ? _caller.Username : null) ?? req.PromotedBy;
+
+        if (target == "production" && IsSamePerson(req.ApprovedBy, promotedBy))
         {
             _logger.LogWarning("promotion.promote.validation_failed reason=approver_equals_promoter workflow_id={WorkflowId}", workflowId);
             return Err<WorkflowResponse>(400, "approved_by must differ from promoted_by");
@@ -126,7 +131,7 @@ public class PromotionService : IPromotionService
             }
         }
 
-        // Granular RBAC (plan_rbac_granular.md §6.2): in granular mode the
+        // Granular RBAC: in granular mode the
         // caller must hold workflow.promote conditioned on the TARGET
         // environment (and this workflow). The coarse [HasPermission] on the
         // controller only checked "can promote at all"; this enforces the
@@ -151,7 +156,7 @@ public class PromotionService : IPromotionService
             }
         }
 
-        // FR-021 + Phase-3 gates: delegate the qa→production "must have a
+        // QA-lab gates: delegate the qa→production "must have a
         // recent successful run" check (and any other admin-defined
         // promotion gate) to the policy evaluator. The seeded default
         // gate keeps the 48h rule operational without admin work; admins
@@ -208,7 +213,7 @@ public class PromotionService : IPromotionService
             Services = default,
             ChangeSummary = req.ChangeSummary,
             PromotedAt = now,
-            PromotedBy = req.PromotedBy ?? _caller.Username ?? string.Empty,
+            PromotedBy = promotedBy ?? string.Empty,
             ConversationId = wf.ConversationId,
             IsActive = true,
             CreatedAt = now,
@@ -268,7 +273,7 @@ public class PromotionService : IPromotionService
 
         await _audit.LogAsync("workflow", promoted.WorkflowId, "promote",
             before: new { from_environment = wf.Environment, from_workflow_id = wf.WorkflowId },
-            after: new { to_environment = target, version = promoted.Version, approved_by = req.ApprovedBy, promoted_by = req.PromotedBy },
+            after: new { to_environment = target, version = promoted.Version, approved_by = req.ApprovedBy, promoted_by = promotedBy },
             ct: ct);
         await _trace.EventAsync("workflow.promote", "workflow", "completed",
             metadata: new { workflow_id = promoted.WorkflowId, from_environment = wf.Environment, to_environment = target, version = promoted.Version },
@@ -300,7 +305,7 @@ public class PromotionService : IPromotionService
             return Err<WorkflowResponse>(404, $"version {toVersion} not found for this workflow");
         }
 
-        // S13.6 — refuse rollback when the snapshot graph contains
+        // Refuse rollback when the snapshot graph contains
         // non-reversible nodes. Authors must rebuild from draft instead
         // of pretending to "undo" something whose effect can't be undone.
         var report = await AnalyzeSnapshotAsync(snapshot, ct);
@@ -570,6 +575,12 @@ public class PromotionService : IPromotionService
     // preserve existing PromotionService messages like "workflow not
     // found" verbatim; Problems.NotFound(resource) is for fresh sites
     // that prefer "<resource> '<key>' not found" formatting.
+    // Usernames are compared trimmed and case-insensitively, so "Alice " cannot
+    // pass as a second reviewer for "alice".
+    private static bool IsSamePerson(string? approvedBy, string? promotedBy) =>
+        !string.IsNullOrWhiteSpace(promotedBy)
+        && string.Equals(approvedBy?.Trim(), promotedBy.Trim(), StringComparison.OrdinalIgnoreCase);
+
     private static ActionResult<T> Err<T>(int status, string error, string? code = null) =>
         status switch
         {

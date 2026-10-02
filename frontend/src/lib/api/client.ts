@@ -158,7 +158,7 @@ export interface Snippet {
   // the backend for python_snippet / transform types; null for built-in
   // handlers whose behavior is self-evident from `type`.
   logic_diagram_mermaid: string | null;
-  // S13.6: per-snippet override of the handler's idempotency default.
+  // Per-snippet override of the handler's idempotency default.
   // Null means "fall back to the handler's DefaultIdempotency".
   idempotency: 'idempotent' | 'requires_compensation' | 'non_reversible' | null;
   // Whether a step running this snippet CHANGES anything — a different question
@@ -890,7 +890,7 @@ export const workflows = {
     ),
   delete: (id: string) => api<void>(`/workflow/${id}`, { method: 'DELETE' }),
 
-  // S14.1: workflows tagged metadata.is_subflow=true. Used by /subflows
+  // Workflows tagged metadata.is_subflow=true. Used by /subflows
   // and the editor's subflow-node picker.
   subflows: async (environment?: string) => {
     const qs = environment ? `?environment=${encodeURIComponent(environment)}` : '';
@@ -898,7 +898,7 @@ export const workflows = {
     return raw.map((w) => fromBackend<Workflow>(w, WORKFLOW_MAP));
   },
 
-  // S13.6: rollback risk surface — read-only view of nodes that block
+  // Rollback risk surface — read-only view of nodes that block
   // a clean rollback. Returned shape matches WorkflowController.RollbackRisk.
   rollbackRisk: (id: string) => api<{
     non_reversible: Array<{ snippet_id: string; snippet_name: string; snippet_type: string; kind: string }>;
@@ -1217,7 +1217,7 @@ export const audit = {
   events: (q: AuditQuery = {}) => api<AuditEvent[]>(`/audit/events${qs(q as Record<string, unknown>)}`),
 };
 
-// ─── Resource permissions (S13.5) ──────────────────────────────────────
+// ─── Resource permissions ──────────────────────────────────────
 // Per-resource RBAC overlay: grant a user one of owner/editor/runner/viewer
 // on a single workflow or integration. Global admin is always a floor.
 
@@ -1813,7 +1813,7 @@ export interface Integration {
   headers: Record<string, unknown>;
   tls_skip_verify: boolean;
   allow_private_network: boolean;
-  // S13.3: write-only justification accompanying a toggle of
+  // Write-only justification accompanying a toggle of
   // allow_private_network. Backend stores it inside the audit row;
   // never returned by GET (so it's null when reading).
   allow_private_network_reason?: string | null;
@@ -1964,7 +1964,7 @@ export const integrations = {
 };
 
 // ─────────────────────────────────────────────────────────────────────
-//  Policies (FR-023) — corporate guardrails. Admin-only for writes;
+//  Policies — corporate guardrails. Admin-only for writes;
 //  everyone can read so operators know why a create/run got blocked.
 // ─────────────────────────────────────────────────────────────────────
 
@@ -2401,8 +2401,8 @@ export const gitWebhooks = {
 };
 
 // ─────────────────────────────────────────────────────────────────────
-//  Workflow simulation (FR-022) + integration action test bench
-//  (FR-015/016). Both return raw payloads — the UI picks what to show.
+//  Workflow simulation + integration action test bench
+//  Both return raw payloads — the UI picks what to show.
 // ─────────────────────────────────────────────────────────────────────
 
 export const workflowSimulation = {

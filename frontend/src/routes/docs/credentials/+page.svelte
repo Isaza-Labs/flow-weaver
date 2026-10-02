@@ -5,7 +5,7 @@
 
 <DocLayout
   title="Credentials"
-  lead="Auth material — username plus password or SSH private key — that devices reference so the engine's SSH/NETCONF handlers can log in at workflow runtime."
+  lead="Auth material — username plus password or SSH private key — that devices and Git repositories reference so FlowWeaver can log in at workflow runtime."
 >
   <Callout tone="where" title="Where to find it">
     URL: <a href="/credentials"><code>/credentials</code></a>.
@@ -22,12 +22,14 @@
     </p>
     <p>
       Devices point at a credential via <code>credential_id</code> (see
-      <a href="/docs/devices">Devices</a>). Handlers like <code>ssh</code>,
-      <code>netmiko</code>, and <code>netconf</code> read the referenced
-      credential when they need to authenticate against the target.
+      <a href="/docs/devices">Devices</a>). Step types that log in to a device,
+      such as <code>ssh</code> and <code>ansible_playbook</code>, read the
+      referenced credential when they need to authenticate against the target.
+      Git repositories also use a credential (a token or an SSH key) to reach a
+      private remote.
     </p>
     <Callout tone="info" title="Not the same as AI providers">
-      Credentials are for <em>devices</em>. LLM provider keys live under
+      Credentials are for devices and Git remotes. LLM provider keys live under
       <a href="/docs/ai/providers">AI providers</a> with a different backend
       model and encryption domain. They are not interchangeable.
     </Callout>
@@ -65,15 +67,15 @@
       <thead><tr><th>Column</th><th>Meaning</th></tr></thead>
       <tbody>
         <tr><td>Name</td><td>Display name with a key icon.</td></tr>
-        <tr><td>Type</td><td>Handler hint, e.g. <code>ssh</code>, <code>netconf</code>.</td></tr>
+        <tr><td>Type</td><td>Free-text hint, e.g. <code>ssh</code>, or a type containing <code>git</code> (for example <code>git_token</code>) for a Git HTTPS token.</td></tr>
         <tr><td>Username</td><td>Optional — some handlers use key-only auth without a user.</td></tr>
         <tr>
           <td>Auth</td>
           <td>
             Pill showing <em>password</em>, <em>key</em>, or <em>key missing</em>.
             The <em>key missing</em> state indicates a credential configured
-            for key auth where no key ciphertext is currently stored — usually
-            a migration artefact that needs a re-upload.
+            for key auth where no key is currently stored. Re-upload the key to
+            fix it.
           </td>
         </tr>
         <tr><td>Updated</td><td>Last modification time.</td></tr>

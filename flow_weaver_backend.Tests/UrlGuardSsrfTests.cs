@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace flow_weaver_backend.Tests;
 
-// Traceability: B-08 (TC-FW-B08) and the SSRF portion of NFR-006 (TC-FW-032).
+// SSRF hardening.
 // Exercises IUrlGuard/UrlGuard: requests to loopback, RFC-1918 private ranges,
 // link-local / cloud-metadata (169.254/16) and reserved (0/8) addresses are
 // blocked — and the per-integration allowPrivate flag opens RFC-1918 WITHOUT

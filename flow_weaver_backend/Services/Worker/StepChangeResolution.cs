@@ -4,7 +4,7 @@ namespace flow_weaver_backend.Services.Worker;
 
 // Turns a handler's answer into the flag a step is recorded with.
 //
-// The same three-step rule as Nashira's `SnippetNodeExecutor.ResolveChange`, and the same
+// The same three-step rule as the reference engine's, and the same
 // order, because it is the contract's rule rather than either product's:
 //
 //   1. A handler that MEASURED is believed. Nothing overrides it — an author who declares
@@ -30,7 +30,7 @@ internal static class StepChangeResolution
 
     // The node's declaration.
     //
-    // Nashira reads `config_overrides.changes` off the node itself; here the step's
+    // An engine may read `config_overrides.changes` off the node itself; here the step's
     // InputPayload IS that config, already merged and resolved by the orchestrator
     // (`WorkflowExecutor.MergePayloads`, where config_overrides wins). So the node still
     // wins over the snippet, which is the rule that matters. The one behavioural difference

@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace flow_weaver_backend.Tests;
 
-// Traceability: FR-011 (TC-FW-011) — data-transformation semantics of the
+// Data-transformation semantics of the
 // `transform` task type (distinct from PythonHandlerSandboxTests, which cover
 // sandbox SECURITY, not processing). TransformHandler is a pure JMESPath
 // evaluator over the input payload — no sandbox, DB, or network — so its

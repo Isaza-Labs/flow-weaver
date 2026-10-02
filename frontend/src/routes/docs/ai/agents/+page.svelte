@@ -27,9 +27,13 @@
             <code>agent_id</code> is sent in the request.
         </p>
         <p>
-            The seed data ships with a single "Flow Weaver Assistant" agent
-            bound to the first provider and the default tool list (see
-            below). Feel free to rename or clone it as your team's needs grow.
+            When FlowWeaver starts and no agent with role
+            <code>assistant</code> exists, it creates "FlowWeaver Assistant"
+            if an enabled provider of type <code>openai</code> exists: bound to
+            the oldest one, model override <em>gpt-5.5</em>, temperature 0.2,
+            iteration cap 20, and the default tool list (see below). With only a
+            non-OpenAI provider no agent is created; create one here. You can
+            rename or edit it.
         </p>
     </section>
 
@@ -54,8 +58,9 @@
             <dt>Model override</dt>
             <dd>
                 Model id to send instead of the provider's default. Default:
-                <em>"gpt-5.4"</em> in the <em>New agent</em> dialog. Leave blank to inherit the provider's
-                default.
+                <em>"gpt-5.5"</em>, the same as the seeded agent and the provider
+                form; check it against your provider's models. Leave blank to
+                inherit the provider's default.
             </dd>
             <dt>System prompt</dt>
             <dd>
@@ -73,7 +78,8 @@
                 <em>Clear</em>. Entries saved on an agent that this server's
                 registry doesn't know are kept, marked <em>not in registry</em>,
                 and silently filtered out at chat time. If the catalog can't be
-                loaded the form falls back to the previous free-text field.
+                loaded the form shows a free-text allowlist field instead (one tool
+                per line, or comma-separated).
             </dd>
             <dt>Max iterations</dt>
             <dd>
@@ -105,13 +111,14 @@
             <li><code>get_run_details</code> · <code>get_step_logs</code> · <code>get_workflow_details</code> · <code>update_workflow_node_config</code></li>
         </ul>
         <p>
-            The seeded <em>Flow Weaver Assistant</em> gets a broader list
-            (installed by <code>DefaultAgentSeedService</code>, with a
-            max-iterations cap of 20) and new defaults are added to it
-            automatically on upgrade. On top of the tools above it includes:
+            The seeded <em>FlowWeaver Assistant</em> gets a broader list, with a
+            max-iterations cap of 20. Each time FlowWeaver starts, missing
+            default tools are added to the <code>assistant</code> agent and an
+            iteration cap below 20 is raised to 20. On top of the tools above it
+            includes:
         </p>
         <ul>
-            <li>Catalogue and authoring: <code>list_snippets</code>, <code>create_snippet</code>, <code>list_credentials</code>, <code>evaluate_prompt_sufficiency</code>, <code>simulate_workflow_run</code>, <code>generate_report</code>.</li>
+            <li>Catalog and authoring: <code>list_snippets</code>, <code>create_snippet</code>, <code>list_credentials</code>, <code>evaluate_prompt_sufficiency</code>, <code>simulate_workflow_run</code>, <code>generate_report</code>.</li>
             <li>Administration (admin-gated at dispatch): <code>create_user</code>, <code>list_users</code>, <code>set_user_role</code>, <code>grant_resource_permission</code>, <code>create_policy</code>, <code>list_policies</code>.</li>
             <li>Vendor commands: <code>find_command</code>, <code>list_vendor_commands</code>, <code>validate_ssh_commands</code>, <code>create_vendor_command</code>, <code>update_vendor_command</code>, <code>delete_vendor_command</code>.</li>
             <li>MCP: <code>list_mcp_servers</code>, <code>discover_mcp_tools</code>, <code>call_mcp_tool</code>.</li>
@@ -119,8 +126,8 @@
         </ul>
         <p>
             Uncheck tools the agent shouldn't be allowed to call. The picker only
-            offers tools that actually exist on this server, so an allowlist can
-            no longer drift from the registry by typo. Mutating tools still ask
+            offers tools that actually exist on this server, so a typo can't put
+            an unknown tool in the allowlist. Mutating tools still ask
             for confirmation, and every call is checked against the caller's
             permissions at dispatch time.
         </p>

@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace flow_weaver_backend.Controllers;
 
-// FR-023: CRUD for corporate guardrails. Read is open to any viewer so
+// CRUD for corporate guardrails. Read is open to any viewer so
 // operators can see why a create/run got blocked; mutations require
 // Admin because a bad rule can freeze everyone's ability to edit
 // workflows.
@@ -79,7 +79,7 @@ public class PolicyController : ControllerBase
         public List<PolicyAuditEntry> recent { get; set; } = new();
     }
 
-    // FR-023 audit view. Reads `policy.blocked` trace events so admins
+    // Audit view. Reads `policy.blocked` trace events so admins
     // can see which rules actually fire, how often, and who tripped
     // them. Kept as a lightweight read instead of a full analytics
     // pipeline — the trace_events table is already indexed on

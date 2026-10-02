@@ -162,7 +162,7 @@ public class WorkflowController : ControllerBase
         Guid workflowId, [FromBody] CreateWorkflowTrigger dto)
         => _triggers.PostForWorkflowAsync(workflowId, dto);
 
-    // FR-022: static simulation endpoint. Reuses the AI tool handler so
+    // Static simulation endpoint. Reuses the AI tool handler so
     // the chat agent and the UI button share the exact same validation
     // logic. Reports structural issues (missing snippets, broken edges,
     // template-ordering violations) without touching any device.
@@ -188,7 +188,7 @@ public class WorkflowController : ControllerBase
     public async Task<ActionResult<WorkflowRunResponse>> Run(
         Guid id, [FromBody] RunWorkflowRequest request, CancellationToken ct)
     {
-        // Granular RBAC (DEF-006): the [HasPermission("workflow.run")] gate above
+        // Granular RBAC: the [HasPermission("workflow.run")] gate above
         // is COARSE — it only checks the caller holds workflow.run in SOME
         // context. A grant scoped by environment/resource (e.g. "run in qa only")
         // must still be honored against the CONCRETE workflow being run, or the
@@ -297,7 +297,7 @@ public class WorkflowController : ControllerBase
     public Task<ActionResult<DiffResult>> Diff(Guid id, CancellationToken ct)
         => _promotion.DiffAsync(id, ct);
 
-    // S14.1: list workflows tagged as reusable subflows. Operators flag a
+    // List workflows tagged as reusable subflows. Operators flag a
     // workflow with `metadata.is_subflow = true` (set in the editor) to
     // make it appear in the subflow node's picker. We do the filter in
     // SQL via the jsonb operator so we don't have to load every row.
@@ -342,7 +342,7 @@ public class WorkflowController : ControllerBase
         }));
     }
 
-    // S13.6: rollback risk surface. Lists nodes that block a clean
+    // Rollback risk surface. Lists nodes that block a clean
     // rollback so the editor can warn before promotion.
     [HttpGet("{id:guid}/rollback-risk")]
     [EnableRateLimiting(RateLimitingConfiguration.ReadHeavy)]
@@ -466,7 +466,7 @@ public class WorkflowController : ControllerBase
     }
 
     // Deterministic path for a bundle exported by another FlowWeaver (or by
-    // Nashira — same wire format): resolve every dependency by identity,
+    // another engine that uses the same wire format): resolve every dependency by identity,
     // create the snippets and sub-workflows the bundle carries, rewrite the
     // node references, create the workflow through the SAME create path as
     // everything else (schema + reference validation still applies), then

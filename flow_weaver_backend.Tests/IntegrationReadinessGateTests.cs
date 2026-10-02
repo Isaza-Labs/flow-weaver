@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace flow_weaver_backend.Tests;
 
-// Traceability: FR-026 (TC-FW-026) — a run that references an integration
+// A run that references an integration
 // still in needs_config must be rejected at enqueue time, BEFORE any StepRun
 // or job row is written. WorkflowExecutor.ValidateIntegrationsReadyAsync is the
 // gate EnqueueRunAsync runs before it creates the run; exercising it directly

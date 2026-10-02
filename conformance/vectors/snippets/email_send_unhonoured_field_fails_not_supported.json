@@ -12,7 +12,7 @@
       "subject": "Audit",
       "body": "done",
       "from_address": "noreply@example.com",
-      "from_name": "Nashira"
+      "from_name": "Audit Bot"
     }
   },
   "expected": {

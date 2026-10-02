@@ -15,7 +15,7 @@ using WorkflowRunModel = flow_weaver_backend.Models.WorkflowRun;
 
 namespace flow_weaver_backend.Tests;
 
-// Traceability: NFR-002 / TC-FW-028 — "operational robustness in execution,
+// "operational robustness in execution,
 // audit and recovery: restart / lease / cancellation / restore do NOT duplicate
 // effects". This suite pins the application-level "no duplicated effects on
 // recovery" invariants that ARE deterministically unit-testable (InMemory EF +

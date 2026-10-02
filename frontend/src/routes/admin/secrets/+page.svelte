@@ -35,7 +35,7 @@
   let formError = $state<string | null>(null);
 
   // Mirrors the backend regex so we flag bad input before a round-trip.
-  const NAME_RE = /^[a-z0-9](?:[a-z0-9_-]{1,62}[a-z0-9])?$/;
+  const NAME_RE = /^[a-z0-9][a-z0-9_-]{0,62}[a-z0-9]$/;
 
   onMount(load);
 

@@ -1,5 +1,5 @@
 -- Consolidate a multi-company database down to one, so the RemoveMultiTenancy
--- migration can run (see company_remove.md).
+-- migration can run (see deploy/README.md).
 --
 -- DESTRUCTIVE: every row belonging to a non-canonical company is DELETED.
 -- Intended for development / pre-production databases. Take a dump first.

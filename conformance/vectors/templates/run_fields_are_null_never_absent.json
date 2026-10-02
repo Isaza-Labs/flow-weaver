@@ -30,5 +30,5 @@
   },
   "equivalence": "exact",
   "oracle_commit": "fw@1a11ea3",
-  "notes": "started_at is compared as the ISO-8601 round-trip form of the value the vector supplies, so the case stays deterministic without a redaction rule. CORRECTED 2026-08-28: this vector expected null for failed_step_id / failed_step_error, which is what Nashira emits and NOT what the oracle emits. The oracle seeds them as empty strings on purpose - a notify node reached by an `always` edge reads them on the SUCCESS path, and as a JSON null the message body becomes null and a handler that requires one refuses a step that used to work. The rule is that the oracle defines; this vector had been written from the wrong implementation."
+  "notes": "started_at is compared as the ISO-8601 round-trip form of the value the vector supplies, so the case stays deterministic without a redaction rule. CORRECTED 2026-08-28: this vector expected null for failed_step_id / failed_step_error, which is what another implementation emitted and NOT what the oracle emits. The oracle seeds them as empty strings on purpose - a notify node reached by an `always` edge reads them on the SUCCESS path, and as a JSON null the message body becomes null and a handler that requires one refuses a step that used to work. The rule is that the oracle defines; this vector had been written from the wrong implementation."
 }

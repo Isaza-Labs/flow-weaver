@@ -6,7 +6,7 @@
   // `Role = "assistant"` is the one the chat controller falls back to
   // when no explicit agent_id is supplied. We prefill the seed-equivalent
   // values on "New" so the default experience stays close to the seeded
-  // "Flow Weaver Assistant".
+  // "FlowWeaver Assistant".
 
   import { onMount } from 'svelte';
   import {
@@ -64,7 +64,7 @@
   let role = $state('assistant');
   let description = $state('');
   let providerId = $state('');
-  let modelOverride = $state('gpt-5.4');
+  let modelOverride = $state('gpt-5.5');
   let systemPrompt = $state('');
   let toolsText = $state(DEFAULT_TOOLS.join('\n'));
   let maxIterations = $state(10);
@@ -99,11 +99,11 @@
 
   function openCreate() {
     editing = null;
-    name = 'Flow Weaver Assistant';
+    name = 'FlowWeaver Assistant';
     role = 'assistant';
     description = '';
     providerId = providers.find((p) => p.enabled)?.id ?? '';
-    modelOverride = 'gpt-5.4';
+    modelOverride = 'gpt-5.5';
     systemPrompt = '';
     toolsText = DEFAULT_TOOLS.join('\n');
     selectedTools = [...DEFAULT_TOOLS];
@@ -256,7 +256,7 @@
       <EmptyState
         icon={Bot}
         title="No agents configured"
-        description='The default "Flow Weaver Assistant" auto-seeds after a provider is added and the backend restarts. You can also create one manually here.'
+        description='The default "FlowWeaver Assistant" auto-seeds after a provider is added and the backend restarts. You can also create one manually here.'
       >
         {#snippet actions()}
           <Button variant="primary" icon={Plus} onclick={openCreate} disabled={providers.length === 0}>New agent</Button>
@@ -315,7 +315,7 @@
     {/if}
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-      <Input label="Name" help="agents.name" bind:value={name} disabled={saving} placeholder="Flow Weaver Assistant" />
+      <Input label="Name" help="agents.name" bind:value={name} disabled={saving} placeholder="FlowWeaver Assistant" />
       <Input label="Role" help="agents.role" bind:value={role} disabled={saving} placeholder="assistant" />
     </div>
 
@@ -328,7 +328,7 @@
           <option value={p.id}>{p.name} ({p.type})</option>
         {/each}
       </Select>
-      <Input label="Model override" help="agents.model_override" bind:value={modelOverride} disabled={saving} placeholder="gpt-5.4" />
+      <Input label="Model override" help="agents.model_override" bind:value={modelOverride} disabled={saving} placeholder="gpt-5.5" />
     </div>
 
     <div>

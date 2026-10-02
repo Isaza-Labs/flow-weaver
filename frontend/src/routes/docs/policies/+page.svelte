@@ -5,17 +5,19 @@
 
 <DocLayout
   title="Policies"
-  lead="Global guardrails evaluated on every workflow create, update, and promotion. Admin-only authoring; audit trail of every block."
+  lead="Global guardrails evaluated on every workflow create, update, and promotion, and on each SSH command at run time. Authoring needs policy.manage; audit trail of every block."
 >
   <Callout tone="where" title="Where to find it">
     List: <a href="/policies"><code>/policies</code></a> ·
     Audit: <code>/policies/audit</code>.
-    Sidebar → <strong>Govern</strong> → <strong>Policies</strong>.
+    Sidebar → <strong>Govern</strong> → <strong>Policies</strong> (admins only).
   </Callout>
-  <Callout tone="admin" title="Admin only">
-    The entire <code>/policies</code> surface requires the <code>admin</code>
-    role. Non-admins don't see the sidebar group at all and are bounced to
-    the dashboard if they deep-link.
+  <Callout tone="admin" title="Who can do what">
+    Reading policies and the audit page needs <code>policy.read</code>, which
+    every role holds. Creating, editing, toggling and deleting needs
+    <code>policy.manage</code> (admin by default, or granted with granular
+    permissions). The <strong>Govern</strong> sidebar group is shown to admins
+    only; other roles open <code>/policies</code> directly.
   </Callout>
 
   <section>
@@ -60,8 +62,8 @@
         <tr><td><code>device_pool</code></td><td>Array of pool ids.</td></tr>
         <tr><td><code>snippet_type</code></td><td>Array of snippet types (<code>python_snippet</code>, <code>ssh</code>, <code>ansible_playbook</code>, …).</td></tr>
         <tr><td><code>description_contains</code></td><td>Substring that must / must not appear in the workflow description.</td></tr>
-        <tr><td><code>action</code></td><td>The operation being attempted (<code>create</code>, <code>update</code>, <code>run</code>, <code>promote</code>, or <code>ssh_exec</code> for a single SSH command at run time).</td></tr>
-        <tr><td><code>ssh_command_regex</code></td><td>Array of regular expressions (case-insensitive) matched against each command an <code>ssh</code> step is about to send. A match denies that command: the step stops there and the command never reaches the device. This is the only mechanism that <em>blocks</em> CLI commands — the <a href="/docs/vendor-commands">vendor command catalogue</a> only warns. A pattern that does not compile or takes longer than 250 ms counts as no match.</td></tr>
+        <tr><td><code>action</code></td><td>The operation being attempted (<code>create</code>, <code>update</code>, <code>promote</code>, or <code>ssh_exec</code> for a single SSH command at run time).</td></tr>
+        <tr><td><code>ssh_command_regex</code></td><td>Array of regular expressions (case-insensitive) matched against each command an <code>ssh</code> step is about to send. A match denies that command: the step stops there and the command never reaches the device. This is the only mechanism that <em>blocks</em> CLI commands — the <a href="/docs/vendor-commands">vendor command catalog</a> only warns. A pattern that does not compile or takes longer than 250 ms counts as no match.</td></tr>
       </tbody>
     </table>
     <p>Example — never let an SSH step reload a device in production:</p>
@@ -98,6 +100,13 @@
       (including <code>ssh_command_regex</code>) and gate rules with their
       <code>require</code> list.
     </p>
+    <p>
+      On first start FlowWeaver seeds <code>default.qa_to_production</code>, a
+      gate that requires a successful run of the same workflow within the last
+      2 days (<code>last_successful_run_within</code>). It is the 48-hour rule
+      shown on the <a href="/docs/qa-lab">QA lab</a> page and can be edited like
+      any other policy.
+    </p>
   </section>
 
   <section>
@@ -131,8 +140,7 @@
         of the rule area):
         <ul>
           <li>
-            <strong>Visual</strong> — a chip-based builder
-            (<code>RuleBuilder.svelte</code>) that composes the JSON for you.
+            <strong>Visual</strong> — a chip-based builder that composes the JSON for you.
             Each matcher gets a chip list you can add/remove values from.
           </li>
           <li>
@@ -148,8 +156,7 @@
       the current JSON can't be parsed into its chip model.
     </p>
     <p>
-      Submit posts to <code>POST /api/policy</code>. On success the form
-      resets, closes, and the list refreshes.
+      On success the form resets, closes, and the list refreshes.
     </p>
   </section>
 
@@ -230,7 +237,7 @@
   <section>
     <h2>Role differences</h2>
     <ul>
-      <li><strong>Viewer / operator</strong> — cannot see either page. Backend-side the policy endpoints require <code>admin</code>.</li>
+      <li><strong>Viewer / operator</strong> — read policies and the audit page (<code>policy.read</code>). Create, edit, toggle and delete are rejected unless the user also holds <code>policy.manage</code>.</li>
       <li><strong>Admin</strong> — full access: CRUD, toggle, audit.</li>
     </ul>
   </section>
@@ -239,7 +246,7 @@
     <h2>Related chapters</h2>
     <ul>
       <li><a href="/docs/workflows">Workflows</a> — the surface policies gate.</li>
-      <li><a href="/docs/admin/traces">Traces</a> — every policy decision is also logged here with a request_id to pivot to Serilog.</li>
+      <li><a href="/docs/admin/traces">Traces</a> — every policy block is also logged here as a trace event.</li>
     </ul>
   </section>
 </DocLayout>

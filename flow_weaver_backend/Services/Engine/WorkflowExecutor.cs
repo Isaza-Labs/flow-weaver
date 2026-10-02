@@ -93,7 +93,7 @@ public sealed class WorkflowExecutor : IWorkflowExecutor
         // A production box is the most trusted tier, so refusing qa there
         // only forced operators to stand up a second deployment; the
         // per-device AllowQa/AllowProduction flags still keep a qa run
-        // from touching devices not opened to qa (FR-021).
+        // from touching devices not opened to qa.
         var workerEnv = _options.WorkerEnvironment ?? "dev-sandbox";
         var allowedEnvs = workflow.Environment switch
         {
@@ -105,7 +105,7 @@ public sealed class WorkflowExecutor : IWorkflowExecutor
             throw new WorkflowExecutorException(
                 $"workflow environment '{workflow.Environment}' requires worker environment '{string.Join("' or '", allowedEnvs)}', but current is '{workerEnv}'");
 
-        // FR-021: resolve the requested targets against the workflow's
+        // Resolve the requested targets against the workflow's
         // environment before the run row exists. The same selection that
         // works in draft resolves to nothing in qa when the devices aren't
         // flagged as QA lab, and the operator deserves that as a 409 on the
@@ -275,7 +275,7 @@ public sealed class WorkflowExecutor : IWorkflowExecutor
 
             var dag = _parser.Parse(nodes, edges);
 
-            // FR-021: qa runs only fan out to qa-lab devices/pools. We
+            // QA runs only fan out to qa-lab devices/pools. We
             // look up the workflow's environment once (snapshots don't
             // carry it) and pass it to target resolution so production
             // inventory can't get pinged by a qa promotion smoke test.
@@ -479,7 +479,7 @@ public sealed class WorkflowExecutor : IWorkflowExecutor
                     //
                     // ORDER IS THE WHOLE THING HERE. The obvious implementation tests
                     // `failed && stopOnFailure` and returns, before asking the graph anything
-                    // — and Nashira shipped exactly that, which short-circuited the very rule
+                    // — and an earlier engine shipped exactly that, which short-circuited the very rule
                     // that makes a `failure` edge mean anything: no notify-on-failure or
                     // compensation node ever ran, and `{{ run.failed_step_* }}` was
                     // unreachable by design. So: the node failed, ASK THE GRAPH, and only
@@ -909,7 +909,7 @@ public sealed class WorkflowExecutor : IWorkflowExecutor
     // a failure under stop_on_failure.
     //
     // A property of the GRAPH, not of the run: it asks what the author wrote, not what
-    // happened. Copied from Nashira's function of the same name.
+    // happened. Same function as in the reference engine.
     private static bool ConsumesFailure(Dag dag, string nodeId) =>
         dag.Edges.Any(e => e.EdgeType == "failure" && string.Equals(e.Source, nodeId, StringComparison.Ordinal));
 
@@ -2470,7 +2470,7 @@ public sealed class WorkflowExecutor : IWorkflowExecutor
     // referenced in `integration_action` config_overrides, and rejects
     // the enqueue if any of those integrations is in NeedsConfig.
     // Bulk-queries the rows in one SELECT to avoid N+1.
-    // internal (InternalsVisibleTo) so the FR-026 readiness gate can be
+    // internal (InternalsVisibleTo) so the integration-readiness gate can be
     // asserted directly without standing up the full enqueue scope.
     internal static async Task ValidateIntegrationsReadyAsync(
         AppDbContext db, JsonElement nodes, CancellationToken ct)

@@ -3,8 +3,8 @@ using System.Text.Json.Serialization;
 
 namespace flow_weaver_backend.Dtos;
 
-// Wire contracts for the granular permission-grant management API (phase 3 of
-// plan_rbac_granular.md). Mirrors the Policy DTO shape; `conditions` is the
+// Wire contracts for the granular permission-grant management API.
+// Mirrors the Policy DTO shape; `conditions` is the
 // same ABAC `when`-style object the resolver matches.
 public class CreatePermissionGrant
 {

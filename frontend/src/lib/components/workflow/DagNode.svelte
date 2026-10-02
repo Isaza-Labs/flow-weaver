@@ -28,7 +28,7 @@
   const isEditor = $derived(data.variant === 'editor');
   const status = $derived<string>(data.status ?? '');
 
-  // S13.6: effective rollback policy of this node's snippet. Surfaced
+  // Effective rollback policy of this node's snippet. Surfaced
   // only in the editor — the monitor view already uses node colour
   // for runtime status and a second indicator would compete visually.
   // Sentinels pass through (no badge). `compensated` is a special

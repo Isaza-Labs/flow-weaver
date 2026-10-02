@@ -22,7 +22,8 @@ public class Integration : BaseModel
     public string? Description { get; set; }
     public string BaseURL { get; set; } = string.Empty;
 
-    // AuthConfig may contain secrets (tokens, basic auth). Encrypt at service layer if needed.
+    // AuthConfig holds secrets (tokens, basic auth). It is encrypted at rest by
+    // AppDbContext (IntegrationAuthCipher); services always see plaintext.
     [JsonIgnore]
     public JsonElement AuthConfig { get; set; } = default;
 

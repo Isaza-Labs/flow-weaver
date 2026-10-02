@@ -33,7 +33,7 @@ public class SecretsController : ControllerBase
     // templates, so the name must fit a URL/host-header-safe grammar:
     // lowercase alphanumerics + hyphens.
     private static readonly Regex NameRegex = new(
-        "^[a-z0-9](?:[a-z0-9_-]{1,62}[a-z0-9])?$",
+        "^[a-z0-9][a-z0-9_-]{0,62}[a-z0-9]$",
         RegexOptions.Compiled);
 
     private readonly AppDbContext _db;
