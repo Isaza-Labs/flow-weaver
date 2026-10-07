@@ -36,7 +36,7 @@ public sealed class RestOperationExecutor : IRestOperationExecutor
     private readonly ICurrentUser _caller;
     private readonly IUrlGuard _urlGuard;
     private readonly IHttpClientFactory _httpFactory;
-    private readonly IntegrationAuthBuilder _integrationAuth;
+    private readonly IIntegrationAuthApplier _integrationAuth;
     private readonly ILogger<RestOperationExecutor> _logger;
 
     // Loopback address of this backend, used to resolve a spec's relative
@@ -55,7 +55,7 @@ public sealed class RestOperationExecutor : IRestOperationExecutor
         ICurrentUser caller,
         IUrlGuard urlGuard,
         IHttpClientFactory httpFactory,
-        IntegrationAuthBuilder integrationAuth,
+        IIntegrationAuthApplier integrationAuth,
         IConfiguration config,
         ILogger<RestOperationExecutor> logger)
     {
@@ -217,14 +217,28 @@ public sealed class RestOperationExecutor : IRestOperationExecutor
 
         // Auth resolution:
         //   - If the spec is scoped to an integration, apply the integration's
-        //     auth_config (token / basic / api_key) + custom Headers. This is
-        //     the explicit user-configured path and always wins.
+        //     auth_config (token / basic / api_key / oauth2_client_credentials)
+        //     + custom Headers. This is the explicit user-configured path and
+        //     always wins. It must go through the async applier: the sync
+        //     builder skips oauth2_client_credentials, so the call went out
+        //     without an Authorization header.
         //   - Otherwise, fall back to the spec's first-matching security
         //     scheme via x-credential-ref. Global security first, op-level
         //     overrides.
         if (integration is not null)
         {
-            _integrationAuth.Apply(msg, integration);
+            try
+            {
+                await _integrationAuth.ApplyAsync(msg, integration, cts.Token);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "rest.executor.auth_failed operation_id={OperationId} integration_id={IntegrationId}",
+                    operationId, integration.IntegrationId);
+                return Fail($"integration '{integration.Name}' auth failed: {ex.Message}");
+            }
         }
         else
         {

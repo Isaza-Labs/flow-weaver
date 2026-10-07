@@ -113,6 +113,10 @@ public class RestOperationExecutorTests
         public StubReportRefs ReportRefs { get; set; } = new();
         public FakeHttpMessageHandler Handler { get; set; } =
             new(HttpStatusCode.OK, """{"ok":true}""");
+        // Scripts the OAuth token endpoint for oauth2_client_credentials
+        // integrations; untouched by every other auth method.
+        public FakeHttpMessageHandler TokenHandler { get; set; } =
+            new(HttpStatusCode.OK, """{"access_token":"oauth-token","expires_in":1800}""");
         public string? SelfBaseUrl { get; set; }
 
         public RestOperationExecutor Build() => new(
@@ -124,7 +128,7 @@ public class RestOperationExecutorTests
             new FakeUser(),
             Guard,
             new FakeHttpClientFactory(Handler),
-            new IntegrationAuthBuilder(NullLogger<IntegrationAuthBuilder>.Instance),
+            TestAuth.Applier(TokenHandler),
             new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Backend:SelfBaseUrl"] = SelfBaseUrl,
@@ -872,6 +876,46 @@ public class RestOperationExecutorTests
 
         Assert.False(f.SentRequest.Headers.Contains("X-Spec-Key"));
         Assert.Equal("acme", Assert.Single(f.SentRequest.Headers.GetValues("X-Tenant")));
+    }
+
+    // Regression: the executor used the sync builder, which skips
+    // oauth2_client_credentials, so the call went out anonymous and the
+    // upstream answered 401 while the integration health check was green.
+    [Fact]
+    public async Task OAuthClientCredentialsIntegration_SendsBearerFromTokenEndpoint()
+    {
+        using var f = new Fixture();
+        f.Index.Add("list_devices", "netbox", "GET", "/devices");
+        var integrationId = f.SeedIntegration(authConfig: """
+            {"method":"oauth2_client_credentials","token_url":"https://idp.example.com/token","client_id":"cid","client_secret":"cs"}
+            """);
+        f.SeedSpec("netbox", SimpleSpec, integrationId: integrationId);
+
+        var result = await f.Build().ExecuteAsync("list_devices", None, None, None, default);
+
+        Assert.True(result.Success);
+        Assert.Single(f.TokenHandler.Requests);
+        Assert.Equal("Bearer", f.SentRequest.Headers.Authorization?.Scheme);
+        Assert.Equal("oauth-token", f.SentRequest.Headers.Authorization?.Parameter);
+    }
+
+    [Fact]
+    public async Task OAuthTokenGrantFailure_FailsWithoutCallingUpstream()
+    {
+        using var f = new Fixture();
+        f.Index.Add("list_devices", "netbox", "GET", "/devices");
+        f.TokenHandler = new FakeHttpMessageHandler(HttpStatusCode.Unauthorized, """{"error":"invalid_client"}""");
+        var integrationId = f.SeedIntegration(name: "servicenow", authConfig: """
+            {"method":"oauth2_client_credentials","token_url":"https://idp.example.com/token","client_id":"cid","client_secret":"bad"}
+            """);
+        f.SeedSpec("netbox", SimpleSpec, integrationId: integrationId);
+
+        var result = await f.Build().ExecuteAsync("list_devices", None, None, None, default);
+
+        Assert.False(result.Success);
+        Assert.Contains("servicenow", result.Error);
+        Assert.Contains("auth failed", result.Error);
+        Assert.Empty(f.Handler.Requests);
     }
 
     // ─── response shaping ───────────────────────────────────────────────
