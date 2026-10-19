@@ -15,7 +15,7 @@
     CheckCircle, XCircle, Loader2, ArrowLeft, Eye, RefreshCw,
   } from 'lucide-svelte';
 
-  // S15: Cross-system workflow import wizard. Four steps:
+  // Cross-system workflow import wizard. Four steps:
   //   1. Upload   — pick a file, optionally hint the format.
   //   2. Analyse  — server-side pipeline runs async; we stream progress.
   //   3. Review   — user resolves missing deps + conflicts + duplicates.

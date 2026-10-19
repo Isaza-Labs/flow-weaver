@@ -9,7 +9,7 @@
   "properties": {
     "nodes": {
       "type": "array",
-      "description": "DAG nodes. Must all have unique ids (enforced by the DagParser in Sprint 2).",
+      "description": "DAG nodes. Must all have unique ids (enforced by the DagParser).",
       "items": { "$ref": "#/$defs/node" }
     },
     "edges": {
@@ -46,7 +46,7 @@
         "type": {
           "type": "string",
           "enum": ["task", "decision", "subflow"],
-          "description": "Optional. Defaults to 'task' when absent. 'subflow' is wired in Sprint 3."
+          "description": "Optional. Defaults to 'task' when absent. 'subflow' runs another workflow as a step."
         }
       }
     },
@@ -71,7 +71,7 @@
         },
         "condition": {
           "type": "string",
-          "description": "Required when type = 'conditional'. Evaluated by the engine's ConditionEvaluator (Sprint 2.7)."
+          "description": "Required when type = 'conditional'. Evaluated by the engine's ConditionEvaluator."
         },
         "source_handle": {
           "type": "string",

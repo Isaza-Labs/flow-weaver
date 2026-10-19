@@ -20,8 +20,7 @@
          someone else's upgrade, and an output format should not move with it. -->
     <PackageReference Include="DocumentFormat.OpenXml" Version="3.1.1" />
     <!-- PDF text extraction. QuestPDF above only writes PDFs; reading one back is
-         a different job and this is the pure-managed reader Nashira already uses,
-         so the two products parse a PDF the same way. -->
+         a different job, handled by this pure-managed reader. -->
     <PackageReference Include="PdfPig" Version="0.1.16" />
     <PackageReference Include="coverlet.MTP" Version="10.0.1" />
     <!-- Cron parsing for the scheduler. Supports 5-field (minute) and
@@ -68,7 +67,7 @@
     <PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
     <PackageReference Include="Serilog.Formatting.Compact" Version="3.0.0" />
     <PackageReference Include="YamlDotNet" Version="16.2.0" />
-    <!-- S13.4: AWS KMS for the DataProtection keyring wrap. Loaded
+    <!-- AWS KMS for the DataProtection keyring wrap. Loaded
          unconditionally; activation is a runtime config decision (see
          DataProtection:KmsProvider in appsettings). When the provider is
          "filesystem" (default), the AWS client is never instantiated. -->
@@ -87,7 +86,7 @@
     <None Update="Specs\**\*.yml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <!-- S14.3: vendor command scaffolds (Arista, Fortinet, Palo Alto, F5).
+    <!-- Vendor command catalog (Arista, Fortinet, Palo Alto, F5).
          VendorCommandYamlSeedService walks Skills/vendors/*.yaml at boot,
          so these need to be copied next to the built assembly. -->
     <None Update="Skills\vendors\*.yaml">

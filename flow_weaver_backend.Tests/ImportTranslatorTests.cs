@@ -3,7 +3,7 @@ using flow_weaver_backend.Services.Import.Translators;
 
 namespace flow_weaver_backend.Tests;
 
-// S15: deterministic translator coverage (n8n, Itential, v1 passthrough).
+// Deterministic translator coverage (n8n, Itential, v1 passthrough).
 // AgentTranslator is excluded — it depends on an external LLM and is
 // validated via the wizard's end-to-end smoke test.
 public class ImportTranslatorTests

@@ -8,7 +8,7 @@ using SnippetModel = flow_weaver_backend.Models.Snippet;
 
 namespace flow_weaver_backend.Tests;
 
-// S15: dependency resolver. Uses EF InMemory so we can stage real
+// Dependency resolver. Uses EF InMemory so we can stage real
 // Snippet rows for the candidates-for-mapping path.
 public class DependencyResolverTests
 {

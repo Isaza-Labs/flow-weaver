@@ -6,7 +6,7 @@ using flow_weaver_backend.Services.Identity;
 
 namespace flow_weaver_backend.Services.Ai.Tools.Handlers;
 
-// FU-3: chat-tool front for the import pipeline.
+// Chat-tool front for the import pipeline.
 //
 // The wizard already exposes the analyzer via REST + SSE (under
 // /api/workflow/import). This handler lets a user in /ai/chat paste a

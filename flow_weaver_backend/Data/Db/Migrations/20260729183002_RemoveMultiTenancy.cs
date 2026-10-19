@@ -18,7 +18,7 @@ namespace flow_weaver_backend.Data.Db.Migrations
             // CreateIndex calls further down would fail with a bare
             // "duplicate key" that says nothing about which rows to fix.
             // Fail here instead, naming the table, so the operator can
-            // deduplicate before retrying. See company_remove.md §F0.
+            // deduplicate before retrying. See deploy/README.md.
             migrationBuilder.Sql("""
                 DO $$
                 DECLARE
@@ -62,7 +62,7 @@ namespace flow_weaver_backend.Data.Db.Migrations
                     LOOP
                         IF dup_count > 0 THEN
                             RAISE EXCEPTION
-                                'RemoveMultiTenancy: % has % duplicate group(s) that were only unique per company. Deduplicate before migrating (see company_remove.md).',
+                                'RemoveMultiTenancy: % has % duplicate group(s) that were only unique per company. Deduplicate before migrating (see deploy/README.md).',
                                 offender, dup_count;
                         END IF;
                     END LOOP;

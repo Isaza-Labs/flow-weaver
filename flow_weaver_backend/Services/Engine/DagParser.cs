@@ -185,7 +185,7 @@ public class DagParser
         }
         color[id] = black;
     }
-    // Sprint 3.3: detect cycles across subflow references. Called by
+    // Detect cycles across subflow references. Called by
     // the executor at EnqueueRunAsync to ensure a workflow that includes
     // subflows doesn't transitively reference itself.
     //

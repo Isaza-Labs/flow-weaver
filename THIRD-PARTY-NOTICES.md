@@ -627,3 +627,21 @@ The source inventory records these image tags. The current public Dockerfiles an
 | `mcr.microsoft.com/dotnet/sdk` | `10.0` | backend compilation | build |
 | `node` | `22-alpine` | frontend deps, build and runtime | build |
 | `postgres` | `17-alpine` | database for the compose deployment | runtime |
+
+## 4. Resolved classifications and remaining release work
+
+### Resolved
+
+- **`khroma` 2.1.0** is MIT, confirmed against the upstream licence at the matching tag; a [verbatim copy](./legal/khroma-2.1.0.license.txt) is in this repository.
+- **The libgit2 licence and linking exception** for `LibGit2Sharp.NativeBinaries` 2.0.323 are included [verbatim](./legal/LibGit2Sharp.NativeBinaries-2.0.323.license.txt).
+- **The licence and agreement texts** for QuestPDF 2025.1.5 and the three json-everything packages are included verbatim from those exact versions (see section 2).
+- **The commercial terms** for QuestPDF and the json-everything libraries were assessed on 28 September 2026 for the stated versions and current revenue facts. That decision is kept outside the public repository.
+
+### Remaining before a release-specific notice
+
+1. **Regenerate the inventory from the release artifacts.** Reconcile the NuGet, npm and PyPI version lists with the exact source and images of the release. The current public checkout has no committed NuGet lockfiles or `deploy/requirements.txt`, so a regeneration is not reproducible from the checkout alone.
+2. **Capture the container inputs.** Record the image digests and the installed operating-system package versions and licences from the images built for the release; the Dockerfiles and Compose file currently use tags rather than digest pins.
+3. **Package the licence texts with the built artifacts.** Apache 2.0 requires the licence text and any upstream `NOTICE`; MIT and BSD require their copyright lines. These texts are collected from the artifacts at release time, as required by [distribution and release terms](./legal/DISTRIBUTION_AND_RELEASE.md).
+4. **Reassess the commercial terms** for QuestPDF and json-everything if the package versions or the revenue facts change before a release.
+5. **Review non-software assets** (fonts, icons, logos, screenshots) included in the distribution against `assets/ASSET_MANIFEST.csv`; the SBOM covers code dependencies only.
+6. **Declare modified material.** No component in this inventory is recorded as modified. If a release carries a local patch over a dependency, declare it here.

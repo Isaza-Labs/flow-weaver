@@ -79,7 +79,7 @@ public static class DefaultAgentSeedService
         "get_step_logs",
         "get_workflow_details",
         "update_workflow_node_config",
-        // Sprint 11: report generation
+        // Report generation
         "generate_report",
         // Credentials catalog — the agent needs to resolve names like
         // "github credential" to a UUID before passing it to git_* tools.

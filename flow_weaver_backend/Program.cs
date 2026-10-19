@@ -165,7 +165,7 @@ static LogEventLevel ParseLogLevel(string? raw, LogEventLevel fallback)
         : fallback;
 }
 
-// Sprint 2.8: worker-only mode. When WORKER_ONLY=true (or --worker CLI
+// Worker-only mode. When WORKER_ONLY=true (or --worker CLI
 // flag), skip the entire HTTP surface (controllers, OpenAPI, auth
 // middleware, CORS, rate limiter). The process only runs the DB +
 // engine + worker BackgroundService + handlers. Saves ~40 MB RSS and
@@ -218,17 +218,17 @@ if (!workerOnly)
         {
             document.Info = new Microsoft.OpenApi.OpenApiInfo
             {
-                Title = "Flow Weaver Backend API",
+                Title = "FlowWeaver Backend API",
                 Version = "v1",
                 Description = """
-                    REST API for the Flow Weaver network-automation platform.
+                    REST API for the FlowWeaver network-automation platform.
                     Covers device/credential inventory, workflows, triggers,
                     governance plans, integrations, AI providers/agents, and the
                     file-backed skills + specs catalog under /api/ai/catalog.
                     """,
                 Contact = new Microsoft.OpenApi.OpenApiContact
                 {
-                    Name = "Flow Weaver",
+                    Name = "FlowWeaver",
                     Email = "info@networkingdev.com",
                 },
             };
@@ -255,7 +255,7 @@ builder.Services.AddSingleton<flow_weaver_backend.Services.Security.IntegrationA
 // the frontend container. See ForwardedHeadersConfiguration.
 builder.Services.AddForwardedHeadersFromConfig(builder.Configuration);
 
-// Sprint 5.5: Health checks — /health/live (liveness, no checks) and
+// Health checks — /health/live (liveness, no checks) and
 // /health/ready (readiness, verifies DB connectivity).
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<AppDbContext>("database");
@@ -496,7 +496,7 @@ builder.Services.AddSingleton<flow_weaver_backend.Services.Settings.IAppSettings
 // Rollback risk analyzer used by PromotionService and the editor.
 builder.Services.AddScoped<flow_weaver_backend.Services.Promotion.WorkflowRollbackAnalyzer>();
 
-// S15: cross-system workflow import pipeline (analyze → commit) with
+// Cross-system workflow import pipeline (analyze → commit) with
 // in-memory draft cache, format detectors, deterministic translators
 // for n8n / Itential / v1, and the agent translator as a fallback.
 builder.Services.AddSingleton<flow_weaver_backend.Services.Import.ImportDraftCache>();
@@ -521,7 +521,7 @@ builder.Services.AddScoped<flow_weaver_backend.Services.Import.Translators.IDslT
 builder.Services.AddScoped<flow_weaver_backend.Services.Import.Translators.IDslTranslator,
     flow_weaver_backend.Services.Import.Translators.AgentTranslator>();
 builder.Services.AddScoped<flow_weaver_backend.Services.Ai.Tools.Handlers.GenerateSnippetForImportHandler>();
-// FU-3: chat-tool front for the import pipeline.
+// Chat-tool front for the import pipeline.
 builder.Services.AddScoped<flow_weaver_backend.Services.Ai.Tools.Handlers.AnalyzeForeignWorkflowHandler>();
 
 // SLO compute service shared by the dashboard endpoint and the
@@ -534,7 +534,7 @@ builder.Services.AddScoped<IAIProvider, AIProviderService>();
 builder.Services.AddScoped<IAIAgent, AIAgentService>();
 builder.Services.AddScoped<IWorkflowTrigger, WorkflowTriggerService>();
 
-// Sprint 7: prompt skills + API specs CRUD. These wrap
+// Prompt skills + API specs CRUD. These wrap
 // the catalog tables used by the agent; mutations invalidate the
 // respective singleton caches (ISkillPromptLoader / IApiSpecIndex).
 builder.Services.AddScoped<IAiPromptSkill,
@@ -569,7 +569,7 @@ builder.Services.AddSingleton<flow_weaver_backend.Services.Compiler.IWorkflowExp
     flow_weaver_backend.Services.Compiler.AnsibleWorkflowExporter>();
 builder.Services.AddScoped<IWorkflowPlan, WorkflowPlanService>();
 
-// Sprint 4: AI Constructor — LLM providers, tool system, chat.
+// AI Constructor — LLM providers, tool system, chat.
 builder.Services.AddHttpClient("llm", c => c.Timeout = TimeSpan.FromMinutes(5));
 builder.Services.AddScoped<flow_weaver_backend.Services.Ai.Providers.LlmProviderFactory>();
 
@@ -728,7 +728,7 @@ builder.Services.AddScoped<flow_weaver_backend.Services.Ai.Tools.Handlers.Git.Gi
 builder.Services.AddScoped<flow_weaver_backend.Services.Ai.Tools.Handlers.Git.GitCreateWebhookHandler>();
 builder.Services.AddScoped<flow_weaver_backend.Services.Ai.Tools.Handlers.Git.GitCreateRemoteRepositoryHandler>();
 
-// Sprint 11: report generation. The tool handler needs
+// Report generation. The tool handler needs
 // IToolExecutionContext (scoped — hydrated by AiChatController per turn)
 // and IReportService (scoped — wraps the four exporters).
 builder.Services.AddScoped<flow_weaver_backend.Services.Ai.Tools.IToolExecutionContext,
@@ -760,7 +760,7 @@ QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 builder.Services.AddScoped<flow_weaver_backend.Services.Ai.Constructor.IPromptAnalyzer,
     flow_weaver_backend.Services.Ai.Constructor.PromptAnalyzer>();
 
-// Sprint 8: ${secret:source:id:field} resolver used by the REST executor
+// ${secret:source:id:field} resolver used by the REST executor
 // and any tool that needs stored credentials without the admin
 // pasting them into the agent prompt.
 builder.Services.AddScoped<flow_weaver_backend.Services.Ai.Secrets.ISecretResolver,
@@ -776,14 +776,14 @@ builder.Services.AddScoped<flow_weaver_backend.Services.Ai.Reports.IReportRefere
 builder.Services.AddScoped<flow_weaver_backend.Services.Ai.RestExecutor.IRestOperationExecutor,
     flow_weaver_backend.Services.Ai.RestExecutor.RestOperationExecutor>();
 
-// Sprint 2.1: runtime entities (read-only from the HTTP surface). The
-// engine/workers added in 2.2–2.4 are the only writers.
+// Runtime entities (read-only from the HTTP surface). The
+// workflow executor and the worker are the only writers.
 builder.Services.AddScoped<IWorkflowRun, WorkflowRunService>();
 builder.Services.AddScoped<IStepRun, StepRunService>();
 builder.Services.AddScoped<IWorkflowVersion, WorkflowVersionService>();
 builder.Services.AddScoped<IJob, JobService>();
 
-// Sprint 2.2: Dapper-backed queue repository. Scoped so it shares the
+// Dapper-backed queue repository. Scoped so it shares the
 // per-request AppDbContext connection (keeps transactions, connection
 // reuse, and the configured data source in one place).
 builder.Services.AddScoped<IQueueRepository, QueueRepository>();
@@ -791,15 +791,15 @@ builder.Services.AddScoped<IQueueRepository, QueueRepository>();
 // columns on every query in the project — matches the EF Core converter.
 Dapper.SqlMapper.AddTypeHandler(new JsonElementTypeHandler());
 
-// Sprint 2.3: DAG parsing + variable templating. Both are stateless after
+// DAG parsing + variable templating. Both are stateless after
 // construction, so Singleton keeps allocation out of the per-request path.
 builder.Services.AddSingleton<DagParser>();
 builder.Services.AddSingleton<IVariableResolver, VariableResolver>();
 
-// Sprint 2.7: Condition evaluator for conditional edges in the DAG.
+// Condition evaluator for conditional edges in the DAG.
 builder.Services.AddSingleton<IConditionEvaluator, ConditionEvaluator>();
 
-// Sprint 2.4: Workflow executor — the orchestration brain. Singleton
+// Workflow executor — the orchestration brain. Singleton
 // because it holds the concurrency SemaphoreSlim and creates scopes
 // internally (one per run). RetryPolicyExecutor is stateless; the worker
 // uses it to run a step's retry_policy attempts.
@@ -808,7 +808,7 @@ builder.Services.Configure<WorkflowExecutorOptions>(
 builder.Services.AddSingleton<RetryPolicyExecutor>();
 builder.Services.AddSingleton<IWorkflowExecutor, WorkflowExecutor>();
 
-// Sprint 2.5: Worker — BackgroundService that polls the job queue and
+// Worker — BackgroundService that polls the job queue and
 // dispatches to handlers. Options bind to the "Worker" section.
 // Individual ISnippetHandler implementations are registered by Sprint
 // 2.6; the worker resolves them from the DI scope at dispatch time.
@@ -867,12 +867,12 @@ if (!workerOnly)
     builder.Services.AddHostedService<flow_weaver_backend.BackgroundServices.SchedulerHostedService>();
 }
 
-// Sprint 10: reseed-from-disk for skills + specs so deployed updates to
+// Reseed-from-disk for skills + specs so deployed updates to
 // bundled /Skills/*.md and /Specs/*.yaml can overwrite existing rows on
 // demand from the admin UI.
 builder.Services.AddScoped<flow_weaver_backend.Services.Ai.Seed.CatalogReseedService>();
 
-// Sprint 2.6: Snippet handlers. Each ISnippetHandler maps to a
+// Snippet handlers. Each ISnippetHandler maps to a
 // Snippet.Type value. Scoped so they can inject a fresh DbContext.
 //
 // Guarded client: IUrlGuard runs on the initial URL AND on every redirect
@@ -926,7 +926,7 @@ builder.Services.AddScoped<flow_weaver_backend.Services.Worker.ISnippetHandler,
 builder.Services.AddScoped<flow_weaver_backend.Services.Worker.ISnippetHandler,
     flow_weaver_backend.Services.Worker.Handlers.PythonHandler>();
 // (ansible handler registered above — real or simulated depending on Simulation:Enabled)
-// Sprint 11: report snippet — lets workflow steps produce the same
+// Report snippet — lets workflow steps produce the same
 // artifacts the agent's generate_report tool produces, composed with
 // integration_action to email/upload them.
 builder.Services.AddScoped<flow_weaver_backend.Services.Worker.ISnippetHandler,
@@ -950,7 +950,7 @@ builder.Services.AddScoped<flow_weaver_backend.Services.Worker.ISnippetHandler,
 builder.Services.AddScoped<flow_weaver_backend.Services.Worker.ISnippetHandler,
     flow_weaver_backend.Services.Worker.Handlers.GitOpsHandler>();
 
-// Sprint 5.1: SSRF guard — blocks requests to private/loopback addresses.
+// SSRF guard — blocks requests to private/loopback addresses.
 builder.Services.AddSingleton<IUrlGuard, UrlGuard>();
 
 // Skills (/Skills/*.md) and API specs (/Specs/*.yaml) are file-backed caches
@@ -1080,7 +1080,7 @@ builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 builder.Services.AddScoped<IAuthAuditLogger, AuthAuditLogger>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
-// Sprint 5.7: Domain audit logger — captures entity mutations (create,
+// Domain audit logger — captures entity mutations (create,
 // update, delete) for compliance. Scoped so it shares the request's
 // DbContext, ICurrentUser, and IHttpContextAccessor.
 builder.Services.AddScoped<flow_weaver_backend.Services.Audit.IAuditLogger,
@@ -1227,7 +1227,7 @@ if (app.Environment.IsDevelopment())
         scopeFactory, app.Environment, catalogLogger);
 }
 
-// Sprint 8: when an OpenAI provider is enabled, ensure a default
+// When an OpenAI provider is enabled, ensure a default
 // assistant agent is wired to it. Keeps /ai/chat working without
 // requiring admins to manually author an agent before first use.
 {
@@ -1237,7 +1237,7 @@ if (app.Environment.IsDevelopment())
         scopeFactory, agentSeedLogger);
 }
 
-// Sprint 10: seed baseline Snippets (ping / rest_call / transform).
+// Seed baseline Snippets (ping / rest_call / transform).
 // Idempotent by type — the agent has these as building blocks from day
 // one instead of minting them before every new workflow.
 {
@@ -1363,7 +1363,7 @@ if (!workerOnly)
     app.MapScalarApiReference(options =>
     {
         options
-            .WithTitle("Flow Weaver API")
+            .WithTitle("FlowWeaver API")
             .WithTheme(ScalarTheme.Default)
             .WithDefaultHttpClient(ScalarTarget.Shell, ScalarClient.Curl);
     });
@@ -1399,7 +1399,7 @@ if (!workerOnly)
     app.UseRateLimiter();
     app.MapControllers();
 
-    // Sprint 5.5: Health check endpoints (anonymous).
+    // Health check endpoints (anonymous).
     // /health/live  — always 200, no checks (liveness probe).
     // /health/ready — runs the "database" check (readiness probe).
     app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false })

@@ -65,10 +65,10 @@ public static class AgentToolHandlers
         typeof(GitListWebhooksHandler),
         typeof(GitCreateWebhookHandler),
         typeof(GitCreateRemoteRepositoryHandler),
-        // S15: drafts a Snippet body for a missing reference detected during
+        // Drafts a Snippet body for a missing reference detected during
         // workflow import (wizard's "generate with AI" action).
         typeof(GenerateSnippetForImportHandler),
-        // FU-3: chat-tool that translates a foreign workflow definition
+        // Chat-tool that translates a foreign workflow definition
         // to v1 + lists missing dependencies. Read-only; the chat user
         // is redirected to /workflows/import to commit.
         typeof(AnalyzeForeignWorkflowHandler),

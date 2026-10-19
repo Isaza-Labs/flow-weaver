@@ -26,7 +26,7 @@ public class WorkflowExecutorOptions
     // where a step never transitions to terminal.
     public int OrchestrationTimeoutSeconds { get; set; } = 7200; // 2 h
 
-    // Sprint 3.4: which environment this process is allowed to run
+    // Which environment this process is allowed to run
     // workflows for. A ladder: "dev-sandbox" accepts drafts only, "qa-lab"
     // accepts drafts + qa, "production" accepts drafts + qa + production.
     // Default allows all drafts to run in dev without extra config.

@@ -94,7 +94,7 @@ public sealed class PermissionClassifier
         // Static DAG validation, no handler execution.
         ["simulate_workflow_run"] = new("workflow", "read", TierAutonomous),
 
-        // Import-assist tools (FU-3 / S15). Both are pure analysis / draft
+        // Import-assist tools. Both are pure analysis / draft
         // generation that persist NOTHING — the wizard commits separately —
         // so read-level + autonomous, matching the other intake tools. Explicit
         // entries are REQUIRED: the unknown-fallback would tag them

@@ -302,7 +302,7 @@ public class WorkflowImportController : ControllerBase
             });
         }
 
-        // FU-1: wrap the whole commit in a transaction. The pipeline
+        // Wrap the whole commit in a transaction. The pipeline
         // persists snippets/integrations BEFORE the workflow (so the
         // reference validator can resolve their ids) — without a tx,
         // a failure in the workflow save leaves orphan stubs/integrations.
@@ -667,7 +667,7 @@ public class WorkflowImportController : ControllerBase
         // stub=new-id would fail).
         await _db.SaveChangesAsync(ct);
 
-        // S15: re-check references after the user's resolutions
+        // Re-check references after the user's resolutions
         // (mapping, stubbing, generating). Catches typos in
         // `target_id` and other cases where the remap produced an id
         // that doesn't resolve to a real row.
@@ -692,7 +692,7 @@ public class WorkflowImportController : ControllerBase
             previousNodes);
         if (!refResult.IsValid)
         {
-            // FU-1: rollback the staged snippets / integrations so the
+            // Rollback the staged snippets / integrations so the
             // user can retry with corrected resolutions without leaving
             // orphan rows in /snippets and /integrations.
             if (tx is not null) await tx.RollbackAsync(ct);
@@ -704,7 +704,7 @@ public class WorkflowImportController : ControllerBase
             });
         }
 
-        // FU-5: `update_existing` keeps the structural duplicate's
+        // `update_existing` keeps the structural duplicate's
         // WorkflowId and history intact instead of soft-deleting +
         // inserting (which is what `replace` does). The current state
         // is captured as a WorkflowVersion snapshot so rollback still
@@ -2224,7 +2224,7 @@ public class WorkflowImportController : ControllerBase
         return v.Clone();
     }
 
-    // FU-5: shallow merge of two metadata objects with the imported
+    // Shallow merge of two metadata objects with the imported
     // side winning on key collisions. We don't go deeper than one level
     // because metadata values are typically scalars or flags
     // (`is_subflow`, `source_format`); deep-merge with overwrite policy

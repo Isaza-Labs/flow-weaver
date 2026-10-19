@@ -3,7 +3,7 @@ using flow_weaver_backend.Services.Import.Translators;
 
 namespace flow_weaver_backend.Tests;
 
-// FU-4: AgentResponseParser is the pure-function piece of the
+// AgentResponseParser is the pure-function piece of the
 // AgentTranslator we can unit-test without standing up an LLM.
 // Covers fence-stripping, wrapped-vs-bare workflow shape, and the
 // fallback when the response isn't valid JSON.

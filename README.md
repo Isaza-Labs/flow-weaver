@@ -1,5 +1,7 @@
 # FlowWeaver
 
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE) [![Release](https://img.shields.io/github/v/release/Isaza-Labs/flow-weaver?include_prereleases)](https://github.com/Isaza-Labs/flow-weaver/releases)
+
 **Build network workflows without writing code. Keep control of what runs.**
 
 FlowWeaver is an open-source, self-hosted platform for network automation. Describe a task to the AI assistant or build it in the visual editor, inspect the resulting workflow, and run it through a deterministic execution engine. The platform brings device inventory, multi-vendor integrations, environment controls, simulation, approvals, run logs, and audit records into one place.

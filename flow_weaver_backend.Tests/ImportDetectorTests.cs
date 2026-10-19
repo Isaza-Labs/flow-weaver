@@ -3,7 +3,7 @@ using flow_weaver_backend.Services.Import.Detectors;
 
 namespace flow_weaver_backend.Tests;
 
-// S15: format detection unit tests. Cheap, no DB.
+// Format detection unit tests. Cheap, no DB.
 public class ImportDetectorTests
 {
     private static JsonElement Parse(string json)

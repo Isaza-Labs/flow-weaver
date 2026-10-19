@@ -364,7 +364,7 @@ public class WorkflowExecutorOrchestrationTests
         Assert.Equal("schedule", run.Trigger);
     }
 
-    // FU-2 pre-flight: a workflow whose integration is still waiting for
+    // Pre-flight: a workflow whose integration is still waiting for
     // credentials must not be enqueued at all.
     [Fact]
     public async Task Enqueue_RefusesAWorkflowWhoseIntegrationStillNeedsConfig()

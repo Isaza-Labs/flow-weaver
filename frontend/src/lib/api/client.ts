@@ -1427,7 +1427,7 @@ export const adminSettings = {
     api<AdminSettingsBody>('/admin/settings', { method: 'PUT', body: JSON.stringify(body) }),
 };
 
-// Sprint 8: conversations + secrets for the new /ai UI.
+// Conversations + secrets for the new /ai UI.
 export interface AiConversationSummary {
   conversation_id: string;
   agent_id: string | null;
@@ -2567,7 +2567,7 @@ export const importWorkflow = {
   },
 };
 
-// ─── S15: cross-system import wizard ─────────────────────────────────
+// ─── Cross-system import wizard ──────────────────────────────────────
 
 export type ImportStatus = 'pending' | 'analyzing' | 'ready' | 'failed' | 'committed';
 

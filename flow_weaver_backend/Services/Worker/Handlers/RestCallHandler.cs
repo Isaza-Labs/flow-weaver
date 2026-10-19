@@ -81,7 +81,7 @@ public sealed class RestCallHandler : ISnippetHandler
             return Fail($"`{url}` is not a valid http/https URL");
         }
 
-        // Sprint 5.1: SSRF guard — reject private/loopback/metadata URLs.
+        // SSRF guard — reject private/loopback/metadata URLs.
         try
         {
             _urlGuard.EnsureSafe(url);

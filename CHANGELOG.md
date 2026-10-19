@@ -28,6 +28,8 @@ Each entry should distinguish verified behavior from known limitations and break
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-15
+
 ### Added
 
 - Public repository documentation package: project overview, quick start, governance, maintainers, contribution, support and security policies; the Apache 2.0 scope notices for skills, specifications and workflows; and the legal set (licensing framework, DCO, trademark policy, third-party notices control).
@@ -46,14 +48,22 @@ Each entry should distinguish verified behavior from known limitations and break
 
 - Documentation cleanup across the repository, the in-app manual and the agent skills: removed internal references, corrected statements that contradicted the code, fixed broken links and replaced example data with documentation-reserved values.
 - `.gitignore` no longer matches source folders named `Secrets` on case-insensitive filesystems.
+- The agent's `execute_operation` tool sent requests to integrations configured with `oauth2_client_credentials` without an `Authorization` header, so the upstream answered 401 (for example ServiceNow: "User is not authenticated") while the integration health check reported `healthy`. The REST executor now applies integration auth through `IIntegrationAuthApplier`, which fetches and caches the OAuth access token; a failed token grant is returned as an explicit auth error instead of an anonymous call.
+
+### Security
+
+- `Integration.AuthConfig` is now encrypted at rest with the Data Protection keyring. On startup, existing plaintext rows are rewritten encrypted; from then on those credentials depend on the keyring, so back it up before upgrading.
 
 ### Known limitations
 
-- **Pre-1.0 development state.** No stable release has been tagged; setup and interfaces may change. Verify a deployment in your own environment before using it for operational work.
+- **Pre-1.0 pre-release.** v0.9.0 is the first tagged pre-release; setup and interfaces may change before 1.0. Verify a deployment in your own environment before using it for operational work.
 - **The third-party notice is a historical inventory, not yet a complete release notice.** The [release work](./THIRD-PARTY-NOTICES.md#4-resolved-classifications-and-remaining-release-work) includes packaging third-party licence texts with the built artifacts, recording commercial-term decisions, and regenerating the inventory from those artifacts. The current public checkout has no committed NuGet lockfiles or `deploy/requirements.txt`, and its container bases use tags rather than digest pins.
-- **No supported-version table exists** because no release has been tagged. Until then, fixes are applied to the current development line.
+- Supported versions are listed in [SECURITY.md](./SECURITY.md#supported-versions).
 
 ---
+
+[Unreleased]: https://github.com/Isaza-Labs/flow-weaver/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/Isaza-Labs/flow-weaver/releases/tag/v0.9.0
 
 <!--
 Template for a release entry:

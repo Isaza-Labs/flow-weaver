@@ -330,7 +330,7 @@ elseif (-not $providerId) {
 }
 else {
     $agentBody = @{
-        name           = 'Flow Weaver Assistant'
+        name           = 'FlowWeaver Assistant'
         role           = 'assistant'
         description    = 'Default assistant created by setup'
         provider_id    = $providerId

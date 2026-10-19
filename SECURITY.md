@@ -23,7 +23,10 @@ Please allow a reasonable opportunity to investigate and remediate before public
 
 ## Supported versions
 
-Until versioned releases exist, fixes are applied to the current development line. A supported-version table must be added when releases are tagged.
+| Version | Supported |
+| --- | --- |
+| 0.9.x (pre-release) | Security fixes land on `main` and ship in the next 0.9.x tag |
+| Earlier commits | Not supported |
 
 ## Scope
 

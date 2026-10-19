@@ -337,7 +337,7 @@ else
     if [[ -z $PROVIDER_ID ]]; then
         warn "No AI provider available — skipping agent creation. Re-run './setup.sh configure' after adding one."
     else
-        abody=$(printf '{"name":"Flow Weaver Assistant","role":"assistant","description":"Default assistant created by setup","provider_id":"%s","system_prompt":"","max_iterations":20,"temperature":0.2}' "$PROVIDER_ID")
+        abody=$(printf '{"name":"FlowWeaver Assistant","role":"assistant","description":"Default assistant created by setup","provider_id":"%s","system_prompt":"","max_iterations":20,"temperature":0.2}' "$PROVIDER_ID")
         aresp=$(curl -s -w '\n%{http_code}' -X POST "$BACKEND_URL/api/AIAgent" \
             "${AUTH[@]}" -H 'Content-Type: application/json' -d "$abody")
         acode=${aresp##*$'\n'}; aresp=${aresp%$'\n'*}

@@ -86,7 +86,7 @@ public sealed class WorkflowExecutor : IWorkflowExecutor
                                       && w.IsActive, ct)
             ?? throw new WorkflowExecutorException($"workflow {workflowId} not found");
 
-        // Sprint 3.4: environment guard, enforced at enqueue time so the
+        // Environment guard, enforced at enqueue time so the
         // user gets immediate feedback rather than a deferred failure in
         // the worker. Worker environments form a ladder: dev-sandbox runs
         // drafts only, qa-lab runs drafts + qa, production runs everything.
@@ -121,7 +121,7 @@ public sealed class WorkflowExecutor : IWorkflowExecutor
         // Fail fast on structural errors before writing any row.
         _parser.Parse(workflow.Nodes, workflow.Edges);
 
-        // FU-2: pre-flight integration health. Refuse to enqueue when
+        // Pre-flight integration health. Refuse to enqueue when
         // the workflow references an integration that is still waiting
         // for credentials (Status = "needs_config", typical right after
         // the import wizard auto-creates the row). Without this gate the
@@ -2466,7 +2466,7 @@ public sealed class WorkflowExecutor : IWorkflowExecutor
     private static bool IsTerminal(string status) =>
         status is StepStatus.Completed or StepStatus.Failed or StepStatus.Skipped or StepStatus.Cancelled;
 
-    // FU-2: walks the workflow nodes, collects every integration_id
+    // Walks the workflow nodes, collects every integration_id
     // referenced in `integration_action` config_overrides, and rejects
     // the enqueue if any of those integrations is in NeedsConfig.
     // Bulk-queries the rows in one SELECT to avoid N+1.

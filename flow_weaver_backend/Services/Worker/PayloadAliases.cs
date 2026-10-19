@@ -4,7 +4,7 @@ namespace flow_weaver_backend.Services.Worker;
 
 /// <summary>
 /// Rewrites a step's resolved payload from the accepted ALIAS spelling of a
-/// key to the canonical one (snippets/SPEC.md — "Flow Weaver is the oracle for
+/// key to the canonical one (snippets/SPEC.md — "FlowWeaver is the oracle for
 /// payload keys").
 /// </summary>
 /// <remarks>

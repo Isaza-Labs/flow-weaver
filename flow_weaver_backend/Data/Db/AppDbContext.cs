@@ -99,7 +99,7 @@ public class AppDbContext : DbContext
     public DbSet<AIAgent> AIAgents => Set<AIAgent>();
     public DbSet<AIConversation> AIConversations => Set<AIConversation>();
 
-    // Sprint 7: DB-backed replacement for /Skills/*.md and /Specs/*.yaml.
+    // DB-backed replacement for /Skills/*.md and /Specs/*.yaml.
     public DbSet<AiPromptSkill> AiPromptSkills => Set<AiPromptSkill>();
     public DbSet<AiApiSpec> AiApiSpecs => Set<AiApiSpec>();
 
@@ -144,19 +144,19 @@ public class AppDbContext : DbContext
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<AuthEvent> AuthEvents => Set<AuthEvent>();
 
-    // Sprint 8: secret store consumed by the agent's
+    // Secret store consumed by the agent's
     // ExecuteOperation tool and REST spec executor via ${secret:...} refs.
     public DbSet<Secret> Secrets => Set<Secret>();
 
-    // Sprint 9: append-only action trace. ITraceLogger writes here from
+    // Append-only action trace. ITraceLogger writes here from
     // every critical path; a BackgroundService prunes rows older than
     // Tracing:RetentionDays.
     public DbSet<TraceEvent> TraceEvents => Set<TraceEvent>();
 
-    // Sprint 5.7: Domain audit trail (distinct from auth-specific AuthEvents).
+    // Domain audit trail (distinct from auth-specific AuthEvents).
     public DbSet<AuditEvent> AuditLogs => Set<AuditEvent>();
 
-    // Sprint 11: generated report files persisted for audit. Body lives
+    // Generated report files persisted for audit. Body lives
     // as bytea (gzipped for html/csv/pdf); ReportRetentionHostedService
     // purges expired rows.
     public DbSet<ReportArtifact> ReportArtifacts => Set<ReportArtifact>();
@@ -495,7 +495,7 @@ public class AppDbContext : DbContext
             e.HasIndex(x => x.Provider);
         });
 
-        // Sprint 7: DB-backed replacement for /Skills/*.md and /Specs/*.yaml.
+        // DB-backed replacement for /Skills/*.md and /Specs/*.yaml.
         modelBuilder.Entity<AiPromptSkill>(e =>
         {
             e.ToTable("ai_prompt_skills");
@@ -643,7 +643,7 @@ public class AppDbContext : DbContext
             e.HasIndex(x => x.RequestId);
         });
 
-        // Sprint 5.7: Domain audit log for entity mutations.
+        // Domain audit log for entity mutations.
         //
         // Every index below is shaped after a filter /api/audit/events
         // actually offers. A bare EntityType index would be useless —
@@ -668,7 +668,7 @@ public class AppDbContext : DbContext
             e.HasIndex(x => x.RequestId);
         });
 
-        // Sprint 11: persisted report files. Indexed for the admin list
+        // Persisted report files. Indexed for the admin list
         // view's common filters (per user, per format, per source) and
         // for the retention sweeper which scans by ExpiresAt on active rows.
         modelBuilder.Entity<ReportArtifact>(e =>
