@@ -40,6 +40,22 @@ The first workflow in the quick start starts in **draft**. You can simulate the 
 
 Permissions include the default Admin, Operator, and Viewer roles. Granular capability grants are available through an opt-in rollout setting and are not the default. See [permissions](./docs/permissions.md) for enforcement scope and current limitations.
 
+## See it in action
+
+The recordings below come from a local demo instance with synthetic lab devices.
+
+**Build a workflow in the visual editor.** Drag snippets from the palette, connect them, mark the failure branch, save, and simulate without contacting any device.
+
+![Building a workflow in the visual editor: nodes are dragged from the palette, connected, one branch is set to failure, then the workflow is saved and simulated](./assets/screenshots/flowweaver-build.gif)
+
+**Promote through QA to production.** Promotion to QA is refused until the workflow has a passing simulation. Promotion to production is refused until the QA copy has a recent successful run, and it needs a second approver.
+
+![Promoting a workflow: draft to QA is blocked until a simulation passes, QA to production is blocked until a QA run succeeds, then it is promoted with a named approver](./assets/screenshots/flowweaver-promote.gif)
+
+**Inventory, run history, and audit.** Register a device and allow it as a QA target, open a run to inspect each step's output, and find the change in the audit log.
+
+![Adding a lab device, enabling it for QA runs, opening a run's step output, and expanding the matching audit log entry](./assets/screenshots/flowweaver-inventory.gif)
+
 ## Community and project policies
 
 - [Documentation index](./docs/README.md) and [support routes](./SUPPORT.md)
