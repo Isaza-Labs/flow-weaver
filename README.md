@@ -44,6 +44,10 @@ Permissions include the default Admin, Operator, and Viewer roles. Granular capa
 
 The recordings below come from a local demo instance with synthetic lab devices.
 
+**Ask the AI assistant to build a workflow.** The assistant inspects the existing snippets and devices, proposes a plan with the DAG it intends to create, and waits for confirmation. After "yes" it creates the draft workflow, simulates it, and reports what it reused. The result opens in the visual editor like any other workflow. Waiting time for the model is sped up in the recording.
+
+![Asking the AI assistant for a reachability triage workflow: it lists snippets and devices, proposes a plan, creates the draft workflow after confirmation, simulates it, and the new workflow opens in the editor](./assets/screenshots/flowweaver-ai.gif)
+
 **Build a workflow in the visual editor.** Drag snippets from the palette, connect them, mark the failure branch, save, and simulate without contacting any device.
 
 ![Building a workflow in the visual editor: nodes are dragged from the palette, connected, one branch is set to failure, then the workflow is saved and simulated](./assets/screenshots/flowweaver-build.gif)
