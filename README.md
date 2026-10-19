@@ -4,6 +4,8 @@
 
 **Build network workflows without writing code. Keep control of what runs.**
 
+![FlowWeaver runs the same workflow on two lab devices: one takes the success path, the other the failure path](./assets/screenshots/flowweaver-run.gif)
+
 FlowWeaver is an open-source, self-hosted platform for network automation. Describe a task to the AI assistant or build it in the visual editor, inspect the resulting workflow, and run it through a deterministic execution engine. The platform brings device inventory, multi-vendor integrations, environment controls, simulation, approvals, run logs, and audit records into one place.
 
 The AI helps author workflows; it does not bypass review or execute arbitrary production changes on its own. A workflow still needs the right targets, configuration, permissions, and validation for the environment where it will run.
