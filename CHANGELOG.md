@@ -28,7 +28,7 @@ Each entry should distinguish verified behavior from known limitations and break
 
 ## [Unreleased]
 
-## [0.9.0] - 2026-10-15
+## [0.9.0] - 2026-10-20
 
 ### Added
 
