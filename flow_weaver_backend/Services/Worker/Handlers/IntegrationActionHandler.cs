@@ -84,12 +84,19 @@ public sealed class IntegrationActionHandler : ISnippetHandler
             "worker.integration_action.start step_run_id={StepRunId} device_id={DeviceId} integration_id={IntegrationId} action_id={ActionId} action_name={ActionName} method={Method} url_host={UrlHost}",
             request.StepRunId, request.DeviceId, integrationId, actionId, action.Name, action.Method, urlHost);
 
-        // Append query params.
+        // Append query params. Numbers and booleans are sent as their JSON text
+        // (`limit=1000`, `has_primary_ip=true`) and an array repeats the key once
+        // per element (`status=active&status=planned`), the multi-value filter
+        // form NetBox and most REST APIs expect. Objects and nulls have no query
+        // form and are skipped.
         if (input.TryGetProperty("query", out var qp) && qp.ValueKind == JsonValueKind.Object)
         {
             var qs = string.Join("&", qp.EnumerateObject()
-                .Where(p => p.Value.ValueKind == JsonValueKind.String)
-                .Select(p => $"{Uri.EscapeDataString(p.Name)}={Uri.EscapeDataString(p.Value.GetString()!)}"));
+                .SelectMany(p => (p.Value.ValueKind == JsonValueKind.Array
+                        ? p.Value.EnumerateArray().Select(ScalarText)
+                        : new[] { ScalarText(p.Value) })
+                    .Where(v => v is not null)
+                    .Select(v => $"{Uri.EscapeDataString(p.Name)}={Uri.EscapeDataString(v!)}")));
             if (!string.IsNullOrEmpty(qs))
                 url += (url.Contains('?') ? "&" : "?") + qs;
         }
@@ -246,14 +253,25 @@ public sealed class IntegrationActionHandler : ISnippetHandler
         if (!input.TryGetProperty("params", out var prms) || prms.ValueKind != JsonValueKind.Object)
             return template;
 
+        // A numeric id (`{"id": 25774}`) fills the placeholder like its string form.
         var result = template;
         foreach (var prop in prms.EnumerateObject())
         {
-            if (prop.Value.ValueKind == JsonValueKind.String)
-                result = result.Replace($"{{{prop.Name}}}", prop.Value.GetString());
+            var value = ScalarText(prop.Value);
+            if (value is not null)
+                result = result.Replace($"{{{prop.Name}}}", value);
         }
         return result;
     }
+
+    // Text form of a JSON scalar for a URL: strings as-is, numbers and booleans
+    // as their JSON text. Null for objects, arrays and nulls.
+    private static string? ScalarText(JsonElement el) => el.ValueKind switch
+    {
+        JsonValueKind.String => el.GetString(),
+        JsonValueKind.Number or JsonValueKind.True or JsonValueKind.False => el.GetRawText(),
+        _ => null,
+    };
 
     // Splits the two failure modes so the caller can surface which one
     // happened. Conflating them produced the long-running bug where the

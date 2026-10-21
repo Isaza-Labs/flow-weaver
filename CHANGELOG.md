@@ -28,6 +28,11 @@ Each entry should distinguish verified behavior from known limitations and break
 
 ## [Unreleased]
 
+### Fixed
+
+- `integration_action` steps dropped every query parameter that was not a JSON string, without an error, so `"query": {"limit": 1000}` reached NetBox with no limit and returned its default page of 50 results. Numbers and booleans are now sent as their JSON text (`limit=1000`, `has_primary_ip=true`), and an array repeats the key once per element (`status=active&status=planned`). Objects and nulls are still left out.
+- `integration_action` steps left a path placeholder unfilled when its value in `params` was a number, so `{"id": 42}` produced `/api/dcim/devices/{id}/` and a 404. Numeric and boolean values now fill the placeholder like their string form.
+
 ## [0.9.0] - 2026-10-20
 
 ### Added

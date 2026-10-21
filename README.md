@@ -1,6 +1,6 @@
 # FlowWeaver
 
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE) [![Release](https://img.shields.io/github/v/release/Isaza-Labs/flow-weaver?include_prereleases)](https://github.com/Isaza-Labs/flow-weaver/releases)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE) [![Version: 0.9.0 pre-release](https://img.shields.io/badge/version-0.9.0_pre--release-orange.svg)](./CHANGELOG.md)
 
 **Build network workflows without writing code. Keep control of what runs.**
 

@@ -237,6 +237,19 @@ public class IntegrationActionHandlerTests
         Assert.EndsWith("/api/dcim/devices/42/", f.Handler.Requests[0].RequestUri!.ToString());
     }
 
+    // NetBox ids are integers, so a model naturally sends `{"id": 42}`.
+    [Fact]
+    public async Task NumericPathParamIsInterpolated()
+    {
+        using var f = new Fixture();
+        var integrationId = f.SeedIntegration();
+        var actionId = f.SeedAction(integrationId, path: "/api/dcim/devices/{id}/");
+
+        await Run(f, Input(integrationId, actionId, "\"params\":{\"id\":42}"));
+
+        Assert.EndsWith("/api/dcim/devices/42/", f.Handler.Requests[0].RequestUri!.ToString());
+    }
+
     // An unfilled placeholder is left literal rather than silently dropped —
     // the upstream 404 then names it.
     [Fact]
@@ -265,19 +278,54 @@ public class IntegrationActionHandlerTests
         Assert.Contains("site=madrid", uri);
     }
 
-    // Non-string query values are skipped rather than stringified oddly.
+    // Numbers and booleans are sent as their JSON text. Dropping them silently
+    // turned `"limit": 1000` into NetBox's default page of 50.
     [Fact]
-    public async Task NonStringQueryValuesAreSkipped()
+    public async Task NumberAndBooleanQueryValuesAreSent()
     {
         using var f = new Fixture();
         var integrationId = f.SeedIntegration();
         var actionId = f.SeedAction(integrationId);
 
-        await Run(f, Input(integrationId, actionId, "\"query\":{\"limit\":50,\"name\":\"x\"}"));
+        await Run(f, Input(integrationId, actionId,
+            "\"query\":{\"limit\":1000,\"offset\":0,\"has_primary_ip\":true,\"name\":\"x\"}"));
+
+        var uri = f.Handler.Requests[0].RequestUri!.AbsoluteUri;
+        Assert.Contains("limit=1000", uri);
+        Assert.Contains("offset=0", uri);
+        Assert.Contains("has_primary_ip=true", uri);
+        Assert.Contains("name=x", uri);
+    }
+
+    // An array repeats the key once per element: NetBox's multi-value filter.
+    [Fact]
+    public async Task ArrayQueryValueRepeatsTheKey()
+    {
+        using var f = new Fixture();
+        var integrationId = f.SeedIntegration();
+        var actionId = f.SeedAction(integrationId);
+
+        await Run(f, Input(integrationId, actionId, "\"query\":{\"status\":[\"active\",\"planned\"],\"site_id\":[1,2]}"));
+
+        var query = f.Handler.Requests[0].RequestUri!.Query;
+        Assert.Contains("status=active&status=planned", query);
+        Assert.Contains("site_id=1&site_id=2", query);
+    }
+
+    // Objects and nulls have no query-string form and are left out.
+    [Fact]
+    public async Task ObjectAndNullQueryValuesAreSkipped()
+    {
+        using var f = new Fixture();
+        var integrationId = f.SeedIntegration();
+        var actionId = f.SeedAction(integrationId);
+
+        await Run(f, Input(integrationId, actionId, "\"query\":{\"filter\":{\"a\":1},\"tag\":null,\"name\":\"x\"}"));
 
         var uri = f.Handler.Requests[0].RequestUri!.AbsoluteUri;
         Assert.Contains("name=x", uri);
-        Assert.DoesNotContain("limit", uri);
+        Assert.DoesNotContain("filter", uri);
+        Assert.DoesNotContain("tag", uri);
     }
 
     // ─── the SSRF guard ─────────────────────────────────────────────────
