@@ -28,6 +28,10 @@ Each entry should distinguish verified behavior from known limitations and break
 
 ## [Unreleased]
 
+### Added
+
+- Sample workflows under `workflows/`: DNS audit (NetBox vs. Infoblox), NetBox devices CSV export, Windows KB inventory, silent packet loss check and leaf reachability check. Each ships as a full bundle export with a canvas capture and a README covering purpose, prerequisites, inputs, outputs, risk level and QA evidence.
+
 ### Fixed
 
 - `integration_action` steps dropped every query parameter that was not a JSON string, without an error, so `"query": {"limit": 1000}` reached NetBox with no limit and returned its default page of 50 results. Numbers and booleans are now sent as their JSON text (`limit=1000`, `has_primary_ip=true`), and an array repeats the key once per element (`status=active&status=planned`). Objects and nulls are still left out.

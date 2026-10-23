@@ -1,0 +1,1026 @@
+{
+  "schema_version": "v3",
+  "kind": "flow_weaver.workflow_bundle",
+  "exported_at": "2026-10-23T20:11:08.0331796Z",
+  "exported_by": {
+    "product": "flow-weaver",
+    "version": "1.0.0"
+  },
+  "requires": {
+    "snippet_types": [
+      "email_send",
+      "python_snippet",
+      "report"
+    ],
+    "capabilities": [
+      "max_parallel",
+      "python_network",
+      "run_namespace"
+    ],
+    "secrets": [
+      {
+        "ref": "${secret:credential:<credential_id>:passphrase}",
+        "used_by": [
+          "snippet:ssh-primitive-paramiko-2"
+        ]
+      },
+      {
+        "ref": "${secret:credential:<credential_id>:password}",
+        "used_by": [
+          "snippet:ssh-primitive-paramiko-2"
+        ]
+      },
+      {
+        "ref": "${secret:credential:<credential_id>:private_key}",
+        "used_by": [
+          "snippet:ssh-primitive-paramiko-2"
+        ]
+      },
+      {
+        "ref": "${secret:credential:<credential_id>:username}",
+        "used_by": [
+          "snippet:ssh-primitive-paramiko-2"
+        ]
+      },
+      {
+        "ref": "${secret:credential:win-fwaudit:password}",
+        "used_by": [
+          "win-audit"
+        ]
+      },
+      {
+        "ref": "${secret:credential:win-fwaudit:username}",
+        "used_by": [
+          "win-audit"
+        ]
+      }
+    ]
+  },
+  "workflow": {
+    "name": "windows-kb-inventory",
+    "description": "Windows inventory over SSH: OS, build.UBR, release, dated hotfixes, latest patch, pending reboot and uptime; HTML report with devices requiring attention.",
+    "environment": "draft",
+    "input_schema": {
+      "type": "object",
+      "properties": {}
+    },
+    "metadata": {}
+  },
+  "nodes": [
+    {
+      "x": 0,
+      "y": 26,
+      "id": "__start__",
+      "snippet_id": "__start__",
+      "config_overrides": {}
+    },
+    {
+      "x": 256,
+      "y": 18,
+      "id": "build-ps-command",
+      "snippet_id": "ffcce402-30f2-4554-b532-3f93138698c4",
+      "config_overrides": {
+        "script": "$ErrorActionPreference = 'Stop'\n$ProgressPreference = 'SilentlyContinue'\n$os = Get-CimInstance Win32_OperatingSystem\n$cv = Get-ItemProperty 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion'\n$kb = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)\nfunction Add-Kb([string]$t) { if ($t) { [regex]::Matches($t, 'KB\\d+', 'IgnoreCase') | ForEach-Object { [void]$kb.Add($_.Value.ToUpperInvariant()) } } }\n$hf = @()\ntry { $hf = @(Get-HotFix | ForEach-Object { Add-Kb $_.HotFixID; $d = ''; try { if ($_.InstalledOn) { $d = $_.InstalledOn.ToString('yyyy-MM-dd') } } catch {}; @{ KB = $_.HotFixID; Type = $_.Description; Date = $d } }) } catch {}\n$wu = ''\ntry { $s = (New-Object -ComObject Microsoft.Update.Session).CreateUpdateSearcher(); $n = $s.GetTotalHistoryCount(); if ($n -gt 0) { foreach ($e in $s.QueryHistory(0, [Math]::Min($n, 2000))) { if ($e.ResultCode -in 2, 3) { Add-Kb $e.Title; $d = $e.Date.ToString('yyyy-MM-dd'); if ($d -gt $wu) { $wu = $d } } } } } catch {}\ntry { Get-ChildItem 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Component Based Servicing\\Packages' | ForEach-Object { Add-Kb $_.PSChildName } } catch {}\n$rb = (Test-Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Component Based Servicing\\RebootPending') -or (Test-Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\WindowsUpdate\\Auto Update\\RebootRequired')\n$rel = if ($cv.DisplayVersion) { $cv.DisplayVersion } else { $cv.ReleaseId }\n@{ OS_Caption = $os.Caption; OS_Version = $os.Version; OS_Build = $os.BuildNumber; OS_UBR = $cv.UBR; OS_Release = $rel; OS_ProductType = $os.ProductType; OS_Arch = $env:PROCESSOR_ARCHITECTURE; Last_Boot = $os.LastBootUpTime.ToString('s'); Reboot_Pending = $rb; Last_WU_Install = $wu; HotFixes = $hf; Installed_Patches = @($kb | Sort-Object) } | ConvertTo-Json -Compress -Depth 4"
+      }
+    },
+    {
+      "x": 636,
+      "y": 56,
+      "id": "win-audit",
+      "snippet_id": "6915116b-244d-430b-bf87-6922056edc74",
+      "config_overrides": {
+        "mode": "exec",
+        "changes": false,
+        "command": "{{ steps.build-ps-command.output.command }}",
+        "password": "${secret:credential:win-fwaudit:password}",
+        "username": "${secret:credential:win-fwaudit:username}",
+        "timeout_seconds": 300,
+        "command_timeout_seconds": 240
+      }
+    },
+    {
+      "x": 1016,
+      "y": 94,
+      "id": "parse-windows-audit",
+      "snippet_id": "2be53e0f-6732-4d8a-b677-6642b50558f8",
+      "config_overrides": {}
+    },
+    {
+      "x": 1396,
+      "y": 132,
+      "id": "aggregate-kb-report",
+      "snippet_id": "de4bb3b9-adfe-4631-b04f-a309592cbd29",
+      "config_overrides": {}
+    },
+    {
+      "x": 1776,
+      "y": 170,
+      "id": "html-report",
+      "snippet_id": "d8a63d33-8d34-4afe-a66e-435ca74f495d",
+      "config_overrides": {
+        "format": "html",
+        "document": {
+          "badge": "{{ run.workflow_name }} - manual run",
+          "stats": [
+            {
+              "tone": "accent",
+              "label": "Dispositivos",
+              "value": "{{ steps.aggregate-kb-report.output.device_count }}"
+            },
+            {
+              "tone": "medium",
+              "label": "Sin auditar",
+              "value": "{{ steps.aggregate-kb-report.output.failed_devices }}"
+            },
+            {
+              "tone": "high",
+              "label": "Parche antiguo",
+              "value": "{{ steps.aggregate-kb-report.output.stale_devices }}"
+            },
+            {
+              "tone": "medium",
+              "label": "Reboot pendiente",
+              "value": "{{ steps.aggregate-kb-report.output.reboot_pending_devices }}"
+            }
+          ],
+          "title": "Windows KB inventory",
+          "sections": [
+            {
+              "title": "Inventario de parches",
+              "tables": [
+                {
+                  "rows": "{{ steps.aggregate-kb-report.output.rows }}",
+                  "caption": "Resumen por dispositivo",
+                  "headers": [
+                    "Dispositivo",
+                    "SO",
+                    "Build",
+                    "KBs",
+                    "Ultimo parche",
+                    "Dias",
+                    "Reboot pendiente",
+                    "Uptime (dias)",
+                    "Estado"
+                  ]
+                }
+              ],
+              "category": "store",
+              "description": "Estado de parcheo por dispositivo. 'Dias' cuenta desde el ultimo hotfix o instalacion de Windows Update."
+            },
+            {
+              "title": "Requieren atencion",
+              "tables": [
+                {
+                  "rows": "{{ steps.aggregate-kb-report.output.attention_rows }}",
+                  "caption": "Dispositivos con incidencias",
+                  "headers": [
+                    "Dispositivo",
+                    "Motivo"
+                  ],
+                  "severity_columns": {
+                    "1": "medium"
+                  }
+                }
+              ],
+              "category": "critical",
+              "description": "Ultimo parche hace mas de 35 dias (un ciclo de Patch Tuesday mas margen) o reinicio pendiente."
+            },
+            {
+              "title": "Hotfixes instalados",
+              "tables": [
+                {
+                  "rows": "{{ steps.aggregate-kb-report.output.hotfix_rows }}",
+                  "caption": "Get-HotFix por dispositivo (mas reciente primero)",
+                  "headers": [
+                    "Dispositivo",
+                    "KB",
+                    "Tipo",
+                    "Instalado"
+                  ]
+                }
+              ],
+              "category": "store"
+            }
+          ],
+          "subtitle": "Estado de parcheo por dispositivo",
+          "generated_by": "FlowWeaver"
+        }
+      }
+    },
+    {
+      "x": 2156,
+      "y": 0,
+      "id": "notify-failure",
+      "snippet_id": "b0973ab2-d54b-4ce1-bbd9-328ca0a71acf",
+      "config_overrides": {
+        "to": "netops@example.com",
+        "body": "Workflow `{{ run.workflow_name }}` failed at step `{{ run.failed_step_id }}` with: {{ run.failed_step_error }}\n\nRun details: {{ run.url }}",
+        "subject": "FAILED: windows-kb-inventory"
+      }
+    },
+    {
+      "x": 2536,
+      "y": 94,
+      "id": "__end__",
+      "snippet_id": "__end__",
+      "config_overrides": {}
+    }
+  ],
+  "edges": [
+    {
+      "type": "success",
+      "source": "__start__",
+      "target": "build-ps-command",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "success",
+      "source": "build-ps-command",
+      "target": "win-audit",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "success",
+      "source": "win-audit",
+      "target": "parse-windows-audit",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "success",
+      "source": "parse-windows-audit",
+      "target": "aggregate-kb-report",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "success",
+      "source": "aggregate-kb-report",
+      "target": "html-report",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "success",
+      "source": "html-report",
+      "target": "__end__",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "failure",
+      "source": "build-ps-command",
+      "target": "notify-failure",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "failure",
+      "source": "win-audit",
+      "target": "notify-failure",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "failure",
+      "source": "parse-windows-audit",
+      "target": "notify-failure",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "failure",
+      "source": "aggregate-kb-report",
+      "target": "notify-failure",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "failure",
+      "source": "html-report",
+      "target": "notify-failure",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "always",
+      "source": "notify-failure",
+      "target": "__end__",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    }
+  ],
+  "dependencies": {
+    "snippets": [
+      {
+        "id": "2be53e0f-6732-4d8a-b677-6642b50558f8",
+        "slug": "parse-windows-audit",
+        "name": "parse-windows-audit",
+        "type": "python_snippet",
+        "description": "Parses the JSON from the PowerShell collector (OS, build+UBR, release, dated hotfixes, pending reboot) and derives the host's NVD CPE.",
+        "code": "import json\nimport re\nfrom datetime import datetime, timezone\nfrom flowweaver_runtime import get_input, set_output\n\n# Caption year -> NVD CPE product for Windows Server releases.\nSERVER_PRODUCTS = {\n    \"2025\": \"windows_server_2025\",\n    \"2022\": \"windows_server_2022\",\n    \"2019\": \"windows_server_2019\",\n    \"2016\": \"windows_server_2016\",\n}\nARCH = {\"AMD64\": \"x64\", \"ARM64\": \"arm64\", \"X86\": \"x86\"}\n\n\ndef _cpe_product(caption, release):\n    caption = caption or \"\"\n    rel = (release or \"\").strip().lower()\n    m = re.search(r\"Windows Server (\\d{4})\", caption)\n    if m:\n        return SERVER_PRODUCTS.get(m.group(1))\n    if \"Windows 11\" in caption and rel:\n        return \"windows_11_\" + rel\n    if \"Windows 10\" in caption and rel:\n        return \"windows_10_\" + rel\n    return None\n\n\ndef _json_from_stdout(raw):\n    # The JSON document is the last line that looks like one; anything a\n    # profile or module printed before it is ignored.\n    for line in reversed(raw.splitlines()):\n        line = line.strip().lstrip(\"\uFEFF\")\n        if line.startswith(\"{\"):\n            return json.loads(line)\n    raise ValueError(f\"PowerShell did not return JSON; got {raw[:200]!r}\")\n\n\ndef _days_since(day, now):\n    if not day:\n        return None\n    try:\n        then = datetime.strptime(day[:10], \"%Y-%m-%d\").replace(tzinfo=timezone.utc)\n    except ValueError:\n        return None\n    return (now - then).days\n\n\ndef run(ctx):\n    inp = get_input()\n    ssh = inp[\"steps\"][\"win-audit\"][\"output\"]\n    results = ssh.get(\"results\")\n    if not results:\n        raise ValueError(f\"expected exec-mode results from win-audit, got keys: {sorted(ssh)}\")\n\n    res = results[0]\n    if res[\"exit_status\"] != 0:\n        raise RuntimeError(\n            f\"PowerShell exited {res['exit_status']} on {inp['device']['name']}: \"\n            f\"{(res.get('stderr') or res.get('stdout') or '')[:300]}\")\n\n    data = _json_from_stdout(res.get(\"stdout\") or \"\")\n\n    patches = data.get(\"Installed_Patches\") or []\n    if isinstance(patches, str):\n        patches = [patches]\n    patches = sorted({str(p).upper() for p in patches if p})\n\n    hotfixes = data.get(\"HotFixes\") or []\n    if isinstance(hotfixes, dict):\n        hotfixes = [hotfixes]\n    hotfixes = sorted(\n        ({\"kb\": str(h.get(\"KB\") or \"\").upper(),\n          \"type\": str(h.get(\"Type\") or \"\"),\n          \"installed_on\": str(h.get(\"Date\") or \"\")} for h in hotfixes if isinstance(h, dict)),\n        key=lambda h: h[\"installed_on\"], reverse=True)\n\n    now = datetime.now(timezone.utc)\n    last_hotfix = max((h[\"installed_on\"] for h in hotfixes if h[\"installed_on\"]), default=\"\")\n    last_wu = str(data.get(\"Last_WU_Install\") or \"\")\n    last_patch = max(last_hotfix, last_wu)\n\n    build = str(data.get(\"OS_Build\") or \"\")\n    ubr = data.get(\"OS_UBR\")\n    version = str(data.get(\"OS_Version\") or \"\")\n    full_build = f\"{version}.{ubr}\" if version and ubr is not None else version\n    release = str(data.get(\"OS_Release\") or \"\")\n    arch = ARCH.get(str(data.get(\"OS_Arch\") or \"\").upper(), \"*\")\n    product = _cpe_product(data.get(\"OS_Caption\"), release)\n    cpe = f\"cpe:2.3:o:microsoft:{product}:{full_build}:*:*:*:*:*:{arch}:*\" if product and ubr is not None else None\n\n    last_boot = str(data.get(\"Last_Boot\") or \"\")\n    uptime_days = None\n    if last_boot:\n        try:\n            uptime_days = (now.replace(tzinfo=None) - datetime.strptime(last_boot[:19], \"%Y-%m-%dT%H:%M:%S\")).days\n        except ValueError:\n            pass\n\n    set_output({\n        \"device\": inp[\"device\"][\"name\"],\n        \"os_caption\": data.get(\"OS_Caption\"),\n        \"os_version\": version,\n        \"os_build\": build,\n        \"os_ubr\": ubr,\n        \"os_full_build\": full_build,\n        \"os_release\": release,\n        \"os_product_type\": data.get(\"OS_ProductType\"),\n        \"os_arch\": arch,\n        \"last_boot\": last_boot,\n        \"uptime_days\": uptime_days,\n        \"reboot_pending\": bool(data.get(\"Reboot_Pending\")),\n        \"last_patch_date\": last_patch,\n        \"days_since_last_patch\": _days_since(last_patch, now),\n        \"hotfixes\": hotfixes,\n        \"hotfix_count\": len(hotfixes),\n        \"installed_patches\": patches,\n        \"patch_count\": len(patches),\n        \"cpe\": cpe,\n    })\n",
+        "script_language": "python",
+        "input_schema": {
+          "type": "object",
+          "properties": {}
+        },
+        "output_schema": {
+          "type": "object",
+          "required": [
+            "device",
+            "os_build",
+            "installed_patches",
+            "patch_count"
+          ],
+          "properties": {
+            "cpe": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "device": {
+              "type": "string"
+            },
+            "os_ubr": {
+              "type": "integer"
+            },
+            "os_arch": {
+              "type": "string"
+            },
+            "hotfixes": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
+            "os_build": {
+              "type": "string"
+            },
+            "last_boot": {
+              "type": "string"
+            },
+            "os_caption": {
+              "type": "string"
+            },
+            "os_release": {
+              "type": "string"
+            },
+            "os_version": {
+              "type": "string"
+            },
+            "patch_count": {
+              "type": "integer"
+            },
+            "uptime_days": {
+              "type": "integer"
+            },
+            "hotfix_count": {
+              "type": "integer"
+            },
+            "os_full_build": {
+              "type": "string"
+            },
+            "reboot_pending": {
+              "type": "boolean"
+            },
+            "last_patch_date": {
+              "type": "string"
+            },
+            "os_product_type": {
+              "type": "integer"
+            },
+            "installed_patches": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "days_since_last_patch": {
+              "type": "integer"
+            }
+          }
+        },
+        "target_mode": "per_device",
+        "max_parallel": 1,
+        "timeout_seconds": 60,
+        "idempotency": "idempotent",
+        "retry_policy": null,
+        "logic_diagram_mermaid": "flowchart TD\n    in([win-audit results 0]) --> ex{exit_status == 0?}\n    ex -->|no| fail([Fail with stderr preview])\n    ex -->|yes| parse[Parse last JSON line of stdout]\n    parse --> norm[Normalize KB list and hotfixes with dates]\n    norm --> dates[Last patch date, days since, uptime]\n    dates --> cpe{Caption and release map to an NVD product?}\n    cpe -->|yes| build[cpe = windows product : version.UBR : arch]\n    cpe -->|no| none[cpe = null]\n    build --> out([device, OS fields, hotfixes, patches, cpe])\n    none --> out",
+        "network_enabled": false
+      },
+      {
+        "id": "6915116b-244d-430b-bf87-6922056edc74",
+        "slug": "ssh-primitive-paramiko-2",
+        "name": "SSH primitive (paramiko)",
+        "type": "python_snippet",
+        "description": "Raw SSH via paramiko, for an interaction the `ssh` step cannot express. Two modes on one connection: `mode='exec'` (default) runs each of `commands` on its own channel and reports stdout/stderr/exit_status per command; `mode='shell'` opens ONE interactive shell and drives it with `steps`, each {send, expect} — that is the mode for a password change that prompts twice, a \"[confirm y/n]\" or a commit-confirm. PREFER THE `ssh` STEP for ordinary \"send commands, read output\": it is netmiko with vendor-aware parsing, host-key pinning and policy checks, and this one runs with the network sandbox lifted. Credentials are never auto-injected — pass \"${secret:credential:<credential_id>:username}\" and :password / :private_key through config_overrides and they resolve before the script runs. Mark any step carrying a secret with `secret: true` so its payload stays out of the stored run output. `ok: false` is a result to branch on; only connect/auth errors fail the step.",
+        "code": "# SSH primitive (paramiko) — one connection, two modes.\n#\n#   mode=\"exec\"  (default)  each entry of `commands` runs on its own channel\n#                           via exec_command, so you get stdout, stderr and\n#                           exit_status per command. Servers and Linux-like\n#                           network OSes; many classic CLIs refuse exec.\n#   mode=\"shell\"            ONE interactive shell driven by `steps`, each\n#                           {send, expect}. This is the mode for an exchange\n#                           exec cannot hold: a password change that asks\n#                           twice, a \"[confirm y/n]\", a commit-confirm.\n#\n# Deliberately NOT device-aware. This is the primitive the vendor-shaped\n# steps are built out of, not a replacement for them — when the built-in\n# `ssh` step covers the job, use that instead: it pins host keys, handles\n# paging and parses output. Reach for this one when the INTERACTION is the\n# problem.\n\nimport io\nimport re\nimport time\n\nimport paramiko\nfrom flowweaver_runtime import get_input, set_output\n\n# ANSI/CSI/OSC and the C0 control bytes a live TTY sprays into a shell\n# channel. Left in, they turn an `expect` regex into a coin flip.\n#\n# Kept as a PATTERN STRING, not a compiled object, and every regex below\n# goes through the module-level re.* functions for the same reason: the\n# import guard blocks the name `compile` wherever it appears, attribute\n# access included, so `re.compile(...)` is refused before the sandbox is\n# even built. re's own internal cache makes this free anyway — do not\n# \"optimise\" it back into a compiled pattern.\n_NOISE = (\n    r\"\\x1b\\[[0-9;?]*[ -/]*[@-~]\"\n    r\"|\\x1b\\][^\\x07\\x1b]*(?:\\x07|\\x1b\\\\)\"\n    r\"|\\x1b[@-Z\\\\-_]\"\n    r\"|[\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f\\x7f]\")\n\n\ndef _clean(text, strip):\n    return re.sub(_NOISE, \"\", text) if strip else text\n\n\ndef _load_key(pem, passphrase):\n    # paramiko has no \"work out the type\" loader, so try each class and keep\n    # the first that parses. The order is cheapest-first, not a preference.\n    last = None\n    for cls in (paramiko.Ed25519Key, paramiko.ECDSAKey, paramiko.RSAKey, paramiko.DSSKey):\n        try:\n            return cls.from_private_key(io.StringIO(pem), password=passphrase or None)\n        except Exception as err:\n            last = err\n    raise ValueError(\"private_key did not parse as ed25519, ecdsa, rsa or dsa: %s\" % last)\n\n\ndef _config(inp):\n    device = inp.get(\"device\") or {}\n    host = inp.get(\"host\") or device.get(\"ip\") or device.get(\"name\")\n    if not host:\n        raise ValueError(\"no host: pass `host`, or run this step against a device\")\n\n    username = inp.get(\"username\")\n    password = inp.get(\"password\")\n    private_key = inp.get(\"private_key\")\n    if not username:\n        raise ValueError(\n            \"no username: pass `username`, e.g. \"\n            \"${secret:credential:<credential_id>:username} — the reference is \"\n            \"resolved before this script runs, so no plaintext is stored on the node\")\n    if not password and not private_key:\n        raise ValueError(\"no credential: pass `password` or `private_key`\")\n\n    mode = str(inp.get(\"mode\") or \"exec\").strip().lower()\n    if mode not in (\"exec\", \"shell\"):\n        raise ValueError(\"mode must be 'exec' or 'shell', not %r\" % mode)\n\n    commands = inp.get(\"commands\")\n    if not commands and inp.get(\"command\"):\n        commands = [inp[\"command\"]]\n    steps = inp.get(\"steps\") or []\n\n    if mode == \"exec\" and not commands:\n        raise ValueError(\"mode='exec' needs `command` or `commands`\")\n    if mode == \"shell\" and not steps:\n        raise ValueError(\"mode='shell' needs `steps`, each {send, expect}\")\n\n    return {\n        \"host\": host,\n        \"port\": int(inp.get(\"port\") or 22),\n        \"username\": username,\n        \"password\": password,\n        \"private_key\": private_key,\n        \"key_passphrase\": inp.get(\"key_passphrase\"),\n        \"mode\": mode,\n        \"commands\": list(commands or []),\n        \"steps\": list(steps),\n        \"connect_timeout\": int(inp.get(\"connect_timeout_seconds\") or 15),\n        \"command_timeout\": int(inp.get(\"command_timeout_seconds\") or 30),\n        \"read_timeout\": int(inp.get(\"read_timeout_seconds\") or 15),\n        \"idle\": float(inp.get(\"idle_seconds\") or 1.0),\n        \"prompt\": inp.get(\"shell_prompt\") or r\"[>#$%]\\s*$\",\n        \"stop_on_error\": bool(inp.get(\"stop_on_error\", True)),\n        \"strip_ansi\": bool(inp.get(\"strip_ansi\", True)),\n        \"host_key_policy\": str(inp.get(\"host_key_policy\") or \"auto_add\").lower(),\n    }\n\n\ndef _connect(cfg):\n    client = paramiko.SSHClient()\n    if cfg[\"host_key_policy\"] == \"reject\":\n        client.load_system_host_keys()\n        client.set_missing_host_key_policy(paramiko.RejectPolicy())\n    else:\n        # Trust on first use, said out loud rather than left to look like\n        # pinning: under the default policy this primitive does NOT verify\n        # the host key. The built-in `ssh` step does.\n        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())\n\n    kwargs = {\n        \"hostname\": cfg[\"host\"],\n        \"port\": cfg[\"port\"],\n        \"username\": cfg[\"username\"],\n        \"timeout\": cfg[\"connect_timeout\"],\n        \"banner_timeout\": cfg[\"connect_timeout\"],\n        \"auth_timeout\": cfg[\"connect_timeout\"],\n        # The WORKER's ssh-agent and ~/.ssh keys are not this step's\n        # credentials. Left on, paramiko tries them silently and a workflow\n        # reaches a device nobody ever gave it a credential for.\n        \"allow_agent\": False,\n        \"look_for_keys\": False,\n    }\n    if cfg[\"private_key\"]:\n        kwargs[\"pkey\"] = _load_key(cfg[\"private_key\"], cfg[\"key_passphrase\"])\n    else:\n        kwargs[\"password\"] = cfg[\"password\"]\n\n    client.connect(**kwargs)\n    return client\n\n\ndef _run_commands(client, cfg):\n    results = []\n    ok = True\n    for command in cfg[\"commands\"]:\n        stdin, stdout, stderr = client.exec_command(command, timeout=cfg[\"command_timeout\"])\n        stdin.close()\n        out = stdout.read().decode(\"utf-8\", \"replace\")\n        err = stderr.read().decode(\"utf-8\", \"replace\")\n        status = stdout.channel.recv_exit_status()\n        results.append({\n            \"command\": command,\n            \"stdout\": _clean(out, cfg[\"strip_ansi\"]),\n            \"stderr\": _clean(err, cfg[\"strip_ansi\"]),\n            \"exit_status\": status,\n            \"ok\": status == 0,\n        })\n        if status != 0:\n            ok = False\n            if cfg[\"stop_on_error\"]:\n                break\n    return {\n        \"mode\": \"exec\",\n        \"ok\": ok,\n        \"results\": results,\n        \"failed\": [r[\"command\"] for r in results if not r[\"ok\"]],\n    }\n\n\ndef _read(chan, pattern, timeout, idle, strip):\n    # Returns (text, matched). WITH a pattern, matched means it showed up\n    # before the deadline. WITHOUT one the only stop condition is silence: a\n    # device sitting at its prompt with nothing left to say looks exactly\n    # like one that never started, so `idle` is what decides it is done.\n    deadline = time.monotonic() + timeout\n    buf = \"\"\n    last = time.monotonic()\n    while time.monotonic() < deadline:\n        chan.settimeout(0.5)\n        try:\n            chunk = chan.recv(65535)\n        except TimeoutError:\n            # socket.timeout IS TimeoutError from Python 3.10 on, so this\n            # catches paramiko's read timeout without importing socket.\n            chunk = b\"\"\n        except paramiko.SSHException:\n            break\n        if chunk:\n            buf += chunk.decode(\"utf-8\", \"replace\")\n            last = time.monotonic()\n            if pattern and re.search(pattern, _clean(buf, strip)):\n                return _clean(buf, strip), True\n            continue\n        if chan.closed or chan.eof_received:\n            break\n        if not pattern and buf and (time.monotonic() - last) >= idle:\n            return _clean(buf, strip), True\n    return _clean(buf, strip), (not pattern) and bool(buf)\n\n\ndef _run_shell(client, cfg):\n    # Wide and tall on purpose: a narrow pty wraps lines mid-token and the\n    # `expect` never matches what the operator typed into the node.\n    chan = client.invoke_shell(width=511, height=1000)\n    try:\n        banner, _ = _read(\n            chan, cfg[\"prompt\"], cfg[\"read_timeout\"], cfg[\"idle\"], cfg[\"strip_ansi\"])\n        transcript = banner\n        performed = []\n        ok = True\n        for step in cfg[\"steps\"]:\n            send = step.get(\"send\", \"\")\n            expect = step.get(\"expect\") or cfg[\"prompt\"]\n            timeout = int(step.get(\"timeout_seconds\") or cfg[\"read_timeout\"])\n            terminator = step.get(\"terminator\")\n            if terminator is None:\n                terminator = \"\\n\"\n            chan.send((send + terminator).encode(\"utf-8\"))\n            out, matched = _read(chan, expect, timeout, cfg[\"idle\"], cfg[\"strip_ansi\"])\n            transcript += out\n            secret = bool(step.get(\"secret\"))\n            performed.append({\n                # A step marked `secret` keeps its payload out of the step\n                # output. The output is a STORED run artifact — a new\n                # password sent to a device must not come back as something\n                # anyone with read access can page through.\n                \"send\": \"***\" if secret else send,\n                \"expect\": expect,\n                \"matched\": matched,\n                \"output\": \"***\" if secret and step.get(\"redact_output\") else out,\n            })\n            if not matched:\n                ok = False\n                if cfg[\"stop_on_error\"]:\n                    break\n        return {\n            \"mode\": \"shell\",\n            \"ok\": ok,\n            \"steps\": performed,\n            \"transcript\": transcript,\n            \"unmatched\": [s[\"expect\"] for s in performed if not s[\"matched\"]],\n        }\n    finally:\n        chan.close()\n\n\n_cfg = _config(get_input())\n_client = _connect(_cfg)\ntry:\n    _out = _run_commands(_client, _cfg) if _cfg[\"mode\"] == \"exec\" else _run_shell(_client, _cfg)\nfinally:\n    _client.close()\n\n_out[\"host\"] = _cfg[\"host\"]\n_out[\"port\"] = _cfg[\"port\"]\nset_output(_out)",
+        "script_language": "python",
+        "input_schema": {
+          "type": "object",
+          "x-order": [
+            "mode",
+            "commands",
+            "steps",
+            "host",
+            "port",
+            "username",
+            "password",
+            "private_key",
+            "key_passphrase",
+            "shell_prompt",
+            "stop_on_error",
+            "host_key_policy"
+          ],
+          "required": [
+            "username"
+          ],
+          "properties": {
+            "host": {
+              "type": "string",
+              "description": "Target address. Omit on a per_device step to use the device's own IP."
+            },
+            "mode": {
+              "enum": [
+                "exec",
+                "shell"
+              ],
+              "type": "string",
+              "default": "exec",
+              "description": "'exec' runs each command on its own channel and reports exit_status per command — servers and Linux-like NOSes; many classic CLIs refuse exec entirely. 'shell' opens ONE interactive shell driven by `steps`, which is the only mode that can answer a prompt."
+            },
+            "port": {
+              "type": "integer",
+              "default": 22,
+              "maximum": 65535,
+              "minimum": 1
+            },
+            "steps": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "send"
+                ],
+                "properties": {
+                  "send": {
+                    "type": "string",
+                    "description": "Text written to the channel."
+                  },
+                  "expect": {
+                    "type": "string",
+                    "description": "Regex to wait for after sending. Defaults to `shell_prompt`."
+                  },
+                  "secret": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Replaces this step's `send` with *** in the output. Set it on anything carrying a password — the step output is a stored run artifact."
+                  },
+                  "terminator": {
+                    "type": "string",
+                    "default": "\n",
+                    "description": "Appended to `send`. Set \"\" to send a bare keystroke."
+                  },
+                  "redact_output": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "With `secret`, also drops what the device echoed back for this step."
+                  },
+                  "timeout_seconds": {
+                    "type": "integer",
+                    "description": "Overrides `read_timeout_seconds` for this step."
+                  }
+                }
+              },
+              "description": "shell mode — the expect script, run in order."
+            },
+            "command": {
+              "type": "string",
+              "description": "exec mode — shorthand for a single-entry `commands`."
+            },
+            "commands": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "exec mode — one channel per entry, run in order."
+            },
+            "password": {
+              "type": "string",
+              "description": "\"${secret:credential:<credential_id>:password}\". Provide this or `private_key`."
+            },
+            "username": {
+              "type": "string",
+              "description": "Pass \"${secret:credential:<credential_id>:username}\" — the reference resolves before the script runs, so no plaintext is stored on the node."
+            },
+            "strip_ansi": {
+              "type": "boolean",
+              "default": true,
+              "description": "Strip ANSI/CSI/OSC and C0 noise before matching and before returning. Leaving it in turns an `expect` into a coin flip."
+            },
+            "private_key": {
+              "type": "string",
+              "description": "PEM key: \"${secret:credential:<credential_id>:private_key}\". ed25519 / ecdsa / rsa / dsa are all tried."
+            },
+            "idle_seconds": {
+              "type": "number",
+              "default": 1.0,
+              "description": "shell mode — how long the channel must stay quiet before a step with no `expect` is considered finished."
+            },
+            "shell_prompt": {
+              "type": "string",
+              "default": "[>#$%]\\s*$",
+              "description": "shell mode — the regex a step waits for when it declares no `expect` of its own."
+            },
+            "stop_on_error": {
+              "type": "boolean",
+              "default": true,
+              "description": "Stop at the first non-zero exit_status (exec) or unmatched `expect` (shell)."
+            },
+            "key_passphrase": {
+              "type": "string",
+              "description": "\"${secret:credential:<credential_id>:passphrase}\"."
+            },
+            "host_key_policy": {
+              "enum": [
+                "auto_add",
+                "reject"
+              ],
+              "type": "string",
+              "default": "auto_add",
+              "description": "'auto_add' is trust-on-first-use: the host key is NOT verified. 'reject' verifies against the worker's known_hosts and fails on an unknown host. The built-in `ssh` step pins properly and is the better default for routine work."
+            },
+            "read_timeout_seconds": {
+              "type": "integer",
+              "default": 15,
+              "description": "shell mode — how long one step waits for its `expect`."
+            },
+            "command_timeout_seconds": {
+              "type": "integer",
+              "default": 30,
+              "description": "exec mode — per command."
+            },
+            "connect_timeout_seconds": {
+              "type": "integer",
+              "default": 15
+            }
+          },
+          "additionalProperties": true
+        },
+        "output_schema": {
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean",
+              "description": "Every command exited 0 (exec), or every step matched its `expect` (shell). False is a result to branch on, not a step failure — only connect/auth errors fail the step."
+            },
+            "host": {
+              "type": "string"
+            },
+            "mode": {
+              "enum": [
+                "exec",
+                "shell"
+              ],
+              "type": "string"
+            },
+            "port": {
+              "type": "integer"
+            },
+            "steps": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "send": {
+                    "type": "string",
+                    "description": "*** when the step declared `secret`."
+                  },
+                  "expect": {
+                    "type": "string"
+                  },
+                  "output": {
+                    "type": "string"
+                  },
+                  "matched": {
+                    "type": "boolean"
+                  }
+                }
+              },
+              "description": "shell mode."
+            },
+            "failed": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "exec mode — the commands that exited non-zero."
+            },
+            "results": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "ok": {
+                    "type": "boolean"
+                  },
+                  "stderr": {
+                    "type": "string"
+                  },
+                  "stdout": {
+                    "type": "string"
+                  },
+                  "command": {
+                    "type": "string"
+                  },
+                  "exit_status": {
+                    "type": "integer"
+                  }
+                }
+              },
+              "description": "exec mode."
+            },
+            "unmatched": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "shell mode — the `expect` patterns that never showed up."
+            },
+            "transcript": {
+              "type": "string",
+              "description": "shell mode — the whole session, banner included."
+            }
+          }
+        },
+        "target_mode": "per_device",
+        "max_parallel": 10,
+        "timeout_seconds": 120,
+        "idempotency": "idempotent",
+        "retry_policy": {},
+        "logic_diagram_mermaid": "flowchart TD\n    in([config_overrides: host, credential, mode]) --> conn[SSHClient.connect - agent and ~/.ssh keys refused]\n    conn -->|auth or connect fails| fail([step FAILS])\n    conn --> mode{mode}\n    mode -->|exec| ex[exec_command per command]\n    ex --> exr([results: stdout, stderr, exit_status per command])\n    mode -->|shell| sh[invoke_shell, read the banner]\n    sh --> loop[per step: send, then read until expect]\n    loop -->|matched| loop\n    loop -->|no match and stop_on_error| stop[ok = false]\n    loop --> shr([transcript + matched per step])\n    stop --> shr\n    exr --> close[close the connection]\n    shr --> close\n    close --> out([ok, mode, host, results or transcript])",
+        "network_enabled": true
+      },
+      {
+        "id": "b0973ab2-d54b-4ce1-bbd9-328ca0a71acf",
+        "slug": "email-send-2",
+        "name": "email_send",
+        "type": "email_send",
+        "description": "Send an email / e-mail notification / report by mail. Delivers through a configured SMTP relay (Gmail, Microsoft 365, SendGrid, Amazon SES, Mailgun or a custom server — see /email). Use this whenever a workflow should email someone. Set `to` and `subject` in the node's config_overrides plus `body` (plain text) and/or `html`; optional `cc`, `bcc`, `reply_to` and `attachments` (base64 — feed it from an upstream `report` step). Omit `channel_id` to use the default channel. Host, port, TLS and the password live on the channel, never on the node. The send is NOT reversible. Branch on {{ steps.X.output.ok }}. Use target_mode='once' (not device-scoped).",
+        "code": null,
+        "script_language": null,
+        "input_schema": {
+          "type": "object",
+          "x-order": [
+            "channel_id",
+            "to",
+            "cc",
+            "bcc",
+            "subject",
+            "body",
+            "html",
+            "from_address",
+            "from_name",
+            "reply_to",
+            "attachments"
+          ],
+          "required": [
+            "to",
+            "subject"
+          ],
+          "properties": {
+            "cc": {
+              "type": [
+                "string",
+                "array"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "Optional carbon-copy recipient(s), same shape as `to`."
+            },
+            "to": {
+              "type": [
+                "string",
+                "array"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "Recipient(s): one address, a comma-separated string, or an array of addresses."
+            },
+            "bcc": {
+              "type": [
+                "string",
+                "array"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "Optional blind-copy recipient(s), same shape as `to`."
+            },
+            "body": {
+              "type": "string",
+              "format": "textarea",
+              "description": "Plain-text body. Supply `body`, `html`, or both — at least one is required."
+            },
+            "html": {
+              "type": "string",
+              "format": "textarea",
+              "description": "HTML body. When supplied alone, a plain-text alternative is generated automatically."
+            },
+            "subject": {
+              "type": "string",
+              "description": "Subject line. Templates like {{ steps.X.output.field }} expand before send."
+            },
+            "reply_to": {
+              "type": "string",
+              "description": "Optional Reply-To address."
+            },
+            "from_name": {
+              "type": "string",
+              "description": "Optional display name for the sender."
+            },
+            "channel_id": {
+              "type": "string",
+              "description": "Optional. The EmailChannel (SMTP relay) to send through — a UUID from /email. Omit to use the deployment's default channel."
+            },
+            "attachments": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "file_name",
+                  "content_base64"
+                ],
+                "properties": {
+                  "file_name": {
+                    "type": "string"
+                  },
+                  "content_type": {
+                    "type": "string",
+                    "description": "MIME type; defaults to application/octet-stream."
+                  },
+                  "content_base64": {
+                    "type": "string",
+                    "description": "Base64-encoded file content."
+                  }
+                }
+              },
+              "description": "Optional attachments. Feed content_base64 from an upstream `report` step to email a generated PDF/XLSX."
+            },
+            "from_address": {
+              "type": "string",
+              "description": "Optional override of the channel's sender. Most providers reject a From they do not own."
+            }
+          }
+        },
+        "output_schema": {
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean",
+              "description": "TRUE only when the SMTP server accepted the message — branch on this."
+            },
+            "error": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "SMTP failure reason when ok=false (auth rejected, TLS handshake, unreachable relay)."
+            },
+            "provider": {
+              "type": "string",
+              "description": "gmail | outlook365 | sendgrid | ses | mailgun | smtp."
+            },
+            "channel_id": {
+              "type": "string"
+            },
+            "elapsed_ms": {
+              "type": "integer"
+            },
+            "message_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "RFC 5322 Message-ID of the sent message."
+            },
+            "recipients": {
+              "type": "integer",
+              "description": "Total to + cc + bcc addresses."
+            },
+            "channel_name": {
+              "type": "string"
+            }
+          }
+        },
+        "target_mode": "once",
+        "max_parallel": 10,
+        "timeout_seconds": 60,
+        "idempotency": null,
+        "retry_policy": {},
+        "logic_diagram_mermaid": null,
+        "network_enabled": false
+      },
+      {
+        "id": "d8a63d33-8d34-4afe-a66e-435ca74f495d",
+        "slug": "report-6",
+        "name": "report",
+        "type": "report",
+        "description": "Generate a downloadable report (html/csv/xlsx/pdf) from a structured document. Set `format` + `document` in the node's config_overrides; downstream nodes read {{ steps.X.output.base64 }} and {{ steps.X.output.filename }} to email or upload it.",
+        "code": null,
+        "script_language": null,
+        "input_schema": {
+          "type": "object",
+          "x-order": [
+            "format",
+            "document"
+          ],
+          "required": [
+            "format",
+            "document"
+          ],
+          "properties": {
+            "format": {
+              "enum": [
+                "html",
+                "csv",
+                "xlsx",
+                "pdf"
+              ],
+              "type": "string",
+              "description": "Output file format."
+            },
+            "document": {
+              "type": "object",
+              "description": "Report document (title, sections, tables…) matching the ReportDocument schema. Usually assembled from upstream output via {{ steps.X.output.… }} templates."
+            }
+          }
+        },
+        "output_schema": {
+          "type": "object",
+          "properties": {
+            "base64": {
+              "type": "string",
+              "description": "Raw file bytes, base64-encoded — plug into a downstream email/upload node via {{ steps.X.output.base64 }}."
+            },
+            "format": {
+              "type": "string"
+            },
+            "sha256": {
+              "type": "string"
+            },
+            "filename": {
+              "type": "string"
+            },
+            "size_bytes": {
+              "type": "integer"
+            },
+            "content_type": {
+              "type": "string"
+            },
+            "download_url": {
+              "type": "string",
+              "description": "Relative API path to download the file."
+            },
+            "report_artifact_id": {
+              "type": "string",
+              "description": "UUID of the stored artifact (see /admin/reports)."
+            }
+          }
+        },
+        "target_mode": "once",
+        "max_parallel": 10,
+        "timeout_seconds": 30,
+        "idempotency": null,
+        "retry_policy": {},
+        "logic_diagram_mermaid": null,
+        "network_enabled": false
+      },
+      {
+        "id": "de4bb3b9-adfe-4631-b04f-a309592cbd29",
+        "slug": "aggregate-kb-report-once",
+        "name": "aggregate-kb-inventory",
+        "type": "python_snippet",
+        "description": "Aggregates the per_device envelope from parse-windows-audit into inventory rows, hotfixes, and devices requiring attention (stale patch or pending reboot).",
+        "code": "from flowweaver_runtime import get_input, set_output\n\nSTALE_DAYS = 35  # one Patch Tuesday cycle plus a week of grace\n\n\ndef run(ctx):\n    inp = get_input()\n    parsed = inp[\"steps\"][\"parse-windows-audit\"][\"output\"]\n    if \"devices\" in parsed:\n        entries = parsed[\"devices\"]\n    elif \"device\" in parsed:\n        # A run with a single target hands the once step that device's output\n        # directly instead of the devices[] envelope.\n        entries = [{\"device\": parsed[\"device\"], \"status\": \"completed\", \"output\": parsed}]\n    else:\n        raise ValueError(f\"expected a per_device envelope or a device output from parse-windows-audit, got keys: {sorted(parsed)}\")\n\n    rows, hotfix_rows, attention = [], [], []\n    total_patches = failed = stale = reboot = 0\n    for entry in entries:\n        device = str(entry.get(\"device\") or entry.get(\"device_name\") or \"\")\n        if entry.get(\"status\") != \"completed\":\n            failed += 1\n            rows.append([device, \"\", \"\", \"\", \"\", \"\", \"\", \"\", f\"not audited ({entry.get('status')})\"])\n            continue\n\n        out = entry.get(\"output\") or {}\n        patch_count = int(out.get(\"patch_count\") or 0)\n        total_patches += patch_count\n        days = out.get(\"days_since_last_patch\")\n        is_stale = days is None or days > STALE_DAYS\n        stale += is_stale\n        reboot += bool(out.get(\"reboot_pending\"))\n\n        notes = []\n        if days is None:\n            notes.append(\"no patch date found\")\n        elif is_stale:\n            notes.append(f\"last patch {days} days ago\")\n        if out.get(\"reboot_pending\"):\n            notes.append(\"reboot pending\")\n        if notes:\n            attention.append([device, \"; \".join(notes)])\n\n        rows.append([\n            device,\n            \" \".join(p for p in (out.get(\"os_caption\") or \"\", out.get(\"os_release\") or \"\") if p),\n            str(out.get(\"os_full_build\") or \"\"),\n            str(patch_count),\n            str(out.get(\"last_patch_date\") or \"\"),\n            \"\" if days is None else str(days),\n            \"yes\" if out.get(\"reboot_pending\") else \"no\",\n            \"\" if out.get(\"uptime_days\") is None else str(out[\"uptime_days\"]),\n            \"attention\" if notes else \"ok\",\n        ])\n        for hf in out.get(\"hotfixes\") or []:\n            hotfix_rows.append([device, hf.get(\"kb\") or \"\", hf.get(\"type\") or \"\", hf.get(\"installed_on\") or \"\"])\n\n    set_output({\n        \"device_count\": len(rows),\n        \"failed_devices\": failed,\n        \"total_patches\": total_patches,\n        \"stale_devices\": stale,\n        \"reboot_pending_devices\": reboot,\n        \"rows\": rows,\n        \"attention_rows\": attention,\n        \"hotfix_rows\": hotfix_rows,\n    })\n",
+        "script_language": "python",
+        "input_schema": {
+          "type": "object",
+          "properties": {}
+        },
+        "output_schema": {
+          "type": "object",
+          "properties": {
+            "rows": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "hotfix_rows": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "device_count": {
+              "type": "integer"
+            },
+            "stale_devices": {
+              "type": "integer"
+            },
+            "total_patches": {
+              "type": "integer"
+            },
+            "attention_rows": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "failed_devices": {
+              "type": "integer"
+            },
+            "reboot_pending_devices": {
+              "type": "integer"
+            }
+          }
+        },
+        "target_mode": "once",
+        "max_parallel": 1,
+        "timeout_seconds": 60,
+        "idempotency": "idempotent",
+        "retry_policy": null,
+        "logic_diagram_mermaid": "flowchart TD\n    in([parse-windows-audit envelope devices]) --> loop{Each device}\n    loop -->|not completed| failrow[Row: not audited]\n    loop -->|completed| row[Inventory row: OS, build, KBs, last patch, reboot]\n    row --> stale{Last patch older than 35 days or reboot pending?}\n    stale -->|yes| att[Add to attention_rows]\n    stale -->|no| hf[Add hotfix rows]\n    att --> hf\n    failrow --> loop\n    hf --> loop\n    loop -->|done| out([rows, attention_rows, hotfix_rows, counters])",
+        "network_enabled": false
+      },
+      {
+        "id": "ffcce402-30f2-4554-b532-3f93138698c4",
+        "slug": "build-ps-command",
+        "name": "build-ps-command",
+        "type": "python_snippet",
+        "description": "Converts a PowerShell script into a powershell.exe -EncodedCommand command to run it over SSH on Windows.",
+        "code": "import base64\nfrom flowweaver_runtime import get_input, set_output\n\nCMD_LIMIT = 8191\n\n\ndef _compact(script):\n    kept = []\n    for line in script.splitlines():\n        stripped = line.strip()\n        if stripped and not stripped.startswith(\"#\"):\n            kept.append(line.rstrip())\n    return \"\\n\".join(kept)\n\n\ndef run(ctx):\n    inp = get_input()\n    script = inp.get(\"script\")\n    if not script or not str(script).strip():\n        raise ValueError(\"config_overrides.script is empty - pass the PowerShell to run\")\n\n    body = _compact(str(script))\n    encoded = base64.b64encode(body.encode(\"utf-16-le\")).decode(\"ascii\")\n    command = (\n        \"powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass \"\n        \"-EncodedCommand \" + encoded\n    )\n    if len(command) > CMD_LIMIT:\n        raise ValueError(\n            f\"encoded command is {len(command)} chars, over cmd.exe's {CMD_LIMIT} limit - shorten the script or split it across two SSH commands\")\n\n    set_output({\"command\": command, \"length\": len(command), \"script_chars\": len(body)})\n",
+        "script_language": "python",
+        "input_schema": {
+          "type": "object",
+          "required": [
+            "script"
+          ],
+          "properties": {
+            "script": {
+              "type": "string",
+              "description": "Script PowerShell a codificar para ejecución remota."
+            }
+          }
+        },
+        "output_schema": {
+          "type": "object",
+          "required": [
+            "command",
+            "length",
+            "script_chars"
+          ],
+          "properties": {
+            "length": {
+              "type": "integer"
+            },
+            "command": {
+              "type": "string"
+            },
+            "script_chars": {
+              "type": "integer"
+            }
+          }
+        },
+        "target_mode": "once",
+        "max_parallel": 1,
+        "timeout_seconds": 60,
+        "idempotency": "idempotent",
+        "retry_policy": null,
+        "logic_diagram_mermaid": "flowchart TD\n    in([Input: config_overrides.script]) --> compact[Compact script text]\n    compact --> encode[Base64 encode UTF-16LE bytes]\n    encode --> command[Create PowerShell EncodedCommand invocation]\n    command --> limit{Length <= 8191 chars?}\n    limit -->|no| fail([Fail with size error])\n    limit -->|yes| out([Emit command, length, script_chars])",
+        "network_enabled": false
+      }
+    ],
+    "integrations": [],
+    "mcp_servers": [],
+    "credentials": [],
+    "repositories": [],
+    "workflows": []
+  },
+  "triggers": []
+}

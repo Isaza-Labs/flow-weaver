@@ -1,0 +1,762 @@
+{
+  "schema_version": "v3",
+  "kind": "flow_weaver.workflow_bundle",
+  "exported_at": "2026-10-23T20:10:51.0091818Z",
+  "exported_by": {
+    "product": "flow-weaver",
+    "version": "1.0.0"
+  },
+  "requires": {
+    "snippet_types": [
+      "email_send",
+      "mcp_call",
+      "python_snippet"
+    ],
+    "capabilities": [
+      "conditional_edges",
+      "max_parallel",
+      "python_network",
+      "run_namespace",
+      "template_filters"
+    ],
+    "secrets": []
+  },
+  "workflow": {
+    "name": "Silent packet loss check",
+    "description": "Diagnoses traffic lost between two devices when both ports look healthy: resolves the far end of the cable via NetBox, pulls 5m Prometheus telemetry for both ends from Grafana MCP, applies fixed verdict rules, annotates the silent-loss dashboard, and emails the result. Read-only against the network — no SSH/config nodes.",
+    "environment": "production",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "default": "srl1",
+          "description": "Near-end device name (NetBox name / Prometheus source label)."
+        },
+        "interface": {
+          "type": "string",
+          "default": "ethernet-1/1",
+          "description": "Near-end interface name (Prometheus interface_name label)."
+        }
+      }
+    },
+    "metadata": {}
+  },
+  "nodes": [
+    {
+      "x": 0,
+      "y": 0,
+      "id": "__start__",
+      "snippet_id": "__start__"
+    },
+    {
+      "x": 220,
+      "y": 0,
+      "id": "netbox-lookup",
+      "snippet_id": "e92ff616-bd5f-4882-8a69-8e3cd7b56a4f",
+      "config_overrides": {
+        "device": "{{ input.device | default('srl1') }}",
+        "interface": "{{ input.interface | default('ethernet-1/1') }}",
+        "netbox_integration_id": "05c263ff-a471-48e0-bf9f-6a31201e6806"
+      }
+    },
+    {
+      "x": 440,
+      "y": -40,
+      "id": "build-queries",
+      "snippet_id": "0942e45a-621d-4ee1-a8da-8f513c4ef424",
+      "config_overrides": {}
+    },
+    {
+      "x": 440,
+      "y": 40,
+      "id": "cable-missing-verdict",
+      "snippet_id": "b1160dda-d2cc-4b5f-862e-871666b47d4d",
+      "config_overrides": {}
+    },
+    {
+      "x": 660,
+      "y": 0,
+      "id": "telemetry-near",
+      "snippet_id": "53693917-7ba4-4f42-b22b-7c9e5f8fb5b0",
+      "config_overrides": {
+        "changes": false,
+        "arguments": {
+          "expr": "{{ steps.build-queries.output.near_expr }}",
+          "endTime": "{{ steps.build-queries.output.end_time }}",
+          "queryType": "range",
+          "startTime": "{{ steps.build-queries.output.start_time }}",
+          "stepSeconds": "{{ steps.build-queries.output.step_seconds }}",
+          "datasourceUid": "prometheus"
+        },
+        "tool_name": "query_prometheus",
+        "server": "grafana"
+      }
+    },
+    {
+      "x": 880,
+      "y": 0,
+      "id": "telemetry-far",
+      "snippet_id": "53693917-7ba4-4f42-b22b-7c9e5f8fb5b0",
+      "config_overrides": {
+        "changes": false,
+        "arguments": {
+          "expr": "{{ steps.build-queries.output.far_expr }}",
+          "endTime": "{{ steps.build-queries.output.end_time }}",
+          "queryType": "range",
+          "startTime": "{{ steps.build-queries.output.start_time }}",
+          "stepSeconds": "{{ steps.build-queries.output.step_seconds }}",
+          "datasourceUid": "prometheus"
+        },
+        "tool_name": "query_prometheus",
+        "server": "grafana"
+      }
+    },
+    {
+      "x": 1100,
+      "y": 0,
+      "id": "compute-verdict",
+      "snippet_id": "c9e88392-9611-4441-a319-8d01db18c708",
+      "config_overrides": {}
+    },
+    {
+      "x": 1320,
+      "y": 0,
+      "id": "finalize-verdict",
+      "snippet_id": "d00c2a78-25b1-40ac-accf-9654246c2395",
+      "config_overrides": {}
+    },
+    {
+      "x": 1540,
+      "y": 0,
+      "id": "annotate",
+      "snippet_id": "53693917-7ba4-4f42-b22b-7c9e5f8fb5b0",
+      "config_overrides": {
+        "changes": true,
+        "arguments": {
+          "text": "{{ steps.finalize-verdict.output.summary_text }}",
+          "time": "{{ steps.finalize-verdict.output.time_epoch_ms }}",
+          "panelId": 1,
+          "dashboardUid": "silent-loss"
+        },
+        "tool_name": "create_annotation",
+        "server": "grafana"
+      }
+    },
+    {
+      "x": 1760,
+      "y": 0,
+      "id": "send-email",
+      "snippet_id": "294ffaf9-1d7a-4038-9f68-edc60dd646a1",
+      "config_overrides": {
+        "to": "netops@example.com",
+        "body": "{{ steps.finalize-verdict.output.body_text }}",
+        "subject": "Silent packet loss check: {{ steps.finalize-verdict.output.verdict }}"
+      }
+    },
+    {
+      "x": 1980,
+      "y": 0,
+      "id": "notify-failure",
+      "snippet_id": "294ffaf9-1d7a-4038-9f68-edc60dd646a1",
+      "config_overrides": {
+        "to": "netops@example.com",
+        "body": "Workflow `{{ run.workflow_name }}` failed at step `{{ run.failed_step_id }}` with: {{ run.failed_step_error }}\n\nRun details: {{ run.url }}",
+        "subject": "FlowWeaver run {{ run.id }} failed - Silent packet loss check"
+      }
+    },
+    {
+      "x": 2200,
+      "y": 0,
+      "id": "__end__",
+      "snippet_id": "__end__"
+    }
+  ],
+  "edges": [
+    {
+      "type": "success",
+      "source": "__start__",
+      "target": "netbox-lookup",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "conditional",
+      "source": "netbox-lookup",
+      "target": "build-queries",
+      "condition": "{{ steps.netbox-lookup.output.link_found }} == true",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "conditional",
+      "source": "netbox-lookup",
+      "target": "cable-missing-verdict",
+      "condition": "{{ steps.netbox-lookup.output.link_found }} == false",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "failure",
+      "source": "netbox-lookup",
+      "target": "notify-failure",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "success",
+      "source": "build-queries",
+      "target": "telemetry-near",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "failure",
+      "source": "build-queries",
+      "target": "notify-failure",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "success",
+      "source": "telemetry-near",
+      "target": "telemetry-far",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "failure",
+      "source": "telemetry-near",
+      "target": "notify-failure",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "success",
+      "source": "telemetry-far",
+      "target": "compute-verdict",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "failure",
+      "source": "telemetry-far",
+      "target": "notify-failure",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "success",
+      "source": "compute-verdict",
+      "target": "finalize-verdict",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "failure",
+      "source": "compute-verdict",
+      "target": "notify-failure",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "success",
+      "source": "cable-missing-verdict",
+      "target": "finalize-verdict",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "failure",
+      "source": "cable-missing-verdict",
+      "target": "notify-failure",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "success",
+      "source": "finalize-verdict",
+      "target": "annotate",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "failure",
+      "source": "finalize-verdict",
+      "target": "notify-failure",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "success",
+      "source": "annotate",
+      "target": "send-email",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "failure",
+      "source": "annotate",
+      "target": "notify-failure",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "success",
+      "source": "send-email",
+      "target": "__end__",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "failure",
+      "source": "send-email",
+      "target": "notify-failure",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "always",
+      "source": "notify-failure",
+      "target": "__end__",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    }
+  ],
+  "dependencies": {
+    "snippets": [
+      {
+        "id": "294ffaf9-1d7a-4038-9f68-edc60dd646a1",
+        "slug": "email-send",
+        "name": "email_send",
+        "type": "email_send",
+        "description": "Send an email / e-mail notification / report by mail. Delivers through a configured SMTP relay (Gmail, Microsoft 365, SendGrid, Amazon SES, Mailgun or a custom server — see /email). Use this whenever a workflow should email someone. Set `to` and `subject` in the node's config_overrides plus `body` (plain text) and/or `html`; optional `cc`, `bcc`, `reply_to` and `attachments` (base64 — feed it from an upstream `report` step). Omit `channel_id` to use the default channel. Host, port, TLS and the password live on the channel, never on the node. The send is NOT reversible. Branch on {{ steps.X.output.ok }}. Use target_mode='once' (not device-scoped).",
+        "code": null,
+        "script_language": null,
+        "input_schema": {
+          "type": "object",
+          "x-order": [
+            "channel_id",
+            "to",
+            "cc",
+            "bcc",
+            "subject",
+            "body",
+            "html",
+            "from_address",
+            "from_name",
+            "reply_to",
+            "attachments"
+          ],
+          "required": [
+            "to",
+            "subject"
+          ],
+          "properties": {
+            "cc": {
+              "type": [
+                "string",
+                "array"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "Optional carbon-copy recipient(s), same shape as `to`."
+            },
+            "to": {
+              "type": [
+                "string",
+                "array"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "Recipient(s): one address, a comma-separated string, or an array of addresses."
+            },
+            "bcc": {
+              "type": [
+                "string",
+                "array"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "Optional blind-copy recipient(s), same shape as `to`."
+            },
+            "body": {
+              "type": "string",
+              "format": "textarea",
+              "description": "Plain-text body. Supply `body`, `html`, or both — at least one is required."
+            },
+            "html": {
+              "type": "string",
+              "format": "textarea",
+              "description": "HTML body. When supplied alone, a plain-text alternative is generated automatically."
+            },
+            "subject": {
+              "type": "string",
+              "description": "Subject line. Templates like {{ steps.X.output.field }} expand before send."
+            },
+            "reply_to": {
+              "type": "string",
+              "description": "Optional Reply-To address."
+            },
+            "from_name": {
+              "type": "string",
+              "description": "Optional display name for the sender."
+            },
+            "channel_id": {
+              "type": "string",
+              "description": "Optional. The EmailChannel (SMTP relay) to send through — a UUID from /email. Omit to use the deployment's default channel."
+            },
+            "attachments": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "file_name",
+                  "content_base64"
+                ],
+                "properties": {
+                  "file_name": {
+                    "type": "string"
+                  },
+                  "content_type": {
+                    "type": "string",
+                    "description": "MIME type; defaults to application/octet-stream."
+                  },
+                  "content_base64": {
+                    "type": "string",
+                    "description": "Base64-encoded file content."
+                  }
+                }
+              },
+              "description": "Optional attachments. Feed content_base64 from an upstream `report` step to email a generated PDF/XLSX."
+            },
+            "from_address": {
+              "type": "string",
+              "description": "Optional override of the channel's sender. Most providers reject a From they do not own."
+            }
+          }
+        },
+        "output_schema": {
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean",
+              "description": "TRUE only when the SMTP server accepted the message — branch on this."
+            },
+            "error": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "SMTP failure reason when ok=false (auth rejected, TLS handshake, unreachable relay)."
+            },
+            "provider": {
+              "type": "string",
+              "description": "gmail | outlook365 | sendgrid | ses | mailgun | smtp."
+            },
+            "channel_id": {
+              "type": "string"
+            },
+            "elapsed_ms": {
+              "type": "integer"
+            },
+            "message_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "RFC 5322 Message-ID of the sent message."
+            },
+            "recipients": {
+              "type": "integer",
+              "description": "Total to + cc + bcc addresses."
+            },
+            "channel_name": {
+              "type": "string"
+            }
+          }
+        },
+        "target_mode": "once",
+        "max_parallel": 10,
+        "timeout_seconds": 60,
+        "idempotency": null,
+        "retry_policy": {},
+        "logic_diagram_mermaid": null,
+        "network_enabled": false
+      },
+      {
+        "id": "53693917-7ba4-4f42-b22b-7c9e5f8fb5b0",
+        "slug": "mcp-call",
+        "name": "mcp_call",
+        "type": "mcp_call",
+        "description": "Call a tool on a registered external MCP server. Set `mcp_server_id` and `tool_name` in the node's config_overrides plus an `arguments` object matching the tool's input schema. Browse servers/tools in the builder's MCP section (or via list_mcp_servers / discover_mcp_tools). Reads {{ steps.X.output.content }} downstream. Use target_mode='once' (not device-scoped).",
+        "code": null,
+        "script_language": null,
+        "input_schema": {
+          "type": "object",
+          "x-order": [
+            "mcp_server_id",
+            "tool_name",
+            "arguments"
+          ],
+          "required": [
+            "mcp_server_id",
+            "tool_name"
+          ],
+          "properties": {
+            "arguments": {
+              "type": "object",
+              "description": "Arguments matching the tool's input schema. Templates like {{ steps.X.output.field }} expand before the call."
+            },
+            "tool_name": {
+              "type": "string",
+              "description": "The exact tool name on that server."
+            },
+            "mcp_server_id": {
+              "type": "string",
+              "description": "The registered MCP server's id (a UUID). Browse servers/tools in the builder's MCP section."
+            }
+          }
+        },
+        "output_schema": {
+          "type": "object",
+          "properties": {
+            "content": {
+              "type": "string",
+              "description": "The tool's text content (MCP content blocks concatenated)."
+            },
+            "is_error": {
+              "type": "boolean",
+              "description": "TRUE when the tool reported an error — branch on this."
+            },
+            "structured": {
+              "description": "Optional structured payload the tool returned."
+            }
+          }
+        },
+        "target_mode": "once",
+        "max_parallel": 10,
+        "timeout_seconds": 30,
+        "idempotency": null,
+        "retry_policy": {},
+        "logic_diagram_mermaid": null,
+        "network_enabled": false
+      },
+      {
+        "id": "b1160dda-d2cc-4b5f-862e-871666b47d4d",
+        "slug": "silent-loss-cable-missing-verdict",
+        "name": "silent-loss-cable-missing-verdict",
+        "type": "python_snippet",
+        "description": "Shortcut verdict builder used when NetBox has no resolvable link_peers for the near-end interface.",
+        "code": "from flowweaver_runtime import get_input, set_output\n\ninp = get_input()\nlk = inp['steps']['netbox-lookup']['output']\nnear_device = lk.get('near_device')\nnear_interface = lk.get('near_interface')\nreason = lk.get('reason') or 'no_link_peers'\n\nset_output({\n    'verdict': 'cable missing in NetBox',\n    'detail': f\"NetBox has no resolvable link_peers for {near_device}/{near_interface} (reason: {reason}). Cannot identify the far end.\",\n    'figures': {},\n})\n",
+        "script_language": null,
+        "input_schema": null,
+        "output_schema": {
+          "type": "object",
+          "properties": {
+            "detail": {
+              "type": "string"
+            },
+            "figures": {
+              "type": "object"
+            },
+            "verdict": {
+              "type": "string"
+            }
+          }
+        },
+        "target_mode": "once",
+        "max_parallel": 1,
+        "timeout_seconds": 10,
+        "idempotency": "idempotent",
+        "retry_policy": null,
+        "logic_diagram_mermaid": "flowchart TD\n    in([steps.netbox-lookup.output: link_found=false, reason]) --> out([verdict = cable missing in NetBox])",
+        "network_enabled": false
+      },
+      {
+        "id": "e92ff616-bd5f-4882-8a69-8e3cd7b56a4f",
+        "slug": "silent-loss-netbox-lookup",
+        "name": "silent-loss-netbox-lookup",
+        "type": "python_snippet",
+        "description": "Looks up the NetBox interface for the given device/interface and reads link_peers to find the far end of the cable.",
+        "code": "from flowweaver_runtime import get_input, set_output, integration, log\n\ninp = get_input()\ndevice = inp.get('device')\ninterface = inp.get('interface')\nif not device or not interface:\n    raise ValueError(\"device and interface are required inputs\")\n\nnb = integration('netbox')\nresp = nb.get('/api/dcim/interfaces/', params={'device': device, 'name': interface})\nif not resp.ok:\n    raise RuntimeError(f\"NetBox HTTP {resp.status_code}: {resp.text[:300]}\")\n\ndata = resp.json()\nresults = data.get('results') or []\n\nif not results:\n    log('warning', 'interface not found in NetBox', device=device, interface=interface)\n    set_output({\n        'link_found': False,\n        'near_device': device,\n        'near_interface': interface,\n        'far_device': None,\n        'far_interface': None,\n        'reason': 'interface_not_found',\n    })\nelse:\n    iface = results[0]\n    link_peers = iface.get('link_peers') or []\n    far_device = None\n    far_interface = None\n    for peer in link_peers:\n        if isinstance(peer, dict):\n            peer_device = (peer.get('device') or {}).get('name')\n            peer_name = peer.get('name')\n            if peer_device and peer_name:\n                far_device = peer_device\n                far_interface = peer_name\n                break\n    link_found = bool(far_device and far_interface)\n    if not link_found:\n        log('warning', 'no cable/link_peers found for interface', device=device, interface=interface)\n    set_output({\n        'link_found': link_found,\n        'near_device': device,\n        'near_interface': interface,\n        'far_device': far_device,\n        'far_interface': far_interface,\n        'reason': None if link_found else 'no_link_peers',\n    })\n",
+        "script_language": "python",
+        "input_schema": {
+          "type": "object",
+          "required": [
+            "device",
+            "interface",
+            "netbox_integration_id"
+          ],
+          "properties": {
+            "device": {
+              "type": "string"
+            },
+            "interface": {
+              "type": "string"
+            },
+            "netbox_integration_id": {
+              "type": "string"
+            }
+          }
+        },
+        "output_schema": {
+          "type": "object",
+          "properties": {
+            "reason": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "far_device": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "link_found": {
+              "type": "boolean"
+            },
+            "near_device": {
+              "type": "string"
+            },
+            "far_interface": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "near_interface": {
+              "type": "string"
+            }
+          }
+        },
+        "target_mode": "once",
+        "max_parallel": 1,
+        "timeout_seconds": 30,
+        "idempotency": "idempotent",
+        "retry_policy": {},
+        "logic_diagram_mermaid": "flowchart TD\n    in([input: device, interface]) --> get[GET /api/dcim/interfaces via integration netbox]\n    get --> found{results non-empty?}\n    found -->|no| nf([link_found=false, reason=interface_not_found])\n    found -->|yes| peers{link_peers has device+name?}\n    peers -->|no| np([link_found=false, reason=no_link_peers])\n    peers -->|yes| ok([link_found=true, far_device, far_interface])",
+        "network_enabled": true
+      },
+      {
+        "id": "c9e88392-9611-4441-a319-8d01db18c708",
+        "slug": "silent-loss-compute-verdict",
+        "name": "silent-loss-compute-verdict",
+        "type": "python_snippet",
+        "description": "Parses the two query_prometheus responses and applies the fixed verdict rules for silent packet loss diagnosis.",
+        "code": "from flowweaver_runtime import get_input, set_output\nimport json\n\nMETRICS = {\n    'out_packets': 'gnmic_srl_if_stats_out_packets',\n    'in_packets': 'gnmic_srl_if_stats_in_packets',\n    'fcs_errors': 'gnmic_srl_if_stats_in_fcs_error_packets',\n    'input_discards': 'gnmic_srl_if_stats_in_discarded_packets',\n    'output_errors': 'gnmic_srl_if_stats_out_error_packets',\n    'output_discards': 'gnmic_srl_if_stats_out_discarded_packets',\n}\n\n# Documented assumptions (not handed to us verbatim by the user) - made explicit\n# so a reviewer can tune them without re-reading the code.\nLOSS_THRESHOLD_PCT = 8.0      # >= this % with clean ports => silent packet loss\nERROR_RATE_EPSILON = 1e-6     # counts/sec above this => \"has errors\"\nMIN_PPS_FOR_VERDICT = 1.0     # below this on BOTH send directions => not enough traffic\n\n\ndef _extract_matrix(mcp_output):\n    if mcp_output.get('is_error'):\n        raise RuntimeError(f\"Grafana MCP query_prometheus returned an error: {mcp_output.get('content')}\")\n    data = mcp_output.get('structured')\n    if not data:\n        content = mcp_output.get('content')\n        text = None\n        if isinstance(content, str):\n            # Grafana MCP's query_prometheus returns content as a bare JSON string,\n            # not a list of {type, text} content-blocks - parse it directly.\n            if content.strip():\n                text = content\n        elif isinstance(content, list) and content:\n            for item in content:\n                if isinstance(item, dict) and item.get('type') == 'text' and item.get('text'):\n                    text = item['text']\n                    break\n            if text is None:\n                first = content[0]\n                text = first if isinstance(first, str) else json.dumps(first)\n        elif isinstance(content, dict):\n            text = json.dumps(content)\n        if text is None:\n            raise ValueError(f\"no textual payload in mcp_call output, keys: {sorted(mcp_output)}\")\n        data = json.loads(text)\n    # Primary shape actually returned by query_prometheus: {\"data\": [ {...series...}, ... ]}\n    # i.e. data[\"data\"] IS the list of series directly (not data[\"data\"][\"result\"]).\n    if isinstance(data, dict) and isinstance(data.get('data'), list):\n        return data['data']\n    # Fallback shapes kept for compatibility with other Prometheus-shaped responses.\n    if isinstance(data, dict) and isinstance(data.get('data'), dict) and 'result' in data['data']:\n        return data['data']['result']\n    if isinstance(data, dict) and 'result' in data:\n        return data['result']\n    if isinstance(data, list):\n        return data\n    raise ValueError(f\"unrecognized prometheus response shape: {data if not isinstance(data, dict) else list(data.keys())}\")\n\n\ndef _rate(series_list, metric_name):\n    # Raw counter samples in (series now carries __name__ per metric again,\n    # since build-queries no longer wraps the selector in rate()). Compute\n    # the per-metric rate ourselves as (last - first) / elapsed_seconds over\n    # the 5m window, instead of averaging already-rated values.\n    for s in series_list:\n        if (s.get('metric') or {}).get('__name__') == metric_name:\n            values = s.get('values') or []\n            points = []\n            for v in values:\n                try:\n                    points.append((float(v[0]), float(v[1])))\n                except (TypeError, ValueError, IndexError):\n                    continue\n            if len(points) < 2:\n                return None\n            points.sort(key=lambda p: p[0])\n            first_ts, first_val = points[0]\n            last_ts, last_val = points[-1]\n            elapsed = last_ts - first_ts\n            if elapsed <= 0:\n                return None\n            return (last_val - first_val) / elapsed\n    return None\n\n\ndef _figures(series_list):\n    return {k: _rate(series_list, name) for k, name in METRICS.items()}\n\n\ninp = get_input()\nbq = inp['steps']['build-queries']['output']\nnear_device, near_interface = bq['near_device'], bq['near_interface']\nfar_device, far_interface = bq['far_device'], bq['far_interface']\n\nnear_series = _extract_matrix(inp['steps']['telemetry-near']['output'])\nfar_series = _extract_matrix(inp['steps']['telemetry-far']['output'])\n\nnear = _figures(near_series)\nfar = _figures(far_series)\nfigures = {'near': near, 'far': far}\n\nif all(v is None for v in near.values()) and all(v is None for v in far.values()):\n    set_output({\n        'verdict': 'telemetry missing',\n        'detail': f\"No Prometheus samples returned for {near_device}/{near_interface} or {far_device}/{far_interface} in the last 5m.\",\n        'figures': figures,\n    })\nelse:\n    def _err_sum(fig):\n        vals = [fig.get('fcs_errors'), fig.get('input_discards'), fig.get('output_errors'), fig.get('output_discards')]\n        return sum(v for v in vals if v is not None)\n\n    near_errors = _err_sum(near)\n    far_errors = _err_sum(far)\n    near_has_errors = near_errors > ERROR_RATE_EPSILON\n    far_has_errors = far_errors > ERROR_RATE_EPSILON\n\n    near_out = near.get('out_packets')\n    far_out = far.get('out_packets')\n    near_in = near.get('in_packets')\n    far_in = far.get('in_packets')\n\n    enough_traffic = (\n        (near_out is not None and near_out >= MIN_PPS_FOR_VERDICT) or\n        (far_out is not None and far_out >= MIN_PPS_FOR_VERDICT)\n    )\n\n    if not enough_traffic:\n        set_output({\n            'verdict': 'not enough traffic',\n            'detail': f\"Send rate is below {MIN_PPS_FOR_VERDICT} pps on both ends over the last 5m - a loss percentage would not be reliable.\",\n            'figures': figures,\n        })\n    elif near_has_errors and far_has_errors:\n        set_output({\n            'verdict': 'errors on both ends',\n            'detail': f\"{near_device}/{near_interface} error rate={near_errors:.4f}/s, {far_device}/{far_interface} error rate={far_errors:.4f}/s.\",\n            'figures': figures,\n        })\n    elif near_has_errors or far_has_errors:\n        bad_end = f\"{near_device}/{near_interface}\" if near_has_errors else f\"{far_device}/{far_interface}\"\n        clean_end = f\"{far_device}/{far_interface}\" if near_has_errors else f\"{near_device}/{near_interface}\"\n        bad_rate = near_errors if near_has_errors else far_errors\n        set_output({\n            'verdict': 'errors on one end',\n            'detail': f\"{bad_end} shows a nonzero error rate ({bad_rate:.4f}/s); {clean_end} is clean.\",\n            'figures': figures,\n        })\n    else:\n        loss_a = None\n        if near_out is not None and near_out > 0 and far_in is not None:\n            loss_a = (near_out - far_in) / near_out * 100.0\n        loss_b = None\n        if far_out is not None and far_out > 0 and near_in is not None:\n            loss_b = (far_out - near_in) / far_out * 100.0\n\n        candidates = []\n        if loss_a is not None and loss_a >= LOSS_THRESHOLD_PCT:\n            candidates.append((loss_a, f\"{near_device}/{near_interface} -> {far_device}/{far_interface}\"))\n        if loss_b is not None and loss_b >= LOSS_THRESHOLD_PCT:\n            candidates.append((loss_b, f\"{far_device}/{far_interface} -> {near_device}/{near_interface}\"))\n\n        loss_summary = {'near_to_far': loss_a, 'far_to_near': loss_b}\n\n        if candidates:\n            worst = max(candidates, key=lambda c: c[0])\n            set_output({\n                'verdict': 'silent packet loss',\n                'detail': f\"{worst[1]} is losing {worst[0]:.1f}% of packets with both ports reporting clean counters.\",\n                'figures': {**figures, 'loss_pct': loss_summary},\n            })\n        elif loss_a is not None and loss_b is not None and loss_a < LOSS_THRESHOLD_PCT and loss_b < LOSS_THRESHOLD_PCT:\n            set_output({\n                'verdict': 'healthy link',\n                'detail': f\"Loss near->far={loss_a:.1f}%, far->near={loss_b:.1f}%, no port errors on either end.\",\n                'figures': {**figures, 'loss_pct': loss_summary},\n            })\n        else:\n            set_output({\n                'verdict': 'inconclusive',\n                'detail': \"No error counters, but packet-loss percentage could not be computed reliably for at least one direction.\",\n                'figures': {**figures, 'loss_pct': loss_summary},\n            })\n",
+        "script_language": null,
+        "input_schema": null,
+        "output_schema": {
+          "type": "object",
+          "properties": {
+            "detail": {
+              "type": "string"
+            },
+            "figures": {
+              "type": "object"
+            },
+            "verdict": {
+              "type": "string"
+            }
+          }
+        },
+        "target_mode": "once",
+        "max_parallel": 1,
+        "timeout_seconds": 30,
+        "idempotency": "idempotent",
+        "retry_policy": null,
+        "logic_diagram_mermaid": "flowchart TD\n    in([telemetry-near/output, telemetry-far/output]) --> parse[parse Prometheus matrices: content may be a bare JSON string, a list of text-blocks, or structured; rate = last minus first over elapsed, per metric per end]\n    parse --> miss{both ends fully empty?}\n    miss -->|yes| tm([verdict = telemetry missing])\n    miss -->|no| traf{send rate below 1 pps both ends?}\n    traf -->|yes| nt([verdict = not enough traffic])\n    traf -->|no| err{errors present?}\n    err -->|both ends| eb([verdict = errors on both ends])\n    err -->|one end| eo([verdict = errors on one end])\n    err -->|none| loss{loss over 8 percent any direction?}\n    loss -->|yes| sl([verdict = silent packet loss])\n    loss -->|no, both clean| hl([verdict = healthy link])\n    loss -->|unmeasurable| inc([verdict = inconclusive])",
+        "network_enabled": false
+      },
+      {
+        "id": "d00c2a78-25b1-40ac-accf-9654246c2395",
+        "slug": "silent-loss-finalize-verdict",
+        "name": "silent-loss-finalize-verdict",
+        "type": "python_snippet",
+        "description": "Merges whichever verdict branch ran (compute-verdict or cable-missing-verdict) and formats the annotation text and email body.",
+        "code": "from flowweaver_runtime import get_input, set_output\nimport time\n\ninp = get_input()\nsteps = inp.get('steps', {})\n\nresult = None\nfor node_id in ('compute-verdict', 'cable-missing-verdict'):\n    entry = steps.get(node_id)\n    if entry and entry.get('output'):\n        result = entry['output']\n        break\n\nif result is None:\n    raise ValueError(\"neither compute-verdict nor cable-missing-verdict produced an output - check the conditional wiring\")\n\nverdict = result.get('verdict', 'inconclusive')\ndetail = result.get('detail', '')\nfigures = result.get('figures') or {}\n\nlk = (steps.get('netbox-lookup') or {}).get('output') or {}\nnear_device = lk.get('near_device')\nnear_interface = lk.get('near_interface')\nfar_device = lk.get('far_device')\nfar_interface = lk.get('far_interface')\n\nnow_ms = int(time.time() * 1000)\n\n# --- Grafana annotation text: when a loss percentage was computed, lead with\n# the verdict, the worse-direction loss %, and \"device interface -> device\n# interface\" (space-separated, matching the demo's annotation style), e.g.\n# \"Silent packet loss 17.0% srl1 ethernet-1/1 -> srl2 ethernet-1/1, both ports clean\".\n# All three verdicts that reach a loss_pct (silent packet loss, healthy link,\n# inconclusive-with-partial-loss) only get there via the compute-verdict\n# branch that already ruled out port errors on either end, so \"both ports\n# clean\" is always accurate here. Verdicts with no loss figure (telemetry\n# missing, not enough traffic, errors on one/both ends, cable missing in\n# NetBox) keep the original \"[verdict] near/iface <-> far/iface\" form since\n# there is no loss number to show.\nloss_pct = figures.get('loss_pct') if isinstance(figures, dict) else None\nannotation = None\nif loss_pct:\n    loss_a = loss_pct.get('near_to_far')\n    loss_b = loss_pct.get('far_to_near')\n    candidates = []\n    if loss_a is not None:\n        candidates.append((loss_a, f\"{near_device} {near_interface} -> {far_device} {far_interface}\"))\n    if loss_b is not None:\n        candidates.append((loss_b, f\"{far_device} {far_interface} -> {near_device} {near_interface}\"))\n    if candidates:\n        worst_pct, worst_dir = max(candidates, key=lambda c: c[0])\n        verdict_label = (verdict[0].upper() + verdict[1:]) if verdict else verdict\n        annotation = f\"{verdict_label} {worst_pct:.1f}% {worst_dir}, both ports clean\"\n\nif annotation:\n    summary_text = annotation\nelse:\n    summary_text = f\"[{verdict}] {near_device}/{near_interface} <-> {far_device or '?'}/{far_interface or '?'}\"\n\nbody_lines = [\n    f\"Silent packet loss check result: {verdict}\",\n    \"\",\n    detail,\n    \"\",\n    f\"Near end: {near_device} / {near_interface}\",\n    f\"Far end:  {far_device or 'unknown'} / {far_interface or 'unknown'}\",\n    \"\",\n    \"Figures (rates, packets/sec, averaged over the last 5 minutes):\",\n]\nfor end_name in ('near', 'far'):\n    fig = figures.get(end_name) if isinstance(figures, dict) else None\n    if fig:\n        body_lines.append(f\"  {end_name}:\")\n        for k, v in fig.items():\n            # Round every rate to one decimal and label the unit explicitly\n            # rather than printing the raw float.\n            if v is None:\n                body_lines.append(f\"    {k}: no data\")\n            else:\n                body_lines.append(f\"    {k}: {v:.1f} packets/s\")\nif loss_pct:\n    body_lines.append(\"\")\n    near_to_far = loss_pct.get('near_to_far')\n    far_to_near = loss_pct.get('far_to_near')\n    near_to_far_str = f\"{near_to_far:.1f}%\" if near_to_far is not None else \"no data\"\n    far_to_near_str = f\"{far_to_near:.1f}%\" if far_to_near is not None else \"no data\"\n    body_lines.append(f\"Loss near->far: {near_to_far_str}\")\n    body_lines.append(f\"Loss far->near: {far_to_near_str}\")\n\nbody_text = \"\\n\".join(body_lines)\n\nset_output({\n    'verdict': verdict,\n    'summary_text': summary_text,\n    'body_text': body_text,\n    'time_epoch_ms': now_ms,\n})\n",
+        "script_language": null,
+        "input_schema": null,
+        "output_schema": {
+          "type": "object",
+          "properties": {
+            "verdict": {
+              "type": "string"
+            },
+            "body_text": {
+              "type": "string"
+            },
+            "summary_text": {
+              "type": "string"
+            },
+            "time_epoch_ms": {
+              "type": "integer"
+            }
+          }
+        },
+        "target_mode": "once",
+        "max_parallel": 1,
+        "timeout_seconds": 10,
+        "idempotency": "idempotent",
+        "retry_policy": null,
+        "logic_diagram_mermaid": "flowchart TD\n    in([compute-verdict.output OR cable-missing-verdict.output - whichever ran]) --> pick[pick the non-skipped result]\n    pick --> hasloss{loss_pct present and a direction has a value?}\n    hasloss -->|yes| worst[pick worse direction] --> ann[\"Verdict X.X% near iface -> far iface, both ports clean\"]\n    hasloss -->|no| legacy[\"[verdict] near/iface <-> far/iface\"]\n    ann --> fmtbody[format body: rates rounded .1f + packets/s, loss % rounded .1f + percent]\n    legacy --> fmtbody\n    fmtbody --> out([verdict, summary_text, body_text, time_epoch_ms])",
+        "network_enabled": false
+      },
+      {
+        "id": "0942e45a-621d-4ee1-a8da-8f513c4ef424",
+        "slug": "silent-loss-build-queries",
+        "name": "silent-loss-build-queries",
+        "type": "python_snippet",
+        "description": "Builds one PromQL rate() expression per link end, covering all 6 SR Linux packet/error counters in a single query.",
+        "code": "from flowweaver_runtime import get_input, set_output\n\nMETRICS = [\n    'gnmic_srl_if_stats_out_packets',\n    'gnmic_srl_if_stats_in_packets',\n    'gnmic_srl_if_stats_in_fcs_error_packets',\n    'gnmic_srl_if_stats_in_discarded_packets',\n    'gnmic_srl_if_stats_out_error_packets',\n    'gnmic_srl_if_stats_out_discarded_packets',\n]\n\n\ndef _expr(device, interface):\n    names = '|'.join(METRICS)\n    # Raw counters only - no rate() here. Wrapping a __name__ regex that\n    # matches multiple metrics in rate() drops the __name__ label from the\n    # output series, collapsing all 6 metrics onto the same labelset\n    # (source, interface_name) and Prometheus rejects the vector. Instead we\n    # return the bare counters as a range query and compute the rate\n    # downstream per-metric from the raw samples (first/last over elapsed\n    # time), after __name__ is still attached to each series.\n    return '{__name__=~\"' + names + '\", source=\"' + device + '\", interface_name=\"' + interface + '\"}'\n\n\ninp = get_input()\nlk = inp['steps']['netbox-lookup']['output']\nnear_device = lk['near_device']\nnear_interface = lk['near_interface']\nfar_device = lk['far_device']\nfar_interface = lk['far_interface']\n\nif not far_device or not far_interface:\n    raise ValueError(\"build-queries reached with no far-end resolved - check the conditional edge wiring\")\n\nset_output({\n    'near_device': near_device,\n    'near_interface': near_interface,\n    'far_device': far_device,\n    'far_interface': far_interface,\n    'near_expr': _expr(near_device, near_interface),\n    'far_expr': _expr(far_device, far_interface),\n    'start_time': 'now-5m',\n    'end_time': 'now',\n    'step_seconds': 60,\n})\n",
+        "script_language": null,
+        "input_schema": null,
+        "output_schema": {
+          "type": "object",
+          "properties": {
+            "end_time": {
+              "type": "string"
+            },
+            "far_expr": {
+              "type": "string"
+            },
+            "near_expr": {
+              "type": "string"
+            },
+            "start_time": {
+              "type": "string"
+            },
+            "step_seconds": {
+              "type": "integer"
+            }
+          }
+        },
+        "target_mode": "once",
+        "max_parallel": 1,
+        "timeout_seconds": 15,
+        "idempotency": "idempotent",
+        "retry_policy": null,
+        "logic_diagram_mermaid": "flowchart TD\n    in([steps.netbox-lookup.output: near/far device+interface]) --> chk{far end resolved?}\n    chk -->|no| f([step FAILS - wiring error])\n    chk -->|yes| build[build raw counter selector per end, no rate(), 6 metrics via __name__ regex, 5m range query]\n    build --> out([near_expr, far_expr, start_time, end_time, step_seconds])",
+        "network_enabled": false
+      }
+    ],
+    "integrations": [],
+    "mcp_servers": [
+      {
+        "id": "75a7c834-5cde-4579-8ee0-2d497c8a88f1",
+        "name": "grafana",
+        "transport": "http"
+      }
+    ],
+    "credentials": [],
+    "repositories": [],
+    "workflows": []
+  },
+  "triggers": []
+}

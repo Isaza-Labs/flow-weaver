@@ -1,0 +1,499 @@
+{
+  "schema_version": "v3",
+  "kind": "flow_weaver.workflow_bundle",
+  "exported_at": "2026-10-23T20:10:54.9548154Z",
+  "exported_by": {
+    "product": "flow-weaver",
+    "version": "1.0.0"
+  },
+  "requires": {
+    "snippet_types": [
+      "email_send",
+      "ping",
+      "python_snippet"
+    ],
+    "capabilities": [
+      "max_parallel",
+      "run_namespace"
+    ],
+    "secrets": []
+  },
+  "workflow": {
+    "name": "leaf-reachability-check",
+    "description": "Pings lab-leaf-01 and lab-leaf-02; records reachable devices and drafts an incident note for unreachable ones.",
+    "environment": "production",
+    "input_schema": {
+      "type": "object"
+    },
+    "metadata": {}
+  },
+  "nodes": [
+    {
+      "x": 0,
+      "y": 0,
+      "id": "__start__",
+      "snippet_id": "__start__"
+    },
+    {
+      "x": 220,
+      "y": 0,
+      "id": "ping",
+      "snippet_id": "d5047e52-7a2f-4d5c-920e-f97f2be746d9"
+    },
+    {
+      "x": 440,
+      "y": -40,
+      "id": "record-reachability",
+      "snippet_id": "63f7f97a-7fbb-4483-bda3-ae9da7342a79",
+      "config_overrides": {
+        "ping_node_id": "ping"
+      }
+    },
+    {
+      "x": 440,
+      "y": 40,
+      "id": "open-incident-note",
+      "snippet_id": "0a5417f5-c0f7-40cb-a561-4c970a9bdade",
+      "config_overrides": {
+        "ping_node_id": "ping"
+      }
+    },
+    {
+      "x": 660,
+      "y": 0,
+      "id": "notify-failure",
+      "snippet_id": "294ffaf9-1d7a-4038-9f68-edc60dd646a1",
+      "config_overrides": {
+        "to": "{{ run.owner_email }}",
+        "body": "Workflow `{{ run.workflow_name }}` failed at step `{{ run.failed_step_id }}` with: {{ run.failed_step_error }}\n\nRun details: {{ run.url }}",
+        "subject": "FlowWeaver run {{ run.id }} failed"
+      }
+    },
+    {
+      "x": 880,
+      "y": 0,
+      "id": "__end__",
+      "snippet_id": "__end__"
+    }
+  ],
+  "edges": [
+    {
+      "type": "success",
+      "source": "__start__",
+      "target": "ping",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "success",
+      "source": "ping",
+      "target": "record-reachability",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "failure",
+      "source": "ping",
+      "target": "open-incident-note",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "success",
+      "source": "record-reachability",
+      "target": "__end__",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "success",
+      "source": "open-incident-note",
+      "target": "__end__",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "failure",
+      "source": "record-reachability",
+      "target": "notify-failure",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "failure",
+      "source": "open-incident-note",
+      "target": "notify-failure",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "always",
+      "source": "notify-failure",
+      "target": "__end__",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    }
+  ],
+  "dependencies": {
+    "snippets": [
+      {
+        "id": "294ffaf9-1d7a-4038-9f68-edc60dd646a1",
+        "slug": "email-send",
+        "name": "email_send",
+        "type": "email_send",
+        "description": "Send an email / e-mail notification / report by mail. Delivers through a configured SMTP relay (Gmail, Microsoft 365, SendGrid, Amazon SES, Mailgun or a custom server — see /email). Use this whenever a workflow should email someone. Set `to` and `subject` in the node's config_overrides plus `body` (plain text) and/or `html`; optional `cc`, `bcc`, `reply_to` and `attachments` (base64 — feed it from an upstream `report` step). Omit `channel_id` to use the default channel. Host, port, TLS and the password live on the channel, never on the node. The send is NOT reversible. Branch on {{ steps.X.output.ok }}. Use target_mode='once' (not device-scoped).",
+        "code": null,
+        "script_language": null,
+        "input_schema": {
+          "type": "object",
+          "x-order": [
+            "channel_id",
+            "to",
+            "cc",
+            "bcc",
+            "subject",
+            "body",
+            "html",
+            "from_address",
+            "from_name",
+            "reply_to",
+            "attachments"
+          ],
+          "required": [
+            "to",
+            "subject"
+          ],
+          "properties": {
+            "cc": {
+              "type": [
+                "string",
+                "array"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "Optional carbon-copy recipient(s), same shape as `to`."
+            },
+            "to": {
+              "type": [
+                "string",
+                "array"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "Recipient(s): one address, a comma-separated string, or an array of addresses."
+            },
+            "bcc": {
+              "type": [
+                "string",
+                "array"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "Optional blind-copy recipient(s), same shape as `to`."
+            },
+            "body": {
+              "type": "string",
+              "format": "textarea",
+              "description": "Plain-text body. Supply `body`, `html`, or both — at least one is required."
+            },
+            "html": {
+              "type": "string",
+              "format": "textarea",
+              "description": "HTML body. When supplied alone, a plain-text alternative is generated automatically."
+            },
+            "subject": {
+              "type": "string",
+              "description": "Subject line. Templates like {{ steps.X.output.field }} expand before send."
+            },
+            "reply_to": {
+              "type": "string",
+              "description": "Optional Reply-To address."
+            },
+            "from_name": {
+              "type": "string",
+              "description": "Optional display name for the sender."
+            },
+            "channel_id": {
+              "type": "string",
+              "description": "Optional. The EmailChannel (SMTP relay) to send through — a UUID from /email. Omit to use the deployment's default channel."
+            },
+            "attachments": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "file_name",
+                  "content_base64"
+                ],
+                "properties": {
+                  "file_name": {
+                    "type": "string"
+                  },
+                  "content_type": {
+                    "type": "string",
+                    "description": "MIME type; defaults to application/octet-stream."
+                  },
+                  "content_base64": {
+                    "type": "string",
+                    "description": "Base64-encoded file content."
+                  }
+                }
+              },
+              "description": "Optional attachments. Feed content_base64 from an upstream `report` step to email a generated PDF/XLSX."
+            },
+            "from_address": {
+              "type": "string",
+              "description": "Optional override of the channel's sender. Most providers reject a From they do not own."
+            }
+          }
+        },
+        "output_schema": {
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean",
+              "description": "TRUE only when the SMTP server accepted the message — branch on this."
+            },
+            "error": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "SMTP failure reason when ok=false (auth rejected, TLS handshake, unreachable relay)."
+            },
+            "provider": {
+              "type": "string",
+              "description": "gmail | outlook365 | sendgrid | ses | mailgun | smtp."
+            },
+            "channel_id": {
+              "type": "string"
+            },
+            "elapsed_ms": {
+              "type": "integer"
+            },
+            "message_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "RFC 5322 Message-ID of the sent message."
+            },
+            "recipients": {
+              "type": "integer",
+              "description": "Total to + cc + bcc addresses."
+            },
+            "channel_name": {
+              "type": "string"
+            }
+          }
+        },
+        "target_mode": "once",
+        "max_parallel": 10,
+        "timeout_seconds": 60,
+        "idempotency": null,
+        "retry_policy": {},
+        "logic_diagram_mermaid": null,
+        "network_enabled": false
+      },
+      {
+        "id": "d5047e52-7a2f-4d5c-920e-f97f2be746d9",
+        "slug": "ping",
+        "name": "ping",
+        "type": "ping",
+        "description": "ICMP ping against a target device. Use as the first step of a reachability workflow.",
+        "code": null,
+        "script_language": null,
+        "input_schema": {
+          "type": "object",
+          "x-order": [
+            "host",
+            "count",
+            "timeout_ms"
+          ],
+          "properties": {
+            "host": {
+              "type": "string",
+              "description": "Target IP or hostname. Omit to ping the step's target Device (Device.IpAddress). A CIDR mask (…/16) is stripped automatically."
+            },
+            "count": {
+              "type": "integer",
+              "default": 4,
+              "maximum": 20,
+              "minimum": 1,
+              "description": "Number of ICMP echo requests to send (clamped 1-20)."
+            },
+            "timeout_ms": {
+              "type": "integer",
+              "default": 3000,
+              "maximum": 30000,
+              "minimum": 100,
+              "description": "Per-request timeout in milliseconds (clamped 100-30000)."
+            }
+          }
+        },
+        "output_schema": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "type": "boolean",
+              "description": "True when at least one reply was received."
+            },
+            "raw_output": {
+              "type": "string",
+              "description": "Per-sequence log lines (seq / status / rtt)."
+            },
+            "rtt_avg_ms": {
+              "type": "number",
+              "description": "Average round-trip time over successful replies (0 when none)."
+            },
+            "packets_sent": {
+              "type": "integer"
+            },
+            "packets_received": {
+              "type": "integer"
+            }
+          }
+        },
+        "target_mode": "per_device",
+        "max_parallel": 10,
+        "timeout_seconds": 10,
+        "idempotency": null,
+        "retry_policy": {},
+        "logic_diagram_mermaid": null,
+        "network_enabled": false
+      },
+      {
+        "id": "63f7f97a-7fbb-4483-bda3-ae9da7342a79",
+        "slug": "record-reachability",
+        "name": "record-reachability",
+        "type": "python_snippet",
+        "description": "Reads the upstream ping step's result for the current device and, when the ping succeeded, returns a clean reachability record: device name, IP address, status \"reachable\", average round-trip time, and a UTC timestamp of when the check was recorded. Read-only and offline (no network access) — it only reshapes data already produced by an upstream `ping` node. Must be wired on the ping step's SUCCESS (or a conditional-success) path; if the upstream ping did not succeed, this step fails loudly so it is never silently used on the wrong branch. The upstream node id defaults to \"ping\" but can be overridden via config_overrides.ping_node_id for workflows that name it differently.",
+        "code": "from datetime import datetime, timezone\nfrom flowweaver_runtime import get_input, set_output\n\ninp = get_input()\ndevice = inp.get('device') or {}\nping_node_id = inp.get('ping_node_id') or 'ping'\n\nsteps = inp.get('steps') or {}\nif ping_node_id not in steps:\n    raise ValueError(\n        f\"no upstream step named '{ping_node_id}' in steps - set config_overrides.ping_node_id \"\n        f\"to the actual ping node id; available steps: {sorted(steps)}\")\n\nping_output = steps[ping_node_id].get('output') or {}\nsuccess = ping_output.get('success')\nif success is not True:\n    raise ValueError(\n        f\"ping result for this device was not successful (success={success!r}) - \"\n        \"record-reachability must be wired behind the ping step's success path; \"\n        \"use open-incident-note for the failure path\")\n\ndevice_name = device.get('name')\nip_address = device.get('ip')\nif not device_name or not ip_address:\n    raise ValueError(f\"device context missing name/ip: {device!r}\")\n\nrtt = ping_output.get('rtt_avg_ms')\nchecked_at = datetime.now(timezone.utc).isoformat()\n\nset_output({\n    'device_name': device_name,\n    'ip_address': ip_address,\n    'status': 'reachable',\n    'rtt_avg_ms': rtt,\n    'checked_at': checked_at,\n})\n",
+        "script_language": "python",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "ping_node_id": {
+              "type": "string",
+              "default": "ping",
+              "description": "Node id of the upstream ping step in this workflow. Defaults to \"ping\"."
+            }
+          },
+          "additionalProperties": false
+        },
+        "output_schema": {
+          "type": "object",
+          "required": [
+            "device_name",
+            "ip_address",
+            "status",
+            "checked_at"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "reachable"
+              ],
+              "type": "string"
+            },
+            "checked_at": {
+              "type": "string",
+              "description": "ISO-8601 UTC timestamp"
+            },
+            "ip_address": {
+              "type": "string"
+            },
+            "rtt_avg_ms": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "device_name": {
+              "type": "string"
+            }
+          }
+        },
+        "target_mode": "per_device",
+        "max_parallel": 1,
+        "timeout_seconds": 30,
+        "idempotency": "idempotent",
+        "retry_policy": null,
+        "logic_diagram_mermaid": "flowchart TD\n    in([steps.&lt;ping_node_id&gt;.output, device]) --> chk{success == true?}\n    chk -->|no| f([step FAILS - must be wired on ping SUCCESS path])\n    chk -->|yes| ex[extract device_name, ip_address from device context]\n    ex --> ts[timestamp: now, UTC, ISO-8601]\n    ts --> out([device_name, ip_address, status=reachable, rtt_avg_ms, checked_at])",
+        "network_enabled": false
+      },
+      {
+        "id": "0a5417f5-c0f7-40cb-a561-4c970a9bdade",
+        "slug": "open-incident-note",
+        "name": "open-incident-note",
+        "type": "python_snippet",
+        "description": "Reads the upstream ping step's result for the current device and, when the ping did NOT succeed, drafts a plain-text incident note: device name, IP address, status \"unreachable\", the detection time, and a suggested first troubleshooting check. Read-only and offline (no network access) — it ONLY builds draft text in memory and never calls a ticketing system or opens a real incident; the note is clearly tagged \"[DRAFT - NOT A TICKET]\" so a human or a separate ticketing step must act on it. Must be wired on the ping step's FAILURE (or a conditional-unreachable) path; if the upstream ping succeeded, this step fails loudly so it is never silently used on the wrong branch. The upstream node id defaults to \"ping\" but can be overridden via config_overrides.ping_node_id, and the suggested first check can be overridden via config_overrides.first_check_hint.",
+        "code": "from datetime import datetime, timezone\nfrom flowweaver_runtime import get_input, set_output\n\ninp = get_input()\ndevice = inp.get('device') or {}\nping_node_id = inp.get('ping_node_id') or 'ping'\n\nsteps = inp.get('steps') or {}\nif ping_node_id not in steps:\n    raise ValueError(\n        f\"no upstream step named '{ping_node_id}' in steps - set config_overrides.ping_node_id \"\n        f\"to the actual ping node id; available steps: {sorted(steps)}\")\n\nping_output = steps[ping_node_id].get('output') or {}\nsuccess = ping_output.get('success')\nif success is True:\n    raise ValueError(\n        \"ping result for this device was successful - open-incident-note must be wired \"\n        \"behind the ping step's failure/conditional-unreachable path; use \"\n        \"record-reachability for the success path\")\n\ndevice_name = device.get('name')\nip_address = device.get('ip')\nif not device_name or not ip_address:\n    raise ValueError(f\"device context missing name/ip: {device!r}\")\n\ndetected_at = datetime.now(timezone.utc).isoformat()\nfirst_check_hint = inp.get('first_check_hint') or (\n    \"verify power/link state and confirm the device's management IP and route from the \"\n    \"monitoring host before escalating\"\n)\n\nnote_text = (\n    \"[DRAFT - NOT A TICKET - no incident was opened]\\n\"\n    f\"Device: {device_name}\\n\"\n    f\"IP: {ip_address}\\n\"\n    \"Status: unreachable\\n\"\n    f\"Detected at: {detected_at}\\n\"\n    f\"Suggested first check: {first_check_hint}\\n\"\n    \"This is a draft note only. A human or a downstream ticketing step must \"\n    \"review and open the actual incident.\"\n)\n\nset_output({\n    'device_name': device_name,\n    'ip_address': ip_address,\n    'status': 'unreachable',\n    'detected_at': detected_at,\n    'note_text': note_text,\n})\n",
+        "script_language": "python",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "ping_node_id": {
+              "type": "string",
+              "default": "ping",
+              "description": "Node id of the upstream ping step in this workflow. Defaults to \"ping\"."
+            },
+            "first_check_hint": {
+              "type": "string",
+              "description": "Optional override for the suggested first troubleshooting check text."
+            }
+          },
+          "additionalProperties": false
+        },
+        "output_schema": {
+          "type": "object",
+          "required": [
+            "device_name",
+            "ip_address",
+            "status",
+            "detected_at",
+            "note_text"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "unreachable"
+              ],
+              "type": "string"
+            },
+            "note_text": {
+              "type": "string",
+              "description": "Draft incident note text, tagged DRAFT - NOT A TICKET. No real ticket is ever opened by this snippet."
+            },
+            "ip_address": {
+              "type": "string"
+            },
+            "detected_at": {
+              "type": "string",
+              "description": "ISO-8601 UTC timestamp"
+            },
+            "device_name": {
+              "type": "string"
+            }
+          }
+        },
+        "target_mode": "per_device",
+        "max_parallel": 1,
+        "timeout_seconds": 30,
+        "idempotency": "idempotent",
+        "retry_policy": null,
+        "logic_diagram_mermaid": "flowchart TD\n    in([steps.&lt;ping_node_id&gt;.output, device]) --> chk{success == true?}\n    chk -->|yes| f([step FAILS - must be wired on ping FAILURE path])\n    chk -->|no| ex[extract device_name, ip_address from device context]\n    ex --> ts[timestamp: now, UTC, ISO-8601]\n    ts --> note[build draft note text, tagged DRAFT - NOT A TICKET]\n    note --> out([device_name, ip_address, status=unreachable, detected_at, note_text])",
+        "network_enabled": false
+      }
+    ],
+    "integrations": [],
+    "mcp_servers": [],
+    "credentials": [],
+    "repositories": [],
+    "workflows": []
+  },
+  "triggers": []
+}

@@ -1,0 +1,370 @@
+{
+  "schema_version": "v3",
+  "kind": "flow_weaver.workflow_bundle",
+  "exported_at": "2026-10-23T20:10:46.5844492Z",
+  "exported_by": {
+    "product": "flow-weaver",
+    "version": "1.0.0"
+  },
+  "requires": {
+    "snippet_types": [
+      "python_snippet",
+      "report"
+    ],
+    "capabilities": [
+      "max_parallel",
+      "python_network"
+    ],
+    "secrets": []
+  },
+  "workflow": {
+    "name": "NetBox devices CSV export",
+    "description": "Fetch all NetBox devices and export them as a CSV report.",
+    "environment": "production",
+    "input_schema": {
+      "type": "object"
+    },
+    "metadata": {}
+  },
+  "nodes": [
+    {
+      "x": 0,
+      "y": 0,
+      "id": "__start__",
+      "snippet_id": "__start__"
+    },
+    {
+      "x": 220,
+      "y": 0,
+      "id": "fetch-netbox-devices",
+      "snippet_id": "d8f6a276-15a2-4d1e-bd55-1b2c2eed0c36",
+      "config_overrides": {
+        "query": {},
+        "page_limit": 1000,
+        "netbox_integration_id": "05c263ff-a471-48e0-bf9f-6a31201e6806"
+      }
+    },
+    {
+      "x": 440,
+      "y": 0,
+      "id": "netbox-devices-to-csv-rows",
+      "snippet_id": "da1657a1-6d9b-485f-afda-14312db0baa6",
+      "config_overrides": {
+        "changes": false
+      }
+    },
+    {
+      "x": 660,
+      "y": 0,
+      "id": "make-csv-report",
+      "snippet_id": "97a1de73-273f-4b5c-ab0c-8d654a2feabf",
+      "config_overrides": {
+        "format": "csv",
+        "document": {
+          "title": "NetBox devices CSV export",
+          "sections": [
+            {
+              "title": "Devices",
+              "tables": [
+                {
+                  "rows": "{{ steps.netbox-devices-to-csv-rows.output.rows }}",
+                  "headers": [
+                    "name",
+                    "ip",
+                    "site",
+                    "role",
+                    "platform",
+                    "status"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "x": 880,
+      "y": 0,
+      "id": "notify-failure",
+      "snippet_id": "97a1de73-273f-4b5c-ab0c-8d654a2feabf",
+      "config_overrides": {
+        "format": "csv",
+        "document": {
+          "title": "NetBox devices export - failure",
+          "sections": [
+            {
+              "title": "Failure",
+              "tables": [
+                {
+                  "rows": [
+                    [
+                      "error",
+                      "-",
+                      "-",
+                      "-",
+                      "-",
+                      "-"
+                    ]
+                  ],
+                  "headers": [
+                    "name",
+                    "ip",
+                    "site",
+                    "role",
+                    "platform",
+                    "status"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "x": 1100,
+      "y": 0,
+      "id": "__end__",
+      "snippet_id": "__end__"
+    }
+  ],
+  "edges": [
+    {
+      "type": "success",
+      "source": "__start__",
+      "target": "fetch-netbox-devices",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "success",
+      "source": "fetch-netbox-devices",
+      "target": "netbox-devices-to-csv-rows",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "failure",
+      "source": "fetch-netbox-devices",
+      "target": "notify-failure",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "success",
+      "source": "netbox-devices-to-csv-rows",
+      "target": "make-csv-report",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "failure",
+      "source": "netbox-devices-to-csv-rows",
+      "target": "notify-failure",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "success",
+      "source": "make-csv-report",
+      "target": "__end__",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "failure",
+      "source": "make-csv-report",
+      "target": "notify-failure",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "always",
+      "source": "notify-failure",
+      "target": "__end__",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    }
+  ],
+  "dependencies": {
+    "snippets": [
+      {
+        "id": "97a1de73-273f-4b5c-ab0c-8d654a2feabf",
+        "slug": "report",
+        "name": "report",
+        "type": "report",
+        "description": "Generate a downloadable report (html/csv/xlsx/pdf) from a structured document. Set `format` + `document` in the node's config_overrides; downstream nodes read {{ steps.X.output.base64 }} and {{ steps.X.output.filename }} to email or upload it.",
+        "code": null,
+        "script_language": null,
+        "input_schema": {
+          "type": "object",
+          "x-order": [
+            "format",
+            "document"
+          ],
+          "required": [
+            "format",
+            "document"
+          ],
+          "properties": {
+            "format": {
+              "enum": [
+                "html",
+                "csv",
+                "xlsx",
+                "pdf"
+              ],
+              "type": "string",
+              "description": "Output file format."
+            },
+            "document": {
+              "type": "object",
+              "description": "Report document (title, sections, tables…) matching the ReportDocument schema. Usually assembled from upstream output via {{ steps.X.output.… }} templates."
+            }
+          }
+        },
+        "output_schema": {
+          "type": "object",
+          "properties": {
+            "base64": {
+              "type": "string",
+              "description": "Raw file bytes, base64-encoded — plug into a downstream email/upload node via {{ steps.X.output.base64 }}."
+            },
+            "format": {
+              "type": "string"
+            },
+            "sha256": {
+              "type": "string"
+            },
+            "filename": {
+              "type": "string"
+            },
+            "size_bytes": {
+              "type": "integer"
+            },
+            "content_type": {
+              "type": "string"
+            },
+            "download_url": {
+              "type": "string",
+              "description": "Relative API path to download the file."
+            },
+            "report_artifact_id": {
+              "type": "string",
+              "description": "UUID of the stored artifact (see /admin/reports)."
+            }
+          }
+        },
+        "target_mode": "once",
+        "max_parallel": 10,
+        "timeout_seconds": 30,
+        "idempotency": null,
+        "retry_policy": {},
+        "logic_diagram_mermaid": null,
+        "network_enabled": false
+      },
+      {
+        "id": "da1657a1-6d9b-485f-afda-14312db0baa6",
+        "slug": "netbox-devices-to-csv-rows",
+        "name": "netbox-devices-to-csv-rows",
+        "type": "python_snippet",
+        "description": "Transforms a NetBox JSON response into CSV report rows (name, IP, site, role, platform, status) and sanitizes residual templates in the input data.",
+        "code": "from flowweaver_runtime import get_input, set_output\n\n\ndef scrub(value):\n    if isinstance(value, str) and \"{{\" in value and \"}}\" in value:\n        return \"\"\n    if isinstance(value, list):\n        return [scrub(v) for v in value]\n    if isinstance(value, dict):\n        return {k: scrub(v) for k, v in value.items()}\n    return value\n\n\ndef run(ctx):\n    inp = get_input()\n    fetch = scrub(inp['steps']['fetch-netbox-devices']['output'])\n    data = fetch.get('data') or {}\n    results = data.get('results') or []\n\n    rows = []\n    for d in results:\n        primary_ip4 = d.get('primary_ip4') or {}\n        site = d.get('site') or {}\n        role = d.get('role') or {}\n        platform = d.get('platform') or {}\n        status = d.get('status') or {}\n\n        rows.append([\n            d.get('name', '-'),\n            primary_ip4.get('address', '-'),\n            site.get('name', '-'),\n            role.get('name', '-'),\n            platform.get('name', '-'),\n            status.get('label', '-')\n        ])\n\n    set_output({\n        'rows': rows,\n        'row_count': len(rows)\n    })\n",
+        "script_language": "python",
+        "input_schema": {
+          "type": "object"
+        },
+        "output_schema": {
+          "type": "object",
+          "properties": {
+            "rows": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "row_count": {
+              "type": "integer"
+            }
+          }
+        },
+        "target_mode": "once",
+        "max_parallel": 1,
+        "timeout_seconds": 60,
+        "idempotency": "idempotent",
+        "retry_policy": {},
+        "logic_diagram_mermaid": "flowchart TD\n    in([\"Input: steps.fetch-netbox-devices.output\"]) --> scrub[\"Sanitize strings containing template placeholder markers\"]\n    scrub --> extract[\"Read data.results\"]\n    extract --> loop{\"For each device\"}\n    loop --> map[\"Map name, primary_ip4.address, site.name, role.name, platform.name, status.label\"]\n    map --> append[\"Append CSV row\"]\n    append --> loop\n    loop -->|done| out([\"Output: rows, row_count\"])",
+        "network_enabled": false
+      },
+      {
+        "id": "d8f6a276-15a2-4d1e-bd55-1b2c2eed0c36",
+        "slug": "fetch-netbox-devices-paginated",
+        "name": "fetch-netbox-devices-paginated",
+        "type": "python_snippet",
+        "description": "Fetches ALL NetBox devices by following pagination (offset-based) regardless of the server's enforced page size, and returns them in the same {data:{results,count}} shape the downstream CSV-rows step expects.",
+        "code": "from flowweaver_runtime import get_input, set_output, integration, log\n\nMAX_PAGES = 500  # safety cap so a pagination bug can't loop forever\n\n\ndef scrub(value):\n    # NetBox free-text fields (comments, description, ...) sometimes contain\n    # literal '{{ ... }}' text (e.g. an unresolved Ansible/Jinja snippet a\n    # human pasted in). The engine auto-injects this step's whole output into\n    # every downstream python_snippet's input and then scans that input for\n    # unresolved '{{ }}' templates BEFORE the downstream script runs - so a\n    # literal '{{ }}' in NetBox data fails the downstream step before its own\n    # code (even a scrub() there) ever executes. Sanitize here, at the\n    # source, so no '{{ }}'-looking string ever leaves this step.\n    if isinstance(value, str) and \"{{\" in value and \"}}\" in value:\n        return \"[scrubbed: contained template-like text]\"\n    if isinstance(value, list):\n        return [scrub(v) for v in value]\n    if isinstance(value, dict):\n        return {k: scrub(v) for k, v in value.items()}\n    return value\n\n\ninp = get_input()\nnb = integration(\"netbox\")\npath = \"/api/dcim/devices/\"\n\nbase_query = dict(inp.get(\"query\") or {})\nbase_query.setdefault(\"limit\", inp.get(\"page_limit\", 1000))\n\nall_results = []\noffset = 0\ntotal_count = None\npage_size = None\npages = 0\n\nwhile True:\n    pages += 1\n    if pages > MAX_PAGES:\n        raise RuntimeError(f\"aborted after {MAX_PAGES} pages fetching NetBox devices - safety cap hit\")\n\n    q = dict(base_query)\n    q[\"offset\"] = offset\n    resp = nb.get(path, params=q)\n    if not resp.ok:\n        raise RuntimeError(f\"NetBox HTTP {resp.status_code} at offset {offset}: {resp.text[:300]}\")\n\n    body = resp.json()\n    results = body.get(\"results\") or []\n    all_results.extend(results)\n\n    if total_count is None:\n        total_count = body.get(\"count\", len(results))\n    if page_size is None:\n        page_size = len(results) or int(base_query.get(\"limit\") or 50)\n\n    offset += page_size\n    if not results or offset >= total_count:\n        break\n\nif total_count is not None and len(all_results) != total_count:\n    log(\"warning\", \"fetched device count does not match NetBox reported count\",\n        fetched=len(all_results), netbox_count=total_count)\n\nsanitized_results = scrub(all_results)\n\nset_output({\n    \"data\": {\"results\": sanitized_results, \"count\": total_count},\n    \"count\": total_count,\n    \"row_count_fetched\": len(all_results),\n})\n",
+        "script_language": "python",
+        "input_schema": {
+          "type": "object",
+          "required": [
+            "netbox_integration_id"
+          ],
+          "properties": {
+            "query": {
+              "type": "object",
+              "description": "Extra NetBox query params (e.g. status filter)"
+            },
+            "page_limit": {
+              "type": "integer",
+              "default": 1000,
+              "description": "Requested page size; server may cap it lower"
+            },
+            "netbox_integration_id": {
+              "type": "string",
+              "description": "UUID of the NetBox integration"
+            }
+          }
+        },
+        "output_schema": {
+          "type": "object",
+          "properties": {
+            "data": {
+              "type": "object",
+              "properties": {
+                "count": {
+                  "type": "integer"
+                },
+                "results": {
+                  "type": "array"
+                }
+              }
+            },
+            "count": {
+              "type": "integer"
+            },
+            "row_count_fetched": {
+              "type": "integer"
+            }
+          }
+        },
+        "target_mode": "once",
+        "max_parallel": 1,
+        "timeout_seconds": 120,
+        "idempotency": "idempotent",
+        "retry_policy": {},
+        "logic_diagram_mermaid": "flowchart TD\n    in([Input: netbox_integration_id, query, page_limit]) --> req[GET /api/dcim/devices at offset 0]\n    req --> ok{HTTP ok?}\n    ok -->|no| fail([step FAILS with NetBox HTTP error])\n    ok -->|yes| collect[Append page results; record count + page_size on first page]\n    collect --> more{offset < NetBox count?}\n    more -->|yes| req\n    more -->|no| check{fetched == NetBox count?}\n    check -->|no| warn[Log warning: count mismatch]\n    check -->|yes| scrub[Recursively replace any string containing '{{ }}' with a safe placeholder]\n    warn --> scrub\n    scrub --> out([Output: data.results (sanitized), data.count, row_count_fetched])",
+        "network_enabled": true
+      }
+    ],
+    "integrations": [],
+    "mcp_servers": [],
+    "credentials": [],
+    "repositories": [],
+    "workflows": []
+  },
+  "triggers": []
+}

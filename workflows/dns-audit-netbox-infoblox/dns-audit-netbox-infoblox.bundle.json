@@ -1,0 +1,492 @@
+{
+  "schema_version": "v3",
+  "kind": "flow_weaver.workflow_bundle",
+  "exported_at": "2026-10-23T20:10:41.0961147Z",
+  "exported_by": {
+    "product": "flow-weaver",
+    "version": "1.0.0"
+  },
+  "requires": {
+    "snippet_types": [
+      "email_send",
+      "integration_action",
+      "python_snippet"
+    ],
+    "capabilities": [
+      "max_parallel",
+      "python_network",
+      "run_namespace"
+    ],
+    "secrets": []
+  },
+  "workflow": {
+    "name": "DNS Audit: NetBox vs. Infoblox",
+    "description": "Checks active NetBox devices against Infoblox DNS host records, tags devices dns-verified/missing-dns, emails a timestamped CSV report. Failure at any step sends a notification email.",
+    "environment": "draft",
+    "input_schema": {
+      "type": "object"
+    },
+    "metadata": {}
+  },
+  "nodes": [
+    {
+      "x": 0,
+      "y": 26,
+      "id": "__start__",
+      "snippet_id": "__start__",
+      "config_overrides": {}
+    },
+    {
+      "x": 256,
+      "y": 18,
+      "id": "fetch-netbox-devices",
+      "snippet_id": "c9dce221-4e9d-4128-803a-c3cc098154e9",
+      "config_overrides": {
+        "query": {
+          "limit": 1000,
+          "status": "active"
+        },
+        "action": "dcim_devices_list",
+        "integration": "netbox"
+      }
+    },
+    {
+      "x": 636,
+      "y": 56,
+      "id": "reconcile-dns",
+      "snippet_id": "1b262c05-f251-48f7-b112-6d1ad44b4ba5",
+      "config_overrides": {
+        "infoblox_integration_id": "71e059bd-60c0-4396-a531-ceaa80a88030"
+      }
+    },
+    {
+      "x": 1016,
+      "y": 94,
+      "id": "apply-netbox-tags",
+      "snippet_id": "032ec4f7-2513-4c11-8171-5e08a069e911",
+      "config_overrides": {
+        "changes": true,
+        "netbox_integration_id": "05c263ff-a471-48e0-bf9f-6a31201e6806"
+      }
+    },
+    {
+      "x": 1396,
+      "y": 132,
+      "id": "send-report-email",
+      "snippet_id": "294ffaf9-1d7a-4038-9f68-edc60dd646a1",
+      "config_overrides": {
+        "to": "netops@example.com",
+        "body": "Attached is the DNS reconciliation report comparing NetBox inventory against Infoblox DNS.",
+        "subject": "DNS inventory reconciliation report",
+        "attachments": [
+          {
+            "file_name": "{{ steps.reconcile-dns.output.filename }}",
+            "content_type": "text/csv",
+            "content_base64": "{{ steps.reconcile-dns.output.content_base64 }}"
+          }
+        ]
+      }
+    },
+    {
+      "x": 1776,
+      "y": 0,
+      "id": "notify-failure",
+      "snippet_id": "294ffaf9-1d7a-4038-9f68-edc60dd646a1",
+      "config_overrides": {
+        "to": "netops@example.com",
+        "body": "Workflow `{{ run.workflow_name }}` failed at step `{{ run.failed_step_id }}` with: {{ run.failed_step_error }}\n\nRun details: {{ run.url }}",
+        "subject": "FlowWeaver run {{ run.id }} failed — DNS Audit: NetBox vs. Infoblox"
+      }
+    },
+    {
+      "x": 2156,
+      "y": 64,
+      "id": "__end__",
+      "snippet_id": "__end__",
+      "config_overrides": {}
+    }
+  ],
+  "edges": [
+    {
+      "type": "success",
+      "source": "__start__",
+      "target": "fetch-netbox-devices",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "success",
+      "source": "fetch-netbox-devices",
+      "target": "reconcile-dns",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "success",
+      "source": "reconcile-dns",
+      "target": "apply-netbox-tags",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "success",
+      "source": "apply-netbox-tags",
+      "target": "send-report-email",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "success",
+      "source": "send-report-email",
+      "target": "__end__",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "failure",
+      "source": "fetch-netbox-devices",
+      "target": "notify-failure",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "failure",
+      "source": "reconcile-dns",
+      "target": "notify-failure",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "failure",
+      "source": "apply-netbox-tags",
+      "target": "notify-failure",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "failure",
+      "source": "send-report-email",
+      "target": "notify-failure",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    },
+    {
+      "type": "always",
+      "source": "notify-failure",
+      "target": "__end__",
+      "source_handle": "s-right",
+      "target_handle": "t-left"
+    }
+  ],
+  "dependencies": {
+    "snippets": [
+      {
+        "id": "294ffaf9-1d7a-4038-9f68-edc60dd646a1",
+        "slug": "email-send",
+        "name": "email_send",
+        "type": "email_send",
+        "description": "Send an email / e-mail notification / report by mail. Delivers through a configured SMTP relay (Gmail, Microsoft 365, SendGrid, Amazon SES, Mailgun or a custom server — see /email). Use this whenever a workflow should email someone. Set `to` and `subject` in the node's config_overrides plus `body` (plain text) and/or `html`; optional `cc`, `bcc`, `reply_to` and `attachments` (base64 — feed it from an upstream `report` step). Omit `channel_id` to use the default channel. Host, port, TLS and the password live on the channel, never on the node. The send is NOT reversible. Branch on {{ steps.X.output.ok }}. Use target_mode='once' (not device-scoped).",
+        "code": null,
+        "script_language": null,
+        "input_schema": {
+          "type": "object",
+          "x-order": [
+            "channel_id",
+            "to",
+            "cc",
+            "bcc",
+            "subject",
+            "body",
+            "html",
+            "from_address",
+            "from_name",
+            "reply_to",
+            "attachments"
+          ],
+          "required": [
+            "to",
+            "subject"
+          ],
+          "properties": {
+            "cc": {
+              "type": [
+                "string",
+                "array"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "Optional carbon-copy recipient(s), same shape as `to`."
+            },
+            "to": {
+              "type": [
+                "string",
+                "array"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "Recipient(s): one address, a comma-separated string, or an array of addresses."
+            },
+            "bcc": {
+              "type": [
+                "string",
+                "array"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "Optional blind-copy recipient(s), same shape as `to`."
+            },
+            "body": {
+              "type": "string",
+              "format": "textarea",
+              "description": "Plain-text body. Supply `body`, `html`, or both — at least one is required."
+            },
+            "html": {
+              "type": "string",
+              "format": "textarea",
+              "description": "HTML body. When supplied alone, a plain-text alternative is generated automatically."
+            },
+            "subject": {
+              "type": "string",
+              "description": "Subject line. Templates like {{ steps.X.output.field }} expand before send."
+            },
+            "reply_to": {
+              "type": "string",
+              "description": "Optional Reply-To address."
+            },
+            "from_name": {
+              "type": "string",
+              "description": "Optional display name for the sender."
+            },
+            "channel_id": {
+              "type": "string",
+              "description": "Optional. The EmailChannel (SMTP relay) to send through — a UUID from /email. Omit to use the deployment's default channel."
+            },
+            "attachments": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "file_name",
+                  "content_base64"
+                ],
+                "properties": {
+                  "file_name": {
+                    "type": "string"
+                  },
+                  "content_type": {
+                    "type": "string",
+                    "description": "MIME type; defaults to application/octet-stream."
+                  },
+                  "content_base64": {
+                    "type": "string",
+                    "description": "Base64-encoded file content."
+                  }
+                }
+              },
+              "description": "Optional attachments. Feed content_base64 from an upstream `report` step to email a generated PDF/XLSX."
+            },
+            "from_address": {
+              "type": "string",
+              "description": "Optional override of the channel's sender. Most providers reject a From they do not own."
+            }
+          }
+        },
+        "output_schema": {
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean",
+              "description": "TRUE only when the SMTP server accepted the message — branch on this."
+            },
+            "error": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "SMTP failure reason when ok=false (auth rejected, TLS handshake, unreachable relay)."
+            },
+            "provider": {
+              "type": "string",
+              "description": "gmail | outlook365 | sendgrid | ses | mailgun | smtp."
+            },
+            "channel_id": {
+              "type": "string"
+            },
+            "elapsed_ms": {
+              "type": "integer"
+            },
+            "message_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "RFC 5322 Message-ID of the sent message."
+            },
+            "recipients": {
+              "type": "integer",
+              "description": "Total to + cc + bcc addresses."
+            },
+            "channel_name": {
+              "type": "string"
+            }
+          }
+        },
+        "target_mode": "once",
+        "max_parallel": 10,
+        "timeout_seconds": 60,
+        "idempotency": null,
+        "retry_policy": {},
+        "logic_diagram_mermaid": null,
+        "network_enabled": false
+      },
+      {
+        "id": "c9dce221-4e9d-4128-803a-c3cc098154e9",
+        "slug": "integration-action",
+        "name": "integration_action",
+        "type": "integration_action",
+        "description": "Call a registered Integration action (e.g. AWX launch, NetBox query, email send). Set `integration_id` and `action_id` in the node's config_overrides along with any body/params the action needs. Look up available actions with fw_integrations:list_palette_actions.",
+        "code": null,
+        "script_language": null,
+        "input_schema": {
+          "type": "object"
+        },
+        "output_schema": {
+          "type": "object"
+        },
+        "target_mode": "once",
+        "max_parallel": 10,
+        "timeout_seconds": 30,
+        "idempotency": null,
+        "retry_policy": {},
+        "logic_diagram_mermaid": null,
+        "network_enabled": false
+      },
+      {
+        "id": "1b262c05-f251-48f7-b112-6d1ad44b4ba5",
+        "slug": "dns-reconcile-infoblox-csv-once-2",
+        "name": "dns-reconcile-infoblox-csv-once",
+        "type": "python_snippet",
+        "description": "Reconcile active NetBox devices against Infoblox host records, classify DNS status, and build a timestamped CSV payload for email/reporting.",
+        "code": "import csv\nimport io\nimport base64\nfrom datetime import datetime, timezone\nfrom flowweaver_runtime import get_input, set_output, integration\n\n\ndef _strip_cidr(value):\n    if not value:\n        return \"\"\n    return str(value).split(\"/\")[0]\n\n\ndef _normalize_tags(tags):\n    out = []\n    for t in tags or []:\n        if isinstance(t, dict):\n            slug = t.get(\"slug\") or t.get(\"name\")\n            if slug:\n                out.append(str(slug))\n        elif isinstance(t, str):\n            out.append(t)\n    return out\n\n\ninp = get_input()\nnb = inp[\"steps\"][\"fetch-netbox-devices\"][\"output\"]\nif \"data\" not in nb or \"results\" not in nb[\"data\"]:\n    raise ValueError(f\"expected NetBox list response under output.data.results, got keys: {sorted(nb)}\")\n\ndevices = nb[\"data\"][\"results\"]\ninfoblox = integration(\"infoblox\")\nrows = []\nupdates = []\ntimestamp = datetime.now(timezone.utc).strftime(\"%Y%m%dT%H%M%SZ\")\n\nfor dev in devices:\n    name = str(dev.get(\"name\") or \"\").strip()\n    primary = dev.get(\"primary_ip4\") or {}\n    ip = _strip_cidr(primary.get(\"address\"))\n    if not name:\n        continue\n\n    existing_tags = _normalize_tags(dev.get(\"tags\"))\n\n    search = infoblox.get(\"/record:host\", params={\"name\": name})\n    if not search.ok:\n        raise RuntimeError(\n            f\"Infoblox lookup failed for device '{name}': HTTP {search.status_code} - {search.text[:300]}\"\n        )\n    try:\n        payload = search.json()\n    except Exception as err:\n        raise RuntimeError(\n            f\"Infoblox returned invalid JSON for device '{name}' (HTTP {search.status_code}): {err}\"\n        )\n\n    # Only an explicit, successfully-parsed empty list means \"no DNS record\".\n    # A non-list payload is not a shape Infoblox's /record:host is documented\n    # to return on success, so treat it as an error rather than guessing.\n    if not isinstance(payload, list):\n        raise RuntimeError(\n            f\"Infoblox returned an unexpected payload shape for device '{name}' \"\n            f\"(HTTP {search.status_code}): expected a JSON list, got {type(payload).__name__}\"\n        )\n\n    exists = bool(payload)\n    status = \"In Sync\" if exists else \"Missing DNS\"\n    tag = \"dns-verified\" if exists else \"missing-dns\"\n\n    rows.append([name, ip, status, tag])\n    updates.append({\n        \"device_id\": dev.get(\"id\"),\n        \"device_name\": name,\n        \"ip\": ip,\n        \"status\": status,\n        \"tag\": tag,\n        \"existing_tags\": existing_tags,\n    })\n\nbuf = io.StringIO()\nwriter = csv.writer(buf)\nwriter.writerow([\"device_name\", \"ip\", \"status\", \"tag\"])\nwriter.writerows(rows)\ncontent = buf.getvalue().encode(\"utf-8\")\n\nset_output({\n    \"timestamp\": timestamp,\n    \"filename\": f\"dns-inventory-reconciliation-{timestamp}.csv\",\n    \"content_type\": \"text/csv\",\n    \"content_base64\": base64.b64encode(content).decode(\"ascii\"),\n    \"row_count\": len(rows),\n    \"rows\": rows,\n    \"updates\": updates,\n})",
+        "script_language": "python",
+        "input_schema": {
+          "type": "object",
+          "required": [
+            "infoblox_integration_id"
+          ],
+          "properties": {
+            "infoblox_integration_id": {
+              "type": "string"
+            }
+          }
+        },
+        "output_schema": {
+          "type": "object",
+          "properties": {
+            "rows": {
+              "type": "array"
+            },
+            "updates": {
+              "type": "array"
+            },
+            "filename": {
+              "type": "string"
+            },
+            "row_count": {
+              "type": "integer"
+            },
+            "timestamp": {
+              "type": "string"
+            },
+            "content_type": {
+              "type": "string"
+            },
+            "content_base64": {
+              "type": "string"
+            }
+          }
+        },
+        "target_mode": "once",
+        "max_parallel": 1,
+        "timeout_seconds": 120,
+        "idempotency": "idempotent",
+        "retry_policy": {},
+        "logic_diagram_mermaid": "flowchart TD\n    in([Input: NetBox device list + Infoblox integration]) --> loop{For each device}\n    loop --> host[Extract name, primary IP, existing tags]\n    host --> lookup[Infoblox GET /record:host?name=device]\n    lookup --> okcheck{HTTP ok?}\n    okcheck -->|no| fail1([step FAILS: names device + HTTP status])\n    okcheck -->|yes| parse{Valid JSON list?}\n    parse -->|no / wrong shape| fail2([step FAILS: names device + HTTP status])\n    parse -->|yes, non-empty| sync[Status = In Sync / Tag = dns-verified]\n    parse -->|yes, empty| miss[Status = Missing DNS / Tag = missing-dns]\n    sync --> row[Append CSV row + update payload]\n    miss --> row\n    row --> loop\n    loop -->|done| csv[Build timestamped CSV]\n    csv --> out([Output: filename, content_base64, rows, updates])",
+        "network_enabled": true
+      },
+      {
+        "id": "032ec4f7-2513-4c11-8171-5e08a069e911",
+        "slug": "apply-netbox-dns-tags-once-2",
+        "name": "apply-netbox-dns-tags-once",
+        "type": "python_snippet",
+        "description": "Apply reconciliation tags back to NetBox while preserving existing tags.",
+        "code": "from flowweaver_runtime import get_input, set_output, integration\n\n\n# Mutually exclusive DNS reconciliation tags: applying one must remove the other.\nOPPOSITE_TAG = {\n    \"dns-verified\": \"missing-dns\",\n    \"missing-dns\": \"dns-verified\",\n}\n\n\ndef _normalize_tags(tags):\n    slugs = []\n    for t in tags or []:\n        if isinstance(t, dict):\n            slug = t.get(\"slug\") or t.get(\"name\")\n            if slug and slug not in slugs:\n                slugs.append(str(slug))\n        elif isinstance(t, str):\n            if t not in slugs:\n                slugs.append(t)\n    return slugs\n\n\ndef _reconciled_tags(existing, new_slug):\n    \"\"\"Add new_slug, drop its opposite DNS tag, keep every other tag as-is.\"\"\"\n    slugs = _normalize_tags(existing)\n    opposite = OPPOSITE_TAG.get(new_slug)\n    result = [s for s in slugs if s != opposite]\n    if new_slug not in result:\n        result.append(new_slug)\n    return result\n\n\ninp = get_input()\nreconcile = inp[\"steps\"][\"reconcile-dns\"][\"output\"]\nif \"updates\" not in reconcile:\n    raise ValueError(f\"expected reconcile output.updates, got keys: {sorted(reconcile)}\")\n\nnb = integration(\"netbox\")\nresults = []\nupdated_count = 0\nskipped_count = 0\nunchanged_count = 0\n\nfor item in reconcile[\"updates\"]:\n    device_id = item.get(\"device_id\")\n    if not device_id:\n        skipped_count += 1\n        results.append({\"device_name\": item.get(\"device_name\"), \"ok\": False, \"reason\": \"missing device_id\"})\n        continue\n\n    existing_slugs = _normalize_tags(item.get(\"existing_tags\"))\n    new_slugs = _reconciled_tags(item.get(\"existing_tags\"), item.get(\"tag\"))\n\n    # Order-independent comparison: same set of tags means nothing to PATCH.\n    if set(new_slugs) == set(existing_slugs):\n        unchanged_count += 1\n        results.append({\n            \"device_id\": device_id,\n            \"device_name\": item.get(\"device_name\"),\n            \"tag\": item.get(\"tag\"),\n            \"ok\": True,\n            \"changed\": False,\n            \"reason\": \"tags already correct, PATCH skipped\",\n        })\n        continue\n\n    tags = [{\"slug\": s} for s in new_slugs]\n    resp = nb.patch(f\"/api/dcim/devices/{device_id}/\", json={\"tags\": tags})\n    ok = bool(resp.ok)\n    if ok:\n        updated_count += 1\n    else:\n        skipped_count += 1\n\n    results.append({\n        \"device_id\": device_id,\n        \"device_name\": item.get(\"device_name\"),\n        \"tag\": item.get(\"tag\"),\n        \"ok\": ok,\n        \"changed\": ok,\n        \"status_code\": resp.status_code,\n        \"error\": None if ok else resp.text[:300],\n    })\n\nset_output({\n    \"updated_count\": updated_count,\n    \"skipped_count\": skipped_count,\n    \"unchanged_count\": unchanged_count,\n    \"results\": results,\n})",
+        "script_language": "python",
+        "input_schema": {
+          "type": "object",
+          "required": [
+            "netbox_integration_id",
+            "changes"
+          ],
+          "properties": {
+            "changes": {
+              "type": "boolean"
+            },
+            "netbox_integration_id": {
+              "type": "string"
+            }
+          }
+        },
+        "output_schema": {
+          "type": "object",
+          "properties": {
+            "results": {
+              "type": "array"
+            },
+            "skipped_count": {
+              "type": "integer"
+            },
+            "updated_count": {
+              "type": "integer"
+            },
+            "unchanged_count": {
+              "type": "integer"
+            }
+          }
+        },
+        "target_mode": "once",
+        "max_parallel": 1,
+        "timeout_seconds": 120,
+        "idempotency": "requires_compensation",
+        "retry_policy": {},
+        "logic_diagram_mermaid": "flowchart TD\n    in([Input: reconcile updates + NetBox integration]) --> client[Resolve NetBox client via integration(\"netbox\")]\n    client --> loop{For each device update}\n    loop --> norm[Normalize existing tags]\n    norm --> compute[Add target tag, remove opposite DNS tag, keep all others]\n    compute --> same{New tag set == existing tag set?}\n    same -->|yes| skip[Skip PATCH, count unchanged]\n    same -->|no| patch[PATCH NetBox device tags]\n    patch --> ok{Patch succeeded?}\n    ok -->|yes| good[Count updated]\n    ok -->|no| bad[Count skipped + capture error]\n    skip --> loop\n    good --> loop\n    bad --> loop\n    loop -->|done| out([Output: updated_count, skipped_count, unchanged_count, results])",
+        "network_enabled": true
+      }
+    ],
+    "integrations": [
+      {
+        "id": "05c263ff-a471-48e0-bf9f-6a31201e6806",
+        "slug": "netbox",
+        "name": "Netbox",
+        "type": "netbox",
+        "base_url": "https://netbox.example.com/",
+        "actions": [
+          {
+            "id": "e64bdb6c-2ef4-4fe9-aec9-1e0f2e28b567",
+            "name": "dcim_devices_list",
+            "method": "GET",
+            "path": "/api/dcim/devices/"
+          }
+        ]
+      }
+    ],
+    "mcp_servers": [],
+    "credentials": [],
+    "repositories": [],
+    "workflows": []
+  },
+  "triggers": []
+}
