@@ -22,7 +22,7 @@
 # cannot run this script. Re-exec under bash transparently instead of failing
 # with "Illegal option -o pipefail".
 if [ -z "${BASH_VERSION:-}" ]; then
-    command -v bash >/dev/null 2>&1 || { echo "Este script necesita bash." >&2; exit 1; }
+    command -v bash >/dev/null 2>&1 || { echo "This script requires bash." >&2; exit 1; }
     exec bash "$0" "$@"
 fi
 
@@ -33,9 +33,9 @@ ok()   { printf '\033[32m✓\033[0m %s\n' "$*"; }
 warn() { printf '\033[33m!\033[0m %s\n' "$*"; }
 die()  { printf '\033[31m✗\033[0m %s\n' "$*" >&2; exit 1; }
 
-[[ ${EUID:-$(id -u)} -eq 0 ]] || die "ejecuta como root (sudo $0)"
+[[ ${EUID:-$(id -u)} -eq 0 ]] || die "run as root (sudo $0)"
 
-echo "FlowWeaver — preparación del host para el sandbox de python_snippet"
+echo "FlowWeaver — host preparation for the python_snippet sandbox"
 echo
 
 # ── 1. Is bubblewrap present? ────────────────────────────────────────────
@@ -71,7 +71,7 @@ VERIFY_WHERE="host"
 verify_now() {
   local st=0
   smoke_test_container || st=$?
-  if [[ $st -ne 2 ]]; then VERIFY_WHERE="contenedor worker"; return $st; fi
+  if [[ $st -ne 2 ]]; then VERIFY_WHERE="worker container"; return $st; fi
   VERIFY_WHERE="host"
   smoke_test
 }
@@ -79,7 +79,7 @@ verify_now() {
 verify_now && initial_status=0 || initial_status=$?
 
 if [[ $initial_status -eq 0 ]]; then
-  ok "los user namespaces sin privilegios ya funcionan (verificado en el $VERIFY_WHERE) — nada que hacer."
+  ok "unprivileged user namespaces already work (verified in the $VERIFY_WHERE) — nothing to do."
   exit 0
 fi
 
@@ -89,9 +89,9 @@ fi
 # the two produced a confident "the smoke test failed" on hosts that simply do
 # not have bubblewrap installed.
 if [[ $initial_status -eq 2 ]]; then
-  warn "bubblewrap no está instalado en este host y no hay ningún contenedor worker"
-  log "($CONTAINER) corriendo, así que el sandbox no se puede verificar desde aquí."
-  log "Se comprueban igualmente las restricciones del kernel."
+  warn "bubblewrap is not installed on this host and no worker container"
+  log "($CONTAINER) is running, so the sandbox cannot be verified from here."
+  log "Checking the kernel restrictions anyway."
   echo
 fi
 
@@ -110,7 +110,7 @@ applied=0
 
 # ── 2a. Ubuntu 23.10+ — AppArmor restriction ─────────────────────────────
 if [[ "$APPARMOR_VAL" == "1" ]]; then
-  log "detectado: $APPARMOR_KNOB=1 (restricción AppArmor de Ubuntu 23.10+)"
+  log "detected: $APPARMOR_KNOB=1 (Ubuntu 23.10+ AppArmor restriction)"
 
   # Preferred: grant `userns` to bwrap ALONE and leave the system-wide
   # hardening in place. Turning the sysctl off would lift the restriction for
@@ -130,17 +130,17 @@ profile bwrap $BWRAP_PATH flags=(unconfined) {
   include if exists <local/bwrap>
 }
 EOF
-      log "escrito /etc/apparmor.d/bwrap"
+      log "wrote /etc/apparmor.d/bwrap"
     else
-      log "/etc/apparmor.d/bwrap ya existía"
+      log "/etc/apparmor.d/bwrap already existed"
     fi
 
     if systemctl reload apparmor >/dev/null 2>&1 \
        || apparmor_parser -r /etc/apparmor.d/bwrap >/dev/null 2>&1; then
       applied=1
-      log "apparmor recargado"
+      log "apparmor reloaded"
     else
-      warn "no se pudo recargar apparmor — se usará el sysctl como alternativa"
+      warn "could not reload apparmor — falling back to the sysctl"
     fi
   fi
 
@@ -151,20 +151,20 @@ EOF
   if [[ $applied -eq 0 ]] || ! verify_now; then
     echo "$APPARMOR_KNOB=0" > /etc/sysctl.d/99-flowweaver-userns.conf
     sysctl --system >/dev/null 2>&1 || sysctl -w "$APPARMOR_KNOB=0" >/dev/null
-    log "escrito /etc/sysctl.d/99-flowweaver-userns.conf ($APPARMOR_KNOB=0)"
+    log "wrote /etc/sysctl.d/99-flowweaver-userns.conf ($APPARMOR_KNOB=0)"
     applied=1
   fi
 
 # ── 2b. Older Debian / Ubuntu ────────────────────────────────────────────
 elif [[ "$CLONE_VAL" == "0" ]]; then
-  log "detectado: $CLONE_KNOB=0 (Debian/Ubuntu antiguos)"
+  log "detected: $CLONE_KNOB=0 (older Debian/Ubuntu)"
   echo "$CLONE_KNOB=1" > /etc/sysctl.d/99-flowweaver-userns.conf
   sysctl --system >/dev/null 2>&1 || sysctl -w "$CLONE_KNOB=1" >/dev/null
   applied=1
 
 # ── 2c. RHEL and derivatives ─────────────────────────────────────────────
 elif [[ -n "$MAX_VAL" && "$MAX_VAL" -eq 0 ]]; then
-  log "detectado: $MAX_KNOB=0 (familia RHEL)"
+  log "detected: $MAX_KNOB=0 (RHEL family)"
   echo "$MAX_KNOB=15000" > /etc/sysctl.d/99-flowweaver-userns.conf
   sysctl --system >/dev/null 2>&1 || sysctl -w "$MAX_KNOB=15000" >/dev/null
   applied=1
@@ -173,15 +173,15 @@ fi
 # ── 3. Verify ────────────────────────────────────────────────────────────
 echo
 if [[ $applied -eq 0 && $initial_status -eq 2 ]]; then
-  ok "no se encontró ninguna restricción del kernel sobre user namespaces en este host."
-  log "Nada que cambiar. Verifícalo desde dentro del worker, que trae bubblewrap:"
+  ok "no kernel restriction on user namespaces was found on this host."
+  log "Nothing to change. Verify it from inside the worker, which ships bubblewrap:"
   log "docker exec -u app <worker> bwrap --ro-bind / / --unshare-user true"
   exit 0
 fi
 
 if [[ $applied -eq 0 ]]; then
-  warn "ninguna restricción conocida de user namespaces coincide y aun así la prueba falla."
-  log "Reporta estos valores para que la detección se pueda extender:"
+  warn "no known user-namespace restriction matches, yet the test still fails."
+  log "Report these values so the detection can be extended:"
   log "  $APPARMOR_KNOB = ${APPARMOR_VAL:-<absent>}"
   log "  $CLONE_KNOB = ${CLONE_VAL:-<absent>}"
   log "  $MAX_KNOB = ${MAX_VAL:-<absent>}"
@@ -195,12 +195,12 @@ fi
 verify_now && smoke_status=0 || smoke_status=$?
 
 if [[ $smoke_status -eq 0 ]]; then
-  ok "los user namespaces sin privilegios ya funcionan (verificado en el $VERIFY_WHERE). Reinicia el worker:"
+  ok "unprivileged user namespaces now work (verified in the $VERIFY_WHERE). Restart the worker:"
   log "docker compose -f deploy/docker-compose.yml restart worker"
 elif [[ $smoke_status -eq 2 ]]; then
-  warn "aplicado, pero no hay ni contenedor worker corriendo ni bubblewrap en el host"
-  log "para verificarlo desde aquí. Compruébalo dentro del contenedor cuando arranque:"
+  warn "applied, but there is neither a running worker container nor bubblewrap on the host"
+  log "to verify it from here. Check it inside the container once it starts:"
   log "docker exec -u app $CONTAINER bwrap --ro-bind / / --unshare-user true"
 else
-  die "el fix se aplicó pero el sandbox sigue fallando — mira docs/handlers/python_snippet.md"
+  die "the fix was applied but the sandbox still fails — see docs/handlers/python_snippet.md"
 fi

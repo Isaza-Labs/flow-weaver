@@ -68,6 +68,19 @@ public class KitIntegrityTests
         var pinned = Pinned();
         var (digest, files) = Digest();
 
+        // The digest is over raw bytes, which git stores with LF. A checkout that converted them
+        // to CRLF changes every file without changing the contract, so name that cause directly
+        // instead of reporting an edit.
+        var crlf = files.Where(f => File.ReadAllBytes(Path.Combine(KitRoot, f)).Contains((byte)'\r')).ToList();
+        Assert.True(
+            crlf.Count == 0,
+            $"""
+            {crlf.Count} conformance kit file(s) contain CR bytes (first: {crlf.FirstOrDefault()}).
+            The kit is stored and pinned with LF line endings. Check that .gitattributes still sets
+            'conformance/** text eol=lf', delete conformance/vectors and conformance/schema from the
+            working tree and run 'git checkout -- conformance' to restore them with LF.
+            """);
+
         Assert.True(
             pinned["digest"] == digest,
             $"""

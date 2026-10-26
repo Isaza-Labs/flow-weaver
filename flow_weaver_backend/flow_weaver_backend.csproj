@@ -4,6 +4,9 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Release version. Keep it equal to frontend/package.json, the CHANGELOG entry and the
+         git tag; bundle exports report it as exported_by.version. -->
+    <Version>0.9.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -35,7 +38,7 @@
          documented-obsolete and cannot do modern STARTTLS/OAuth negotiation.
          Keep at >= 4.15.0: 4.14.x and below carry GHSA-9j88-vvj5-vhgr /
          GHSA-g7hc-96xr-gvvx (moderate). -->
-    <PackageReference Include="MailKit" Version="4.17.0" />
+    <PackageReference Include="MailKit" Version="4.18.2" />
     <PackageReference Include="Microsoft.Azure.Relay" Version="3.1.1" />
     <PackageReference Include="QuestPDF" Version="2025.1.5" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.6" />

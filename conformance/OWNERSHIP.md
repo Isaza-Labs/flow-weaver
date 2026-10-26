@@ -15,7 +15,23 @@ A contract change is a pull request against this repository. It must:
    changing the contract").
 4. Regenerate `PINNED` (digest and per-family counts) in the same change. The integrity check in
    `flow_weaver_backend.Tests/Conformance/KitIntegrityTests.cs` fails when the vectors or the
-   schema do not match it.
+   schema do not match it, and its failure message prints the digest it computed: run
+   `dotnet test flow_weaver_backend.Tests/flow_weaver_backend.Tests.csproj --filter FullyQualifiedName~KitIntegrityTests`
+   after the change and copy that value into `PINNED`.
+
+## How the digest is computed
+
+The input is every `vectors/**/*.json` file plus `schema/workflow.v1.schema.json`. Each file is
+named by its path relative to `conformance/`, with `/` as the separator. The files are sorted by
+that path using ordinal (byte) comparison. Each one then contributes its UTF-8 path, a NUL byte,
+its raw content and a NUL byte to one SHA-256. Content is hashed byte for byte, with no
+normalization.
+
+The bytes are the ones stored in git, which use LF line endings. `.gitattributes` sets
+`conformance/** text eol=lf`, so a checkout keeps LF even when `core.autocrlf=true`, the Git
+for Windows default. Without that rule, Windows checkouts converted every vector to CRLF and the
+digest no longer matched `PINNED`, although the contract had not changed. If you vendor the kit
+through a channel that rewrites line endings, convert the files back to LF before you check them.
 
 Do not edit files in this directory to make a build pass. The kit is what tells you the build is
 wrong.

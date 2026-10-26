@@ -1,0 +1,160 @@
+# Dependency advisories for the frontend (npm) and backend (NuGet) trees.
+#
+# How a result is handled is written down in docs/repository/CI_GATES.md, "Dependency
+# advisories". In short:
+#   - a pull request or push that changes a manifest or lockfile FAILS at high or critical;
+#   - the weekly and manual runs keep ONE open issue, labelled `dependencies`, in step with the
+#     current findings (moderate and above), and close it when there are none left.
+name: Dependency audit
+
+on:
+  schedule:
+    - cron: '17 6 * * 1' # Mondays 06:17 UTC
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'frontend/package.json'
+      - 'frontend/package-lock.json'
+      - '**/*.csproj'
+      - '**/packages.lock.json'
+      - '**/Directory.Packages.props'
+      - '.github/workflows/dependency-audit.yml'
+      - 'tools/dependency-audit-report.mjs'
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/package.json'
+      - 'frontend/package-lock.json'
+      - '**/*.csproj'
+      - '**/packages.lock.json'
+      - '**/Directory.Packages.props'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependency-audit-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      blocking: ${{ steps.gate.outputs.blocking }}
+      tracked: ${{ steps.track.outputs.tracked }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.nvmrc
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: npm audit
+        working-directory: frontend
+        # npm audit exits non-zero whenever it finds anything; the report step decides.
+        run: npm audit --json --package-lock-only > ../npm-audit.json || true
+
+      - name: NuGet vulnerable packages
+        run: |
+          for p in flow_weaver_backend/flow_weaver_backend.csproj flow_weaver_backend.Tests/flow_weaver_backend.Tests.csproj; do
+            dotnet restore "$p" > /dev/null
+            name=$(basename "$p" .csproj)
+            dotnet list "$p" package --vulnerable --include-transitive --format json > "nuget-$name.json"
+          done
+
+      - name: Blocking threshold (high)
+        id: gate
+        run: |
+          set +e
+          node tools/dependency-audit-report.mjs --npm npm-audit.json \
+            --nuget nuget-flow_weaver_backend.json --nuget nuget-flow_weaver_backend.Tests.json \
+            --fail-on high --out report-high.md > /dev/null
+          code=$?
+          set -e
+          [ "$code" -le 1 ] || exit "$code"
+          echo "blocking=$([ "$code" = 1 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Tracking threshold (moderate)
+        id: track
+        run: |
+          set +e
+          node tools/dependency-audit-report.mjs --npm npm-audit.json \
+            --nuget nuget-flow_weaver_backend.json --nuget nuget-flow_weaver_backend.Tests.json \
+            --fail-on moderate --out report.md
+          code=$?
+          set -e
+          [ "$code" -le 1 ] || exit "$code"
+          echo "tracked=$([ "$code" = 1 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-audit
+          path: |
+            npm-audit.json
+            nuget-*.json
+            report.md
+          retention-days: 30
+
+      - name: Fail on high or critical advisories
+        if: steps.gate.outputs.blocking == 'true' && (github.event_name == 'pull_request' || github.event_name == 'push')
+        run: |
+          echo "::error::High or critical dependency advisories are present. See the job summary and docs/repository/CI_GATES.md."
+          exit 1
+
+  # Scheduled and manual runs only: one tracking issue, updated in place, closed when clean.
+  track:
+    name: track
+    needs: audit
+    if: always() && needs.audit.result == 'success' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dependency-audit
+
+      - uses: actions/github-script@v7
+        env:
+          TRACKED: ${{ needs.audit.outputs.tracked }}
+        with:
+          script: |
+            const fs = require('fs');
+            const title = 'Dependency audit: open advisories';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const { data: open } = await github.rest.issues.listForRepo({
+              ...context.repo, state: 'open', labels: 'dependencies', per_page: 100,
+            });
+            const existing = open.find((i) => i.title === title && !i.pull_request);
+
+            if (process.env.TRACKED !== 'true') {
+              if (existing) {
+                await github.rest.issues.createComment({ ...context.repo, issue_number: existing.number,
+                  body: `No moderate or higher advisories remain as of ${runUrl}. Closing.` });
+                await github.rest.issues.update({ ...context.repo, issue_number: existing.number, state: 'closed' });
+              }
+              return;
+            }
+
+            const body = [
+              'Kept up to date by the scheduled dependency audit. Each entry needs an outcome recorded',
+              'in a comment or a pull request: fixed (with the version), or evaluated (with why it does',
+              'not affect FlowWeaver and what would change that). See docs/repository/CI_GATES.md.',
+              '', `Latest run: ${runUrl}`, '', fs.readFileSync('report.md', 'utf8'),
+            ].join('\n');
+
+            if (existing) {
+              await github.rest.issues.update({ ...context.repo, issue_number: existing.number, body });
+            } else {
+              await github.rest.issues.create({ ...context.repo, title, body, labels: ['dependencies', 'needs-triage'] });
+            }

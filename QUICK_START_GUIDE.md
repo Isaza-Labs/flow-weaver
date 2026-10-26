@@ -12,14 +12,22 @@ and repair them.
 
 ## 1. What you need
 
-| Path | Requirements |
-|---|---|
-| **Docker** (recommended) | Docker Engine + Compose v2; Bash and curl for the Linux/macOS wizard, or PowerShell on Windows. |
-| **Native** | .NET 10 SDK, Node 20+, PostgreSQL 17 reachable and writable. `python_snippet` steps additionally need Linux with `bwrap`. |
+Pick one mode and follow only its column of requirements.
 
-You also need a JWT signing key. Generate one with `openssl rand -base64 48` —
-the backend **refuses to boot** outside Development with a short or known-default
-key.
+| Mode | Who it is for | Requirements on the host |
+|---|---|---|
+| **Docker** (recommended) | Trying FlowWeaver or running an instance | Git (or a source archive), Docker Engine with Compose v2, and either Bash and curl (Linux/macOS wizard) or PowerShell (Windows). The containers build and run the backend and frontend, so .NET and Node are **not** needed on the host. |
+| **Native** | Developing FlowWeaver itself | .NET 10 SDK, Node.js 22 (the version CI and the frontend container use), and PostgreSQL 17 reachable and writable. `python_snippet` steps additionally need Linux with `bwrap`. |
+
+**AI provider (optional).** Only the AI assistant (`/ai/chat`) and **Fix with AI**
+need a provider: an OpenAI, Anthropic or Gemini API key, or an Ollama endpoint.
+Inventory, the visual editor, import, simulation, runs and promotion work without
+one, and the wizard lets you skip the provider step and add it later.
+
+The backend needs a JWT signing key. The wizard and `run.sh`/`run.ps1` generate one
+for you. If you configure `deploy/.env` by hand, generate it with
+`openssl rand -base64 48`: the backend **refuses to boot** outside Development with
+a short or known-default key.
 
 > Every command has a PowerShell twin: `setup.sh`/`setup.ps1`, `run.sh`/`run.ps1`.
 > Where a plain shell command is shown (`cp`, `openssl`, `curl`) it assumes bash —
@@ -29,16 +37,24 @@ key.
 
 ## 2. The fast path: the first-run wizard
 
+Get the code, then start the wizard from `deploy/`:
+
 ```bash
-cd deploy
+git clone https://github.com/Isaza-Labs/flow-weaver.git
+cd flow-weaver/deploy
 chmod +x setup.sh run.sh   # first time only
 ./setup.sh
 ```
 
 ```powershell
-cd deploy
+git clone https://github.com/Isaza-Labs/flow-weaver.git
+cd flow-weaver\deploy
 .\setup.ps1
 ```
+
+This clones the development branch, `main`. To install a published release
+instead, see [Releases](https://github.com/Isaza-Labs/flow-weaver/releases): each
+release lists the `git clone --branch <tag>` command for its version.
 
 One interactive command takes you all the way. Each step detects existing state
 and can be skipped, so it is safe to re-run:
@@ -65,9 +81,15 @@ When it finishes:
 | API | <http://localhost:8080> |
 | API reference | <http://localhost:8080/scalar> |
 
+Installation ends here: the wizard has printed these URLs and you can sign in at
+the app with the admin account from step 2. The first exercise starts in
+[section 4](#4-your-first-workflow).
+
 ---
 
 ## 3. Without the wizard
+
+From the root of the clone:
 
 ```bash
 cd deploy
@@ -115,7 +137,14 @@ The assistant may ask for a target or other missing details. Review the
 resulting workflow in `/workflows`: confirm the device, node, connections,
 environment and inputs. If the assistant cannot create it, check that the AI
 provider and default agent are configured and that your account can create
-workflows. You can also use the visual editor below.
+workflows. You can also use the visual editor or the published example below.
+
+### Or import the published example
+
+[`examples/first-workflow/`](examples/first-workflow/README.md) holds a small
+reachability workflow exported from FlowWeaver. Import it at **Workflows → Import**;
+it lands as a draft and needs no integration, credential or secret. Its README
+explains what to adapt, how to simulate and run it, and what to expect.
 
 ### Build it in the visual editor
 
@@ -185,6 +214,9 @@ npx playwright test                      # e2e, needs the stack running
 
 `conformance/` holds the cross-implementation `workflow.v1` suite.
 The Playwright config and end-to-end tests live under `frontend/`.
+`node tools/check-doc-links.mjs` checks the relative links in the Markdown files.
+CI runs the same checks on every pull request; see
+[CI and release gates](docs/repository/CI_GATES.md).
 
 ---
 
@@ -208,6 +240,21 @@ bash ./run.sh down                                          # stop
 docker compose ps                                      # what is up, and healthy
 docker compose exec db psql -U flowweaver -d flowweaver
 ```
+
+### Asking for help
+
+Ask in [Questions and help](https://github.com/Isaza-Labs/flow-weaver/discussions/categories/q-a)
+(see [SUPPORT.md](SUPPORT.md) for every route). Include:
+
+- **Version or commit:** the release tag you installed, or the output of
+  `git rev-parse --short HEAD` in your clone.
+- **Installation mode:** wizard with Docker, `run.sh`/`run.ps1` without the wizard,
+  or native.
+- **Symptom:** what you did, what you expected and what happened.
+- **Relevant log lines:** for example from `bash ./run.sh logs backend`.
+
+Remove credentials, tokens, `.env` contents, internal hostnames and addresses, and
+customer data before posting.
 
 ---
 

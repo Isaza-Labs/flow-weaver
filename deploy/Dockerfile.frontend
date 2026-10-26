@@ -10,8 +10,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
 COPY frontend/ ./
-RUN npm run build \
- && npm prune --omit=dev
+RUN npm run build
 
 FROM node:22-alpine AS runtime
 WORKDIR /app
@@ -19,8 +18,10 @@ ENV NODE_ENV=production \
     HOST=0.0.0.0 \
     PORT=3000
 
+# adapter-node bundles every module the server imports into build/, so the runtime image
+# needs no node_modules: shipping them only added build tooling (Tailwind, the adapter,
+# their transitive packages) to the attack surface. package.json stays for "type": "module".
 COPY --from=build --chown=node:node /app/build         ./build
-COPY --from=build --chown=node:node /app/node_modules  ./node_modules
 COPY --from=build --chown=node:node /app/package.json  ./package.json
 
 USER node
