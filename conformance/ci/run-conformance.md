@@ -111,13 +111,13 @@ here — a gate that blocks on a family known to diverge is red on its first run
 switched off, and a gate that blocks on nothing is decoration. The kit's rule is only that the
 set is explicit and that a family outside it still runs and still reports.
 
-This repository has no CI pipeline. Run FlowWeaver's suite locally with:
+FlowWeaver runs the suite in CI on every pull request to `main`, inside the `backend` job of `.github/workflows/ci.yml`. Run it locally with:
 
 ```
 dotnet test flow_weaver_backend.Tests/flow_weaver_backend.Tests.csproj --filter "FullyQualifiedName~flow_weaver_backend.Tests.Conformance"
 ```
 
-The suite is intended to gate merges once CI is configured. Its blocking set is
+A failure blocks the merge through the required `backend` check. Its blocking set is
 `canonicalization`, `gate`, `schema` and `templates`; the other families run and report, held
 by per-family pass floors. Both are declared in
 `flow_weaver_backend.Tests/Conformance/ConformanceGateTests.cs`.

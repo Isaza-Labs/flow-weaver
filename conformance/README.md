@@ -82,13 +82,13 @@ Each implementation runs every vector against its own adapter and declares which
 **block a merge**; families outside that set still run and still report
 (`ci/run-conformance.md`).
 
-This repository has no CI pipeline. Run the suite locally with:
+The suite runs in CI on every pull request to `main`, inside the `backend` job of `.github/workflows/ci.yml`. Run it locally with:
 
 ```
 dotnet test flow_weaver_backend.Tests/flow_weaver_backend.Tests.csproj --filter "FullyQualifiedName~flow_weaver_backend.Tests.Conformance"
 ```
 
-The suite is intended to gate merges once CI is configured. FlowWeaver's blocking set
+A failure blocks the merge through the required `backend` check. FlowWeaver's blocking set
 (`canonicalization`, `gate`, `schema`, `templates`) and its per-family pass floors are declared
 in `flow_weaver_backend.Tests/Conformance/ConformanceGateTests.cs`.
 

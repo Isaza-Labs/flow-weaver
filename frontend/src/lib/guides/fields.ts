@@ -439,11 +439,6 @@ export const FIELD_HINTS: Record<string, FieldHint> = {
   },
 
   // ------------------------------------------------------------- Miscellaneous
-  'chat.agent': {
-    label: 'Agent',
-    help: 'Which configured agent answers in this conversation. Each brings its own tool allowlist and system prompt.',
-    detail: 'Switching agents starts the next turn under the new one; the messages already exchanged stay as they are.',
-  },
   'policies_audit.window': {
     label: 'Window',
     help: 'How far back to roll up policy denials. Events derive from traces, so the trace retention window is the hard limit.',
@@ -1185,6 +1180,10 @@ export const FIELD_HINTS: Record<string, FieldHint> = {
   'snippets.description': {
     label: 'Description',
     help: 'Free-text note shown on the snippet card. The authoring agent also reads it when deciding which snippet fits a request, so a precise description makes generated workflows better.',
+  },
+  'snippets.source': {
+    label: 'Start from',
+    help: 'Blank loads a generic starter for the chosen type. Picking an existing snippet copies its body, schemas, diagram and timeouts, and takes its type and target mode from it.',
   },
   'snippets.type': {
     label: 'Type',

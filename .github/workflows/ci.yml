@@ -1,0 +1,139 @@
+# Pull-request and main-branch checks. The job names (backend, frontend, repository) are the
+# required status checks on main: renaming one silently drops it from branch protection, so
+# change docs/repository/CI_GATES.md and the ruleset in the same pull request.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore flow_weaver_backend.Tests/flow_weaver_backend.Tests.csproj
+
+      - name: Build
+        run: dotnet build flow_weaver_backend.Tests/flow_weaver_backend.Tests.csproj -c Release --no-restore
+
+      # Includes the conformance gate and the kit integrity check (conformance/PINNED).
+      - name: Test
+        run: >
+          dotnet test flow_weaver_backend.Tests/flow_weaver_backend.Tests.csproj
+          -c Release --no-build
+          --logger "trx;LogFileName=backend.trx"
+          --logger "console;verbosity=normal"
+          --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: TestResults/
+          if-no-files-found: warn
+          retention-days: 14
+
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        # Explicit bash runs with -o pipefail, so `| tee` keeps the check's exit code.
+        shell: bash
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      # Node 22, the same major as deploy/Dockerfile.frontend (node:22-alpine).
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      # Each check writes its full output to a log as well as the job console, so a failure
+      # can be read in full from the artifact even when the console view is truncated.
+      - name: Type and accessibility check
+        run: |
+          mkdir -p ../ci-logs
+          npm run check 2>&1 | tee ../ci-logs/check.log
+
+      - name: Field help coverage
+        if: success() || failure()
+        run: npm run check:hints 2>&1 | tee ../ci-logs/check-hints.log
+
+      - name: Label audit
+        if: success() || failure()
+        run: npm run check:labels 2>&1 | tee ../ci-logs/check-labels.log
+
+      - name: Build
+        if: success() || failure()
+        run: npm run build 2>&1 | tee ../ci-logs/build.log
+
+      - name: Upload check logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-check-logs
+          path: ci-logs/
+          retention-days: 14
+
+  # Checks that are about the repository rather than a component. It runs on Windows on
+  # purpose: the conformance kit is pinned by a byte digest, and a Windows checkout with
+  # core.autocrlf=true is where a line-ending conversion would move it (conformance/OWNERSHIP.md).
+  # The Linux run of the same test is part of the backend job.
+  repository:
+    name: repository
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Use the Git for Windows line-ending default
+        run: git config --global core.autocrlf true
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.nvmrc
+
+      - name: Internal documentation links
+        run: node tools/check-doc-links.mjs
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Conformance kit integrity (Windows checkout)
+        run: >
+          dotnet test flow_weaver_backend.Tests/flow_weaver_backend.Tests.csproj
+          -c Release
+          --filter FullyQualifiedName~KitIntegrityTests
+          --logger "console;verbosity=normal"

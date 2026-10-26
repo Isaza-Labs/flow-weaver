@@ -35,8 +35,9 @@ public class GitBranchPublishTests : IDisposable
         Repository.Init(_work);
         using var repo = new Repository(_work);
         // libgit2 needs an absolute file URL for a refspec push; a relative path
-        // fails with "unsupported URL protocol".
-        repo.Network.Remotes.Add("origin", "file:///" + _bare.Replace('\\', '/'));
+        // fails with "unsupported URL protocol". Uri builds it per platform: prefixing
+        // "file:///" by hand gave Linux paths, which start with '/', a fourth slash.
+        repo.Network.Remotes.Add("origin", new Uri(_bare).AbsoluteUri);
         Commit(repo, "README.md", "base");
         repo.Network.Push(repo.Network.Remotes["origin"], "refs/heads/master:refs/heads/master");
         repo.Branches.Update(repo.Head,

@@ -2,4 +2,7 @@ blank_issues_enabled: false
 contact_links:
   - name: Questions and help
     url: https://github.com/Isaza-Labs/flow-weaver/discussions/categories/q-a
-    about: Ask usage and deployment questions here.
+    about: Installation and usage questions. Include version or commit, installation mode, symptom and the relevant log lines, with credentials and internal data removed.
+  - name: Security vulnerability
+    url: https://github.com/Isaza-Labs/flow-weaver/blob/main/SECURITY.md
+    about: Report vulnerabilities privately as described in SECURITY.md. Never in a public issue.
