@@ -201,7 +201,7 @@
       <Input label="Name" help="snippets.name" bind:value={name} placeholder="e.g. Nokia LLDP gather" />
       <Input label="Description (optional)" help="snippets.description" bind:value={description} placeholder="Short note about what this snippet does" />
 
-      <Select label="Start from" bind:value={sourceId} onchange={onSourcePicked}>
+      <Select label="Start from" help="snippets.source" bind:value={sourceId} onchange={onSourcePicked}>
         <option value="">Blank — generic starter for the type below</option>
         {#each existing as snip (snip.id)}
           <option value={snip.id}>{snip.name} · {snip.type}</option>

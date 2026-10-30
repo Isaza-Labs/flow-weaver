@@ -44,7 +44,7 @@ The resulting `Signed-off-by` line certifies that you may submit the work under 
 
 ## Development setup
 
-Follow the [quick start](./QUICK_START_GUIDE.md) for setup and the [frontend guide](./frontend/README.md) for UI commands. Use the test commands in the quick start and report which checks you ran in the pull request.
+Follow the [quick start](./QUICK_START_GUIDE.md) for setup and the [frontend guide](./frontend/README.md) for UI commands. CI runs the backend, frontend and repository checks on every pull request, and they must pass before merging (see [CI and release gates](./docs/repository/CI_GATES.md)). Run the same commands locally first; they are listed in the [quick start](./QUICK_START_GUIDE.md#6-tests).
 
 ## Security
 

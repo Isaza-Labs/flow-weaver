@@ -1,8 +1,16 @@
 # FlowWeaver
 
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE) [![Version: 0.9.0 pre-release](https://img.shields.io/badge/version-0.9.0_pre--release-orange.svg)](./CHANGELOG.md)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE) [![Version: 0.9.0 in preparation](https://img.shields.io/badge/version-0.9.0_in_preparation-lightgrey.svg)](./CHANGELOG.md)
 
 **Build network workflows without writing code. Keep control of what runs.**
+
+| | |
+|---|---|
+| **Install** | [Quick start](./QUICK_START_GUIDE.md): clone, run the setup wizard, sign in |
+| **First example** | [`examples/first-workflow`](./examples/first-workflow/README.md): import, simulate and run a reachability check |
+| **Documentation** | [Documentation index](./docs/README.md) and the in-app manual at `/docs` |
+| **Questions and help** | [Q&A discussions](https://github.com/Isaza-Labs/flow-weaver/discussions/categories/q-a); defects go to [issues](https://github.com/Isaza-Labs/flow-weaver/issues/new/choose) |
+| **Versions** | [Releases](https://github.com/Isaza-Labs/flow-weaver/releases) and the [changelog](./CHANGELOG.md) |
 
 ![FlowWeaver runs the same workflow on two lab devices: one takes the success path, the other the failure path](./assets/screenshots/flowweaver-run.gif)
 
@@ -30,9 +38,9 @@ The quick start uses a synthetic lab example. Register only devices you are auth
 | Product, operator, and architecture docs | [`docs/`](./docs/README.md) |
 | Integration and vendor specifications | [`specs/`](./specs/README.md) |
 | Versioned workflow contract and conformance suite | [`contracts/`](./contracts/README.md), [`conformance/`](./conformance/) |
-| Example and reusable workflow directories | [`examples/`](./examples/README.md), [`workflows/`](./workflows/README.md) |
+| Example and sample workflows | [`examples/first-workflow`](./examples/first-workflow/README.md), [`workflows/`](./workflows/README.md) |
 
-The `examples/` and `workflows/` directories currently contain guidance rather than a published workflow library. The workflows shown in launch material are product screenshots, not downloadable examples in these directories.
+[`examples/first-workflow`](./examples/first-workflow/README.md) is the starting point: a small workflow bundle that imports on a new instance with no integration or credential. [`workflows/`](./workflows/README.md) holds larger exported samples (NetBox, Infoblox, Windows, Prometheus and Grafana), each with its prerequisites and QA evidence.
 
 ## How the workflow lifecycle works
 
@@ -63,6 +71,7 @@ The recordings below come from a local demo instance with synthetic lab devices.
 ## Community and project policies
 
 - [Documentation index](./docs/README.md) and [support routes](./SUPPORT.md)
+- Questions and help: [Q&A discussions](https://github.com/Isaza-Labs/flow-weaver/discussions/categories/q-a). Reproducible defects and proposals: [issues](https://github.com/Isaza-Labs/flow-weaver/issues/new/choose). Vulnerabilities: privately, per [SECURITY.md](./SECURITY.md).
 - [Contributing](./CONTRIBUTING.md), [security reporting](./SECURITY.md), and [governance](./GOVERNANCE.md)
 - [Apache License 2.0](./LICENSE), [third-party notices](./THIRD-PARTY-NOTICES.md), and [trademark policy](./TRADEMARK.md)
 

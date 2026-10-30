@@ -1,2 +1,7 @@
 # Preserve upstream licence files byte for byte, including their line endings.
 legal/*.license.txt -text
+
+# The conformance kit is pinned by a SHA-256 over raw bytes (conformance/PINNED). Check it out
+# with LF on every platform, so core.autocrlf=true (the Git for Windows default) cannot turn
+# every vector into CRLF and move the digest without any change to the contract.
+conformance/** text eol=lf

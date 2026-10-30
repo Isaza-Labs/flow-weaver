@@ -44,4 +44,12 @@
              CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- Published example bundles: PublishedExampleImportTests imports each one into an empty
+       instance, so an example that stops importing fails the build instead of a reader. -->
+  <ItemGroup>
+    <Content Include="..\examples\**\*.bundle.json"
+             Link="examples\%(RecursiveDir)%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

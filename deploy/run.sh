@@ -215,29 +215,29 @@ verify_sandbox() {
         sleep 2
     done
     if [[ $running != true ]]; then
-        warn "No se pudo verificar el sandbox de python_snippet: el worker no está corriendo."
-        warn "Revisa: ./run.sh logs worker"
+        warn "Could not verify the python_snippet sandbox: the worker is not running."
+        warn "Check: ./run.sh logs worker"
         return 0
     fi
 
     if docker exec -u app flow-weaver-worker \
         bwrap --ro-bind / / --unshare-user --unshare-pid --proc /proc true >/dev/null 2>&1; then
-        say "  ${GREEN}✓${OFF} Sandbox de python_snippet verificado (bwrap + user namespaces)."
+        say "  ${GREEN}✓${OFF} python_snippet sandbox verified (bwrap + user namespaces)."
         return 0
     fi
 
     warn ""
-    warn "✗ El sandbox de python_snippet NO funciona en este host: los pasos python"
-    warn "  fallarán (p. ej. 'bwrap: setting up uid map: Permission denied')."
-    warn "  El resto de la plataforma no se ve afectada."
+    warn "✗ The python_snippet sandbox does NOT work on this host: python steps"
+    warn "  will fail (e.g. 'bwrap: setting up uid map: Permission denied')."
+    warn "  The rest of the platform is not affected."
     if [[ $(uname -s) == Linux ]]; then
-        warn "Causa habitual: el host restringe los user namespaces sin privilegios"
-        warn "(Ubuntu 23.10+, RHEL, Debian antiguo). Arréglalo una sola vez con:"
+        warn "Usual cause: the host restricts unprivileged user namespaces"
+        warn "(Ubuntu 23.10+, RHEL, older Debian). Fix it once with:"
         warn "  sudo bash $PWD/setup-host.sh"
-        warn "y después reinicia el worker:"
+        warn "and then restart the worker:"
         warn "  ./run.sh restart"
     fi
-    warn "Opciones y sus implicaciones: docs/ops/python-sandbox-host-requirements.md"
+    warn "Options and their implications: docs/ops/python-sandbox-host-requirements.md"
 }
 
 # ── argument parsing ────────────────────────────────────────────────────────
@@ -278,7 +278,7 @@ done
 
 if [[ ! -t 0 && ! -r /dev/tty ]] && (( ! ASSUME_YES )); then
     ASSUME_YES=1
-    warn "Sin terminal interactiva: se asume -y (defaults + flags)."
+    warn "No interactive terminal: assuming -y (defaults + flags)."
 fi
 
 docker_ok
@@ -311,13 +311,13 @@ case $COMMAND in
 esac
 
 # ── gather configuration ────────────────────────────────────────────────────
-info "flow-weaver — configuración"
-say  "Los valores entre corchetes son los actuales (deploy/.env) o el default."
+info "flow-weaver — configuration"
+say  "Values in brackets are the current ones (deploy/.env) or the default."
 say  ""
 
 DB_MODE=$(resolve "$DB_MODE" DB_MODE docker)
 if (( ! ASSUME_YES )); then
-    DB_MODE=$(ask "Base de datos: 'docker' (gestionada aquí) o 'external'" "$DB_MODE")
+    DB_MODE=$(ask "Database: 'docker' (managed here) or 'external'" "$DB_MODE")
 fi
 [[ $DB_MODE == docker || $DB_MODE == external ]] || die "--db must be 'docker' or 'external'."
 
@@ -328,39 +328,39 @@ DB_PASSWORD=$(resolve "$DB_PASSWORD" POSTGRES_PASSWORD "")
 if [[ $DB_MODE == docker ]]; then
     POSTGRES_PORT=$(resolve "$POSTGRES_PORT" POSTGRES_PORT 5432)
     if (( ! ASSUME_YES )); then
-        DB_NAME=$(ask "  Nombre de la base de datos" "$DB_NAME")
-        DB_USER=$(ask "  Usuario" "$DB_USER")
-        DB_PASSWORD=$(ask_secret "  Contraseña" "$DB_PASSWORD")
-        POSTGRES_PORT=$(ask "  Puerto publicado de Postgres" "$POSTGRES_PORT")
+        DB_NAME=$(ask "  Database name" "$DB_NAME")
+        DB_USER=$(ask "  User" "$DB_USER")
+        DB_PASSWORD=$(ask_secret "  Password" "$DB_PASSWORD")
+        POSTGRES_PORT=$(ask "  Published Postgres port" "$POSTGRES_PORT")
     fi
     [[ -n $DB_PASSWORD ]] || DB_PASSWORD=flowweaver
     DB_HOST=db; DB_PORT=5432
-    port_busy "$POSTGRES_PORT" && warn "Aviso: el puerto $POSTGRES_PORT ya está escuchando en el host."
+    port_busy "$POSTGRES_PORT" && warn "Warning: port $POSTGRES_PORT is already listening on the host."
 else
     DB_HOST=$(resolve "$DB_HOST" DB_HOST host.docker.internal)
     DB_PORT=$(resolve "$DB_PORT" DB_PORT 5432)
     if (( ! ASSUME_YES )); then
-        DB_HOST=$(ask "  Host de la base de datos" "$DB_HOST")
-        DB_PORT=$(ask "  Puerto" "$DB_PORT")
-        DB_NAME=$(ask "  Nombre de la base de datos" "$DB_NAME")
-        DB_USER=$(ask "  Usuario" "$DB_USER")
-        DB_PASSWORD=$(ask_secret "  Contraseña" "$DB_PASSWORD")
+        DB_HOST=$(ask "  Database host" "$DB_HOST")
+        DB_PORT=$(ask "  Port" "$DB_PORT")
+        DB_NAME=$(ask "  Database name" "$DB_NAME")
+        DB_USER=$(ask "  User" "$DB_USER")
+        DB_PASSWORD=$(ask_secret "  Password" "$DB_PASSWORD")
     fi
-    [[ -n $DB_PASSWORD ]] || die "La contraseña de la base de datos externa es obligatoria (--db-password)."
+    [[ -n $DB_PASSWORD ]] || die "The external database password is required (--db-password)."
 
     # From inside a container, localhost is the container itself.
     if [[ $DB_HOST == localhost || $DB_HOST == 127.0.0.1 || $DB_HOST == ::1 ]]; then
-        warn "'$DB_HOST' apunta al propio contenedor; se usará host.docker.internal."
+        warn "'$DB_HOST' points to the container itself; using host.docker.internal instead."
         DB_HOST=host.docker.internal
     fi
 
     probe_host=$DB_HOST
     [[ $probe_host == host.docker.internal ]] && probe_host=127.0.0.1
     if tcp_reachable "$probe_host" "$DB_PORT"; then
-        say "  ${GREEN}✓${OFF} $probe_host:$DB_PORT responde."
+        say "  ${GREEN}✓${OFF} $probe_host:$DB_PORT is reachable."
     else
-        warn "  No se pudo conectar a $probe_host:$DB_PORT desde el host."
-        warn "  Si la base sólo escucha dentro de otra red Docker, se seguirá intentando al arrancar."
+        warn "  Could not connect to $probe_host:$DB_PORT from the host."
+        warn "  If the database only listens inside another Docker network, it will keep retrying on startup."
     fi
 fi
 
@@ -369,12 +369,12 @@ FRONTEND_PORT=$(resolve "$FRONTEND_PORT" FRONTEND_PORT 3000)
 APP_ENV=$(resolve "$APP_ENV" ASPNETCORE_ENVIRONMENT Production)
 if (( ! ASSUME_YES )); then
     say ""
-    BACKEND_PORT=$(ask "Puerto del backend" "$BACKEND_PORT")
-    FRONTEND_PORT=$(ask "Puerto del frontend" "$FRONTEND_PORT")
-    APP_ENV=$(ask "Entorno (Production/Development)" "$APP_ENV")
+    BACKEND_PORT=$(ask "Backend port" "$BACKEND_PORT")
+    FRONTEND_PORT=$(ask "Frontend port" "$FRONTEND_PORT")
+    APP_ENV=$(ask "Environment (Production/Development)" "$APP_ENV")
 fi
-port_busy "$BACKEND_PORT"  && warn "Aviso: el puerto $BACKEND_PORT ya está escuchando en el host."
-port_busy "$FRONTEND_PORT" && warn "Aviso: el puerto $FRONTEND_PORT ya está escuchando en el host."
+port_busy "$BACKEND_PORT"  && warn "Warning: port $BACKEND_PORT is already listening on the host."
+port_busy "$FRONTEND_PORT" && warn "Warning: port $FRONTEND_PORT is already listening on the host."
 
 # The frontend's ORIGIN must match the URL the browser actually uses, or
 # SvelteKit rejects form posts as cross-origin.
@@ -383,27 +383,27 @@ default_origin="http://localhost:$FRONTEND_PORT"
 if [[ -z $FRONTEND_ORIGIN || $FRONTEND_ORIGIN == http://localhost:* ]]; then
     FRONTEND_ORIGIN=$default_origin
 fi
-(( ASSUME_YES )) || FRONTEND_ORIGIN=$(ask "URL pública del frontend (ORIGIN)" "$FRONTEND_ORIGIN")
+(( ASSUME_YES )) || FRONTEND_ORIGIN=$(ask "Public frontend URL (ORIGIN)" "$FRONTEND_ORIGIN")
 
 # Subnet: reuse what is stored if it is still free, otherwise find a gap.
 SUBNET=$(resolve "$SUBNET" COMPOSE_SUBNET "")
 if [[ -z $SUBNET ]]; then
     SUBNET=$(pick_free_subnet)
-    say "Subred libre elegida automáticamente: $SUBNET"
+    say "Free subnet picked automatically: $SUBNET"
 elif ! subnet_is_free "$SUBNET"; then
     if docker network inspect flow-weaver_flow-weaver-net >/dev/null 2>&1; then
         : # it is ours, already created with this range
     else
-        warn "La subred $SUBNET está ocupada por otra red Docker."
+        warn "Subnet $SUBNET is already used by another Docker network."
         SUBNET=$(pick_free_subnet)
-        warn "Se usará $SUBNET en su lugar."
+        warn "Using $SUBNET instead."
     fi
 fi
 
 JWT_KEY=$(env_get JWT_KEY)
 if [[ -z $JWT_KEY ]]; then
     JWT_KEY=$(gen_jwt_key)
-    say "JWT_KEY generada (48 bytes aleatorios) y guardada en deploy/.env."
+    say "JWT_KEY generated (48 random bytes) and saved to deploy/.env."
 fi
 
 # ── persist ─────────────────────────────────────────────────────────────────
@@ -440,25 +440,25 @@ case $DO_BUILD in
 esac
 
 say ""
-info "Resumen"
-say "  Base de datos   : $DB_MODE ($DB_HOST:$DB_PORT/$DB_NAME como $DB_USER)"
+info "Summary"
+say "  Database        : $DB_MODE ($DB_HOST:$DB_PORT/$DB_NAME as $DB_USER)"
 say "  Backend         : http://localhost:$BACKEND_PORT"
-say "  Frontend        : $FRONTEND_ORIGIN (puerto $FRONTEND_PORT)"
-say "  Entorno         : $APP_ENV"
-say "  Subred          : $SUBNET (TRUSTED_PROXIES en sincronía)"
-say "  Servicios       : ${SERVICES:-todos}"
+say "  Frontend        : $FRONTEND_ORIGIN (port $FRONTEND_PORT)"
+say "  Environment     : $APP_ENV"
+say "  Subnet          : $SUBNET (TRUSTED_PROXIES kept in sync)"
+say "  Services        : ${SERVICES:-all}"
 say "  Compose         : ${FILES[*]}"
 say ""
 
 if (( DRY_RUN )); then
-    say "${YELLOW}--dry-run${OFF}: no se ejecuta nada. El comando sería:"
+    say "${YELLOW}--dry-run${OFF}: nothing is executed. The command would be:"
     say "  docker compose ${FILES[*]} ${UP_ARGS[*]} ${SERVICES:-}"
     exit 0
 fi
 
 if (( ! ASSUME_YES )); then
-    confirm=$(ask "¿Arrancar ahora? (s/n)" "s")
-    [[ $confirm =~ ^[sSyY] ]] || { say "Cancelado. La configuración quedó guardada en deploy/.env."; exit 0; }
+    confirm=$(ask "Start now? (y/n)" "y")
+    [[ $confirm =~ ^[yY] ]] || { say "Cancelled. The configuration was saved to deploy/.env."; exit 0; }
 fi
 
 (( DO_PULL )) && docker compose "${FILES[@]}" pull --ignore-buildable || true
@@ -473,10 +473,10 @@ say ""
 verify_sandbox
 
 say ""
-say "${GREEN}Listo.${OFF}"
+say "${GREEN}Done.${OFF}"
 say "  Frontend : $FRONTEND_ORIGIN"
 say "  API      : http://localhost:$BACKEND_PORT/api/v1"
 say "  Logs     : ./run.sh logs backend"
 say ""
-say "Las migraciones se aplican solas al arrancar el backend; compruébalo con:"
+say "Migrations are applied automatically when the backend starts; check with:"
 say "  ./run.sh logs backend | grep -i 'migrations applied'"

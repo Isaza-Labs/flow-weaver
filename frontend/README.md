@@ -4,7 +4,7 @@ The frontend is the SvelteKit application for the visual workflow builder, inven
 
 ## Local development
 
-Prerequisites: Node.js 20+ and a backend listening on `http://localhost:8080`.
+Prerequisites: Node.js 22 (pinned in `.nvmrc`; the same major as CI and the frontend container) and a backend listening on `http://localhost:8080`.
 
 ```bash
 cd frontend

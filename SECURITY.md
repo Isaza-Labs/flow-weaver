@@ -25,8 +25,10 @@ Please allow a reasonable opportunity to investigate and remediate before public
 
 | Version | Supported |
 | --- | --- |
-| 0.9.x (pre-release) | Security fixes land on `main` and ship in the next 0.9.x tag |
-| Earlier commits | Not supported |
+| 0.9.x (pre-release, from the `v0.9.0` tag) | Yes. Security fixes land on `main` and ship in the next 0.9.x tag |
+| Untagged commits of `main` | No. `main` is the development branch |
+
+A version is supported only once its tag and release are published on the [releases page](https://github.com/Isaza-Labs/flow-weaver/releases). Until `v0.9.0` is published there is no supported release; report a vulnerability against the commit you run.
 
 ## Scope
 
