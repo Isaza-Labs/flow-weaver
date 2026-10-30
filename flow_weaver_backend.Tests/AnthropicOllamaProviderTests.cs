@@ -114,7 +114,8 @@ public class AnthropicProviderTests
         await Build(handler).ChatAsync(messages, "claude-sonnet-5", 0.7, default);
 
         var body = SentBody(handler);
-        Assert.Equal("You are a network engineer.", body.GetProperty("system").GetString());
+        var block = Assert.Single(body.GetProperty("system").EnumerateArray());
+        Assert.Equal("You are a network engineer.", block.GetProperty("text").GetString());
         var msg = Assert.Single(body.GetProperty("messages").EnumerateArray());
         Assert.Equal("user", msg.GetProperty("role").GetString());
     }
@@ -240,7 +241,89 @@ public class AnthropicProviderTests
 
         await Build(handler).ChatAsync(messages, "claude-opus-5", 0.2, default);
 
-        Assert.Equal("base prompt\n\nprofile: net", SentBody(handler).GetProperty("system").GetString());
+        var blocks = SentBody(handler).GetProperty("system").EnumerateArray().ToList();
+        Assert.Equal(2, blocks.Count);
+        Assert.Equal("base prompt", blocks[0].GetProperty("text").GetString());
+        Assert.Equal("profile: net", blocks[1].GetProperty("text").GetString());
+    }
+
+    // ─── prompt caching ─────────────────────────────────────────────────
+
+    // Three breakpoints: the last tool, the first system block (the shared skills
+    // prompt) and the last block of the conversation. Everything else stays unmarked:
+    // the system blocks after the first vary per user and per turn.
+    [Fact]
+    public async Task MarksCacheBreakpointsOnToolsSystemAndLastMessage()
+    {
+        var handler = Empty();
+        var messages = new List<LlmMessage>
+        {
+            new() { Role = "system", Content = "base prompt" },
+            new() { Role = "system", Content = "integration skills" },
+            new() { Role = "user", Content = "hi" },
+            new() { Role = "assistant", Content = "hello" },
+            new() { Role = "user", Content = "list devices" },
+        };
+        var tools = new List<ToolDefinition>
+        {
+            new() { Name = "list_devices", Description = "Lists", ParametersSchema = EmptySchema },
+            new() { Name = "get_device", Description = "Gets", ParametersSchema = EmptySchema },
+        };
+
+        await Build(handler).ChatWithToolsAsync(messages, tools, "claude-opus-5", 0.2, default);
+
+        var body = SentBody(handler);
+        var sentTools = body.GetProperty("tools").EnumerateArray().ToList();
+        Assert.False(sentTools[0].TryGetProperty("cache_control", out _));
+        Assert.Equal("ephemeral", sentTools[1].GetProperty("cache_control").GetProperty("type").GetString());
+
+        var system = body.GetProperty("system").EnumerateArray().ToList();
+        Assert.Equal("ephemeral", system[0].GetProperty("cache_control").GetProperty("type").GetString());
+        Assert.False(system[1].TryGetProperty("cache_control", out _));
+
+        var turns = body.GetProperty("messages").EnumerateArray().ToList();
+        Assert.False(turns[0].GetProperty("content")[0].TryGetProperty("cache_control", out _));
+        var last = turns[^1].GetProperty("content").EnumerateArray().Last();
+        Assert.Equal("ephemeral", last.GetProperty("cache_control").GetProperty("type").GetString());
+
+        var marks = body.ToString().Split("\"cache_control\"").Length - 1;
+        Assert.Equal(3, marks);
+    }
+
+    // With caching on, `input_tokens` is only the uncached tail. The prompt is the sum
+    // of the three fields, and that sum is what InputTokens keeps reporting.
+    [Fact]
+    public async Task InputTokensIncludeCachedTokensAndReportTheSplit()
+    {
+        var handler = new FakeHttpMessageHandler(HttpStatusCode.OK, """
+            {"content":[{"type":"text","text":"ok"}],"stop_reason":"end_turn",
+             "usage":{"input_tokens":50,"cache_creation_input_tokens":200,"cache_read_input_tokens":30000,"output_tokens":3}}
+            """);
+
+        var result = await Build(handler).ChatAsync(UserSays(), "claude-opus-5", 0.2, default);
+
+        Assert.Equal(30_250, result.InputTokens);
+        Assert.Equal(30_000, result.CacheReadTokens);
+        Assert.Equal(200, result.CacheWriteTokens);
+    }
+
+    // The input side of usage arrives on message_start, not on message_delta; it used
+    // to be ignored, so every streamed turn logged tokens_in=0.
+    [Fact]
+    public async Task StreamReportsInputAndCacheTokensFromMessageStart()
+    {
+        var handler = Sse(
+            """{"type":"message_start","message":{"usage":{"input_tokens":7,"cache_creation_input_tokens":0,"cache_read_input_tokens":12000}}}""",
+            """{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"hi"}}""",
+            """{"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":2}}""");
+
+        var events = await Drain(Build(handler));
+
+        var done = Assert.Single(events, e => e.Type == "done");
+        Assert.Equal(12_007, done.InputTokens);
+        Assert.Equal(12_000, done.CacheReadTokens);
+        Assert.Equal(0, done.CacheWriteTokens);
+        Assert.Equal(2, done.OutputTokens);
     }
 
     // Anthropic requires alternating roles, so a parallel tool round has to arrive as

@@ -283,8 +283,12 @@ public class AgentConversationRunnerTests
         return integrationId;
     }
 
+    // Every leading system message: the base prompt and, behind it, the integration
+    // skills, which travel as a message of their own so the base prompt stays cacheable.
     private static string SystemPromptOf(Fixture f, int call)
-        => TestJson.Element(f.Llm.RequestBodies[call]).GetProperty("messages")[0].GetProperty("content").GetString()!;
+        => string.Join("\n\n", TestJson.Element(f.Llm.RequestBodies[call]).GetProperty("messages").EnumerateArray()
+            .TakeWhile(m => m.GetProperty("role").GetString() == "system")
+            .Select(m => m.GetProperty("content").GetString()));
 
     private static AgentTurnRequest Turn(
         string message = "hello", Guid? conversationId = null, Guid? agentId = null, int? deadline = null)

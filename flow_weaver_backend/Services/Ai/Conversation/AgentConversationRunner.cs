@@ -133,10 +133,12 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
             : await LoadLoadedSkillsAsync(request.ConversationId, streamCt);
         foreach (var id in previouslyLoaded) _toolContext.MarkSkillLoaded(id);
         foreach (var id in ScopedSkillCatalog.MatchMentions(userMessage, scopedSkills)) _toolContext.MarkSkillLoaded(id);
-        systemPrompt = ScopedSkillCatalog.ComposePrompt(
-            systemPrompt, scopedSkills, new HashSet<Guid>(_toolContext.LoadedSkillIntegrationIds));
+        // A system message of its own, after the base prompt: it changes when a skill
+        // loads, and the base prompt is the prefix the provider caches.
+        var scopedPrompt = ScopedSkillCatalog.RenderScoped(
+            scopedSkills, new HashSet<Guid>(_toolContext.LoadedSkillIntegrationIds));
 
-        var messages = await BuildInitialMessages(systemPrompt, userMessage, request.ConversationId, streamCt);
+        var messages = await BuildInitialMessages(systemPrompt, scopedPrompt, userMessage, request.ConversationId, streamCt);
         var tools = _toolRegistry.ToDefinitions(agent?.Tools);
         // load_skill is how the model reaches a skill it has not been handed; an
         // agent whose tool list predates it must still be able to call it.
@@ -158,7 +160,7 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
         _logger.LogInformation(
             "ai.chat.begin agent={AgentName} model={Model} tools={ToolCount} messages={MessageCount} conversation={ConversationId} deadline_s={DeadlineSeconds} prompt_chars={PromptChars} scoped_skills={ScopedSkills} skills_loaded={SkillsLoaded}",
             agent?.Name ?? "(fallback)", model, tools.Count, messages.Count,
-            conversationId, deadlineSeconds, systemPrompt?.Length ?? 0,
+            conversationId, deadlineSeconds, (systemPrompt?.Length ?? 0) + scopedPrompt.Length,
             scopedSkills.Count, _toolContext.LoadedSkillIntegrationIds.Count);
 
         var traceId = await _trace.StartAsync("ai.chat.run", "ai", new
@@ -191,6 +193,8 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
         var toolCalls = new List<AgentToolCall>();
         var totalIn = 0;
         var totalOut = 0;
+        var totalCacheRead = 0;
+        var totalCacheWrite = 0;
         var iterationsCompleted = 0;
         var tailText = new StringBuilder();
         var timedOut = false;
@@ -224,6 +228,8 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
                             case "done":
                                 if (evt.InputTokens is int ti) totalIn += ti;
                                 if (evt.OutputTokens is int to) totalOut += to;
+                                if (evt.CacheReadTokens is int cr) totalCacheRead += cr;
+                                if (evt.CacheWriteTokens is int cw) totalCacheWrite += cw;
                                 if (evt.StopReason is not null) stopReason = evt.StopReason;
                                 break;
                         }
@@ -319,14 +325,17 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
             if (timedOut)
             {
                 _logger.LogWarning(
-                    "ai.chat.timeout trace={Trace} iterations={Iterations} elapsed_ms={Elapsed} tokens_in={TokensIn} tokens_out={TokensOut}",
-                    agentRun.TraceId, iterationsCompleted, streamStopwatch.ElapsedMilliseconds, totalIn, totalOut);
+                    "ai.chat.timeout trace={Trace} iterations={Iterations} elapsed_ms={Elapsed} tokens_in={TokensIn} tokens_out={TokensOut} tokens_cache_read={CacheRead} tokens_cache_write={CacheWrite}",
+                    agentRun.TraceId, iterationsCompleted, streamStopwatch.ElapsedMilliseconds, totalIn, totalOut,
+                    totalCacheRead, totalCacheWrite);
                 await _trace.TimeoutAsync(traceId, new
                 {
                     iterations = iterationsCompleted,
                     elapsed_ms = streamStopwatch.ElapsedMilliseconds,
                     tokens_in = totalIn,
                     tokens_out = totalOut,
+                    tokens_cache_read = totalCacheRead,
+                    tokens_cache_write = totalCacheWrite,
                 }, ct);
 
                 var tail = tailText.Length > 500
@@ -337,14 +346,21 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
             else
             {
                 _logger.LogInformation(
-                    "ai.chat.done trace={Trace} iterations={Iterations} elapsed_ms={Elapsed} tokens_in={TokensIn} tokens_out={TokensOut} tool_calls={ToolCalls} output_cut_off={OutputCutOff}",
-                    agentRun.TraceId, iterationsCompleted, streamStopwatch.ElapsedMilliseconds, totalIn, totalOut, toolCalls.Count, outputCutOff);
+                    "ai.chat.done trace={Trace} iterations={Iterations} elapsed_ms={Elapsed} tokens_in={TokensIn} tokens_out={TokensOut} tokens_cache_read={CacheRead} tokens_cache_write={CacheWrite} tool_calls={ToolCalls} output_cut_off={OutputCutOff}",
+                    agentRun.TraceId, iterationsCompleted, streamStopwatch.ElapsedMilliseconds, totalIn, totalOut,
+                    totalCacheRead, totalCacheWrite, toolCalls.Count, outputCutOff);
+                // tokens_in is the whole prompt summed over the turn's rounds; the cache
+                // fields say how much of it was read back at a tenth of the price. A run
+                // of zeros means a silent invalidator in the prefix, or a provider that
+                // does not cache.
                 await _trace.CompleteAsync(traceId, new
                 {
                     iterations = iterationsCompleted,
                     elapsed_ms = streamStopwatch.ElapsedMilliseconds,
                     tokens_in = totalIn,
                     tokens_out = totalOut,
+                    tokens_cache_read = totalCacheRead,
+                    tokens_cache_write = totalCacheWrite,
                     tool_calls = toolCalls.Count,
                     output_cut_off = outputCutOff,
                 }, ct);
@@ -618,9 +634,11 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
     }
 
     private async Task<List<LlmMessage>> BuildInitialMessages(
-        string systemPrompt, string userMessage, Guid? conversationId, CancellationToken ct)
+        string systemPrompt, string scopedPrompt, string userMessage, Guid? conversationId, CancellationToken ct)
     {
         var msgs = new List<LlmMessage> { new() { Role = "system", Content = systemPrompt } };
+        if (!string.IsNullOrEmpty(scopedPrompt))
+            msgs.Add(new LlmMessage { Role = "system", Content = scopedPrompt });
 
         if (conversationId.HasValue)
         {

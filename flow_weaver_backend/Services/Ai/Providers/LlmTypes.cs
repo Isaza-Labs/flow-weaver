@@ -8,6 +8,10 @@ public sealed class ChatResult
     public List<ToolCallResult>? ToolCalls { get; init; }
     public required int InputTokens { get; init; }
     public required int OutputTokens { get; init; }
+    // The part of InputTokens served from / written to the provider's prompt cache.
+    // Zero for providers that do not report it.
+    public int CacheReadTokens { get; init; }
+    public int CacheWriteTokens { get; init; }
     public string? StopReason { get; init; }
 }
 
@@ -25,6 +29,10 @@ public sealed class ChatStreamEvent
     public ToolCallResult? ToolCall { get; init; }
     public int? InputTokens { get; init; }
     public int? OutputTokens { get; init; }
+    // The part of InputTokens served from / written to the provider's prompt cache,
+    // on "done" events. Null for providers that do not report it.
+    public int? CacheReadTokens { get; init; }
+    public int? CacheWriteTokens { get; init; }
     public string? Error { get; init; }
     // Why the model stopped, carried on "done" events when the provider said:
     // OpenAI "stop"/"tool_calls"/"length", Anthropic "end_turn"/"tool_use"/

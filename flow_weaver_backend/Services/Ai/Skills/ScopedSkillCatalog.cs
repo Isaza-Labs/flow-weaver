@@ -175,9 +175,19 @@ public sealed class ScopedSkillCatalog
     public static string ComposePrompt(string basePrompt, IReadOnlyList<ScopedSkill> skills, IReadOnlySet<Guid> loaded)
     {
         if (skills.Count == 0) return basePrompt;
+        return basePrompt.TrimEnd() + "\n\n---\n\n" + RenderScoped(skills, loaded);
+    }
 
-        var sb = new StringBuilder(basePrompt.TrimEnd());
-        sb.Append("\n\n---\n\n").Append(RenderIndex(skills, loaded));
+    // The integration-skill part of the prompt on its own: the index plus the text of
+    // every skill in play. It changes whenever a skill loads, so the runner sends it as
+    // a system message of its own after the base prompt — kept inside the base prompt
+    // it would change the bytes of the cached prefix and every load would pay for the
+    // whole prompt again. Empty when there are no scoped skills.
+    public static string RenderScoped(IReadOnlyList<ScopedSkill> skills, IReadOnlySet<Guid> loaded)
+    {
+        if (skills.Count == 0) return string.Empty;
+
+        var sb = new StringBuilder(RenderIndex(skills, loaded));
         foreach (var s in skills)
         {
             if (!s.AlwaysLoaded && !loaded.Contains(s.IntegrationId)) continue;
