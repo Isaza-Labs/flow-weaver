@@ -123,26 +123,35 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
         var maxIter = agent?.MaxIterations ?? 20;
         var temperature = agent?.Temperature ?? 0.2;
 
-        // Integration skills: the index always, the text when the integration is in
-        // play. "In play" at the start of a turn means loaded earlier in this
-        // conversation (kept in its Context) or named in this message; API calls
-        // during the turn and the load_skill tool add to the set as it goes.
+        // Integration skills and topic skills: the index always, the text when the
+        // integration or topic is in play. "In play" at the start of a turn means
+        // loaded earlier in this conversation (kept in its Context) or named in this
+        // message; tool calls during the turn and the load_skill tool add to the set
+        // as it goes. Both kinds share the one loaded set: integration ids and topic
+        // keys (TopicSkillCatalog.LoadKeyFor) never collide.
         var scopedSkills = await _scopedSkills.ListAsync(streamCt);
-        var previouslyLoaded = scopedSkills.Count == 0
+        var topics = await _skillLoader.LoadTopicsAsync(streamCt);
+        var previouslyLoaded = scopedSkills.Count == 0 && topics.Count == 0
             ? []
             : await LoadLoadedSkillsAsync(request.ConversationId, streamCt);
         foreach (var id in previouslyLoaded) _toolContext.MarkSkillLoaded(id);
         foreach (var id in ScopedSkillCatalog.MatchMentions(userMessage, scopedSkills)) _toolContext.MarkSkillLoaded(id);
+        foreach (var id in TopicSkillCatalog.MatchMentions(userMessage, topics)) _toolContext.MarkSkillLoaded(id);
         // A system message of its own, after the base prompt: it changes when a skill
         // loads, and the base prompt is the prefix the provider caches.
-        var scopedPrompt = ScopedSkillCatalog.RenderScoped(
-            scopedSkills, new HashSet<Guid>(_toolContext.LoadedSkillIntegrationIds));
+        var loadedNow = new HashSet<Guid>(_toolContext.LoadedSkillIntegrationIds);
+        var scopedPrompt = string.Join("\n\n---\n\n", new[]
+        {
+            TopicSkillCatalog.Render(topics, loadedNow),
+            ScopedSkillCatalog.RenderScoped(scopedSkills, loadedNow),
+        }.Where(p => p.Length > 0));
 
         var messages = await BuildInitialMessages(systemPrompt, scopedPrompt, userMessage, request.ConversationId, streamCt);
         var tools = _toolRegistry.ToDefinitions(agent?.Tools);
         // load_skill is how the model reaches a skill it has not been handed; an
         // agent whose tool list predates it must still be able to call it.
-        if (scopedSkills.Count > 0 && !tools.Any(t => t.Name.Equals("load_skill", StringComparison.OrdinalIgnoreCase)))
+        if ((scopedSkills.Count > 0 || topics.Count > 0)
+            && !tools.Any(t => t.Name.Equals("load_skill", StringComparison.OrdinalIgnoreCase)))
             tools.AddRange(_toolRegistry.ToDefinitions(new[] { "load_skill" }));
 
         // Pre-assign a conversation id (new or existing) and echo it back right
@@ -158,10 +167,10 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
         _toolContext.Hydrate(conversationId, agentRunId: null, agent?.Name, userMessage);
 
         _logger.LogInformation(
-            "ai.chat.begin agent={AgentName} model={Model} tools={ToolCount} messages={MessageCount} conversation={ConversationId} deadline_s={DeadlineSeconds} prompt_chars={PromptChars} scoped_skills={ScopedSkills} skills_loaded={SkillsLoaded}",
+            "ai.chat.begin agent={AgentName} model={Model} tools={ToolCount} messages={MessageCount} conversation={ConversationId} deadline_s={DeadlineSeconds} prompt_chars={PromptChars} scoped_skills={ScopedSkills} topic_skills={TopicSkills} skills_loaded={SkillsLoaded}",
             agent?.Name ?? "(fallback)", model, tools.Count, messages.Count,
             conversationId, deadlineSeconds, (systemPrompt?.Length ?? 0) + scopedPrompt.Length,
-            scopedSkills.Count, _toolContext.LoadedSkillIntegrationIds.Count);
+            scopedSkills.Count, topics.Count, _toolContext.LoadedSkillIntegrationIds.Count);
 
         var traceId = await _trace.StartAsync("ai.chat.run", "ai", new
         {
@@ -309,6 +318,10 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
                     if (scopedSkills.Count > 0
                         && await AutoLoadSkillAsync(tc.Name, tc.Arguments, scopedSkills, streamCt) is { } skillMessage)
                         messages.Add(skillMessage);
+                    // Same for a topic: the first call to one of its tools brings its
+                    // rules in, so the calls that follow are made with them in view.
+                    if (topics.Count > 0 && AutoLoadTopicSkills(tc.Name, topics) is { } topicMessage)
+                        messages.Add(topicMessage);
                 }
 
                 if (!warnAlreadyFired && streamStopwatch.ElapsedMilliseconds >= warnThresholdMs)
@@ -527,8 +540,29 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
         };
     }
 
-    // The integrations whose skills this conversation has already loaded, from its
-    // Context. A conversation that does not exist yet has none.
+    // Loads the topic skills a tool belongs to, once per conversation, as a system
+    // message placed right after the tool result. Null when the tool belongs to no
+    // topic or its topics are already in.
+    private LlmMessage? AutoLoadTopicSkills(string toolName, IReadOnlyList<TopicSkill> topics)
+    {
+        var fresh = TopicSkillCatalog.ForTool(toolName, topics)
+            .Where(t => _toolContext.MarkSkillLoaded(t.LoadKey))
+            .ToList();
+        if (fresh.Count == 0) return null;
+
+        _logger.LogInformation(
+            "ai.chat.topic_skill_autoloaded conversation={ConversationId} tool={Tool} skills={Skills}",
+            _toolContext.ConversationId, toolName, string.Join(",", fresh.Select(t => t.Name)));
+
+        return new LlmMessage
+        {
+            Role = "system",
+            Content = string.Join("\n\n---\n\n", fresh.Select(TopicSkillCatalog.RenderLoaded)),
+        };
+    }
+
+    // The integrations and topics whose skills this conversation has already
+    // loaded, from its Context. A conversation that does not exist yet has none.
     private async Task<IReadOnlyCollection<Guid>> LoadLoadedSkillsAsync(Guid? conversationId, CancellationToken ct)
     {
         if (conversationId is not { } id) return [];

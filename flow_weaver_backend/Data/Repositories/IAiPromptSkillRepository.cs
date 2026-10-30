@@ -39,4 +39,9 @@ public interface IAiPromptSkillRepository : IRepository<AiPromptSkill>
     // are loaded on demand by ScopedSkillCatalog, not concatenated into every turn.
     Task<IReadOnlyList<string>> ListActiveGlobalContentsOrderedAsync(
         CancellationToken ct = default);
+
+    // Same rows with their names, which is what tells the loader a row is one of
+    // the on-demand topic skills (TopicSkillCatalog) rather than an every-turn one.
+    Task<IReadOnlyList<(string Name, string Content)>> ListActiveGlobalOrderedAsync(
+        CancellationToken ct = default);
 }

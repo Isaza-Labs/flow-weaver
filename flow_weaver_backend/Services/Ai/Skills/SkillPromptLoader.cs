@@ -13,7 +13,8 @@ namespace flow_weaver_backend.Services.Ai.Skills;
 // Rows tied to an integration are not here: ScopedSkillCatalog indexes them and
 // the runner loads their text only when that integration is in play.
 // Concatenating them all meant every integration's rules rode in every turn
-// about anything else.
+// about anything else. The shipped domain skills listed in TopicSkillCatalog get
+// the same treatment: LoadTopicsAsync hands them to the runner instead.
 //
 // Registered as a Singleton because the cache must survive between
 // requests; DB access is obtained lazily through IServiceScopeFactory so
@@ -39,15 +40,20 @@ public class SkillPromptLoader : ISkillPromptLoader
 
     public async Task<string> LoadAsync(SkillTemplateContext context, CancellationToken ct = default)
     {
-        var combined = await GetCombinedAsync(ct);
+        var combined = (await GetCacheAsync(ct)).Combined;
         return combined
             .Replace("{{CurrentDate}}", context.CurrentDate)
             .Replace("{{ToolList}}", context.ToolList);
     }
 
+    // Rows listed in TopicSkillCatalog, left out of LoadAsync's text. Same cache, so
+    // an edit to one shows up in both on the next turn.
+    public async Task<IReadOnlyList<TopicSkill>> LoadTopicsAsync(CancellationToken ct = default)
+        => (await GetCacheAsync(ct)).Topics;
+
     public void Invalidate() => _cache = null;
 
-    private async Task<string> GetCombinedAsync(CancellationToken ct)
+    private async Task<CacheEntry> GetCacheAsync(CancellationToken ct)
     {
         await _gate.WaitAsync(ct);
         try
@@ -63,23 +69,30 @@ public class SkillPromptLoader : ISkillPromptLoader
                 && maxUpdated is not null
                 && entry.MaxUpdatedUtc >= maxUpdated.Value)
             {
-                return entry.Combined;
+                return entry;
             }
 
-            var rows = await skills.ListActiveGlobalContentsOrderedAsync(ct);
+            var rows = await skills.ListActiveGlobalOrderedAsync(ct);
 
-            var combined = string.Join(SectionSeparator, rows);
+            var everyTurn = rows.Where(r => !TopicSkillCatalog.IsTopic(r.Name)).Select(r => r.Content).ToList();
+            var topics = rows
+                .Select(r => TopicSkillCatalog.From(r.Name, r.Content))
+                .OfType<TopicSkill>()
+                .ToList();
+
+            var combined = string.Join(SectionSeparator, everyTurn);
             _cache = new CacheEntry
             {
                 Combined = combined,
+                Topics = topics,
                 MaxUpdatedUtc = maxUpdated ?? DateTime.MinValue,
             };
 
             _logger.LogInformation(
-                "Loaded {Count} prompt skill row(s) ({Chars} chars)",
-                rows.Count, combined.Length);
+                "Loaded {Count} prompt skill row(s) ({Chars} chars) and {TopicCount} on-demand topic skill(s) ({TopicChars} chars)",
+                everyTurn.Count, combined.Length, topics.Count, topics.Sum(t => t.Content.Length));
 
-            return combined;
+            return _cache;
         }
         finally
         {
@@ -90,6 +103,7 @@ public class SkillPromptLoader : ISkillPromptLoader
     private sealed class CacheEntry
     {
         public string Combined { get; init; } = string.Empty;
+        public IReadOnlyList<TopicSkill> Topics { get; init; } = [];
         public DateTime MaxUpdatedUtc { get; init; }
     }
 }

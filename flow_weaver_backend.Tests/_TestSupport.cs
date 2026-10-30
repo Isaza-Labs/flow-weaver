@@ -98,7 +98,12 @@ internal sealed class FakeVendorCommandRegistry : IVendorCommandRegistry
 // Services only call Invalidate/Reload after a mutation, so no-ops are enough.
 internal sealed class FakeSkillPromptLoader : ISkillPromptLoader
 {
+    // On-demand topic skills the runner should see; none by default.
+    public List<flow_weaver_backend.Services.Ai.Skills.TopicSkill> Topics { get; } = new();
+
     public Task<string> LoadAsync(SkillTemplateContext context, CancellationToken ct = default) => Task.FromResult(string.Empty);
+    public Task<IReadOnlyList<flow_weaver_backend.Services.Ai.Skills.TopicSkill>> LoadTopicsAsync(CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<flow_weaver_backend.Services.Ai.Skills.TopicSkill>>(Topics);
     public void Invalidate() { }
 }
 

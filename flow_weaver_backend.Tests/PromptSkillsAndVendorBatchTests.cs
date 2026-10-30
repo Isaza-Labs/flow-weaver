@@ -72,14 +72,14 @@ public class PromptSkillsAndVendorBatchTests
     public async Task Prompt_SkillsAreConcatenatedInSortOrder()
     {
         using var f = new LoaderFixture();
-        f.Seed("ssh.md", "SSH GUIDANCE", sortOrder: 100);
+        f.Seed("discovery.md", "DISCOVERY GUIDANCE", sortOrder: 100);
         f.Seed("base.md", "BASE RULES", sortOrder: 0);
 
         var prompt = await f.Build().LoadAsync(Ctx());
 
         Assert.True(
             prompt.IndexOf("BASE RULES", StringComparison.Ordinal)
-            < prompt.IndexOf("SSH GUIDANCE", StringComparison.Ordinal), prompt);
+            < prompt.IndexOf("DISCOVERY GUIDANCE", StringComparison.Ordinal), prompt);
     }
 
     [Fact]
@@ -87,9 +87,32 @@ public class PromptSkillsAndVendorBatchTests
     {
         using var f = new LoaderFixture();
         f.Seed("base.md", "A", sortOrder: 0);
-        f.Seed("ssh.md", "B", sortOrder: 1);
+        f.Seed("house-style.md", "B", sortOrder: 1);
 
         Assert.Contains("---", await f.Build().LoadAsync(Ctx()));
+    }
+
+    // A shipped domain skill (TopicSkillCatalog) leaves the every-turn prompt and
+    // comes back from LoadTopicsAsync, with the row's own text; a row the catalog
+    // does not know stays in the prompt.
+    [Fact]
+    public async Task Prompt_TopicSkillsAreServedOnDemandNotConcatenated()
+    {
+        using var f = new LoaderFixture();
+        f.Seed("base.md", "BASE RULES", sortOrder: 0);
+        f.Seed("ssh.md", "SSH GUIDANCE");
+        f.Seed("house-style.md", "HOUSE STYLE");
+        var loader = f.Build();
+
+        var prompt = await loader.LoadAsync(Ctx());
+        var topics = await loader.LoadTopicsAsync();
+
+        Assert.Contains("BASE RULES", prompt);
+        Assert.Contains("HOUSE STYLE", prompt);
+        Assert.DoesNotContain("SSH GUIDANCE", prompt);
+        var ssh = Assert.Single(topics);
+        Assert.Equal("ssh.md", ssh.Name);
+        Assert.Equal("SSH GUIDANCE", ssh.Content);
     }
 
     // The template slots are what let one stored prompt serve every request

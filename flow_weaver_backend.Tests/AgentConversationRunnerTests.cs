@@ -171,6 +171,12 @@ public class AgentConversationRunnerTests
         public Guid ProviderId { get; private set; }
         // Operation id → api, for the scoped-skill auto-load path. Empty by default.
         public Dictionary<string, string> OperationApis { get; } = new();
+        // The skill loader, whose Topics feed the on-demand topic skills. None by default.
+        public FakeSkillPromptLoader Skills { get; } = new();
+
+        public void AddTopic(string name, string content)
+            => Skills.Topics.Add(TopicSkillCatalog.From(name, content)
+                ?? throw new InvalidOperationException($"{name} is not a topic skill"));
 
         public StubHandler RegisterTool(string name)
         {
@@ -250,7 +256,7 @@ public class AgentConversationRunnerTests
                 factory,
                 Registry,
                 dispatcher,
-                new FakeSkillPromptLoader(),
+                Skills,
                 new ScopedSkillCatalog(Db, new MappingSpecIndex(OperationApis)),
                 caller,
                 new FakeTrace(),
@@ -583,6 +589,72 @@ public class AgentConversationRunnerTests
 
         await f.Build().RunAsync(Turn("and now?", conversationId: first.ConversationId), new RecordingSink(), default);
         Assert.Contains("ACTION1 SKILL TEXT", SystemPromptOf(f, 2));
+    }
+
+    // ─── topic skills ───────────────────────────────────────────────────
+
+    // A topic skill is indexed in every turn and stays out of the prompt until its
+    // topic is in play; naming it in the message is one way.
+    [Fact]
+    public async Task TopicSkillIsIndexedButNotLoadedUntilMentioned()
+    {
+        using var f = ReadyFixture(Sse(TextFrame("ok"), Done()), Sse(TextFrame("ok"), Done()));
+        f.AddTopic("git.md", "# Skill: git\nGIT SKILL TEXT");
+
+        await f.Build().RunAsync(Turn("who am I logged in as?"), new RecordingSink(), default);
+        var quiet = SystemPromptOf(f, 0);
+        Assert.Contains("## Topic skills", quiet);
+        Assert.Contains("`git.md`", quiet);
+        Assert.DoesNotContain("GIT SKILL TEXT", quiet);
+
+        await f.Build().RunAsync(Turn("haz commit de los cambios en el repo"), new RecordingSink(), default);
+        Assert.Contains("GIT SKILL TEXT", SystemPromptOf(f, 1));
+    }
+
+    // Calling one of a topic's tools loads it mid-turn, right behind the tool
+    // result, and the conversation remembers it for the next turn.
+    [Fact]
+    public async Task TopicToolCallAutoLoadsTheSkillAndTheConversationRemembersIt()
+    {
+        using var f = ReadyFixture(
+            Sse(ToolFrame("call_1", "git_list_files", """{"repository":"infra"}"""), Done()),
+            Sse(TextFrame("done"), Done()),
+            Sse(TextFrame("again"), Done()));
+        f.RegisterTool("git_list_files");
+        f.AddTopic("git.md", "# Skill: git\nGIT SKILL TEXT");
+
+        var first = await f.Build().RunAsync(Turn("what files are there?"), new RecordingSink(), default);
+
+        Assert.DoesNotContain("GIT SKILL TEXT", SystemPromptOf(f, 0));
+        var afterTool = TestJson.Element(f.Llm.RequestBodies[1]).GetProperty("messages").EnumerateArray().ToList();
+        var injected = afterTool.Last(m => m.GetProperty("role").GetString() == "system");
+        Assert.Contains("GIT SKILL TEXT", injected.GetProperty("content").GetString());
+
+        var conv = await f.Db.AIConversations.SingleAsync();
+        Assert.Contains(TopicSkillCatalog.LoadKeyFor("git.md"), ScopedSkillCatalog.LoadedFromContext(conv.Context));
+
+        await f.Build().RunAsync(Turn("and now?", conversationId: first.ConversationId), new RecordingSink(), default);
+        Assert.Contains("GIT SKILL TEXT", SystemPromptOf(f, 2));
+    }
+
+    // load_skill must be on offer whenever there is a topic to load, even with no
+    // integration skills and an agent tool list that predates it.
+    [Fact]
+    public async Task LoadSkillToolIsOfferedWhenOnlyTopicSkillsExist()
+    {
+        using var f = new Fixture();
+        f.SeedProvider();
+        f.SeedAgent(tools: new List<string> { "list_workflows" });
+        f.RegisterTool("list_workflows");
+        f.RegisterTool("load_skill");
+        f.AddTopic("git.md", "# Skill: git\nGIT SKILL TEXT");
+        f.Llm = new ScriptedLlm(Sse(TextFrame("ok"), Done()));
+
+        await f.Build().RunAsync(Turn("hello"), new RecordingSink(), default);
+
+        var offered = TestJson.Element(f.Llm.RequestBodies[0]).GetProperty("tools").EnumerateArray()
+            .Select(t => t.GetProperty("function").GetProperty("name").GetString()).ToList();
+        Assert.Contains("load_skill", offered);
     }
 
     // An agent with an explicit tool list that predates load_skill still gets it

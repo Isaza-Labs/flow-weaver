@@ -53,4 +53,14 @@ public class AiPromptSkillRepository : RepositoryBase<AiPromptSkill>, IAiPromptS
             .OrderBy(s => s.SortOrder).ThenBy(s => s.Name)
             .Select(s => s.Content)
             .ToListAsync(ct);
+
+    public async Task<IReadOnlyList<(string Name, string Content)>> ListActiveGlobalOrderedAsync(
+        CancellationToken ct = default)
+        => (await Query(activeOnly: true, tracking: false)
+                .Where(s => s.IntegrationId == null)
+                .OrderBy(s => s.SortOrder).ThenBy(s => s.Name)
+                .Select(s => new { s.Name, s.Content })
+                .ToListAsync(ct))
+            .Select(s => (s.Name, s.Content))
+            .ToList();
 }

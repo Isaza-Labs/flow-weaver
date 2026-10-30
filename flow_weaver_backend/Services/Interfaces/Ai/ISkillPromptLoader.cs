@@ -1,4 +1,5 @@
 using flow_weaver_backend.Dtos;
+using flow_weaver_backend.Services.Ai.Skills;
 
 namespace flow_weaver_backend.Services.Interfaces;
 
@@ -9,8 +10,14 @@ namespace flow_weaver_backend.Services.Interfaces;
 // hits Invalidate or when the row-level MAX(UpdatedAt) has advanced.
 public interface ISkillPromptLoader
 {
-    // Builds (or returns cached) prompt for the supplied context.
+    // Builds (or returns cached) prompt for the supplied context. Topic skills
+    // (TopicSkillCatalog) are not in it; they come from LoadTopicsAsync.
     Task<string> LoadAsync(SkillTemplateContext context, CancellationToken ct = default);
+
+    // The global rows that are loaded on demand, in prompt order. Empty by default
+    // so a loader that knows nothing about topics keeps every row in the prompt.
+    Task<IReadOnlyList<TopicSkill>> LoadTopicsAsync(CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<TopicSkill>>([]);
 
     // Drops the cached prompt. Called by AiPromptSkillService after every
     // insert/update/delete so the next LoadAsync sees the fresh state
