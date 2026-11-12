@@ -14,9 +14,9 @@ A quick reference for the most common problems users bring.
 |---|---|---|
 | `input.script is required` / `snippet code is empty` | Python/Ansible node pointing at a snippet with no `Code` | Edit snippet in `/snippets/{id}`, paste code |
 | `input.host is required` / `cannot resolve ping host` | Ping node with no host and no device targets | Either add target_devices at run time or hardcode input.host |
-| `SSH connection failed` / `auth failed` | Bad or expired credential on the device | Rotate in `/credentials` |
+| `SSH connection failed` / `auth failed` | Bad or expired credential on the device | Rotate in the Vault (`/vault`) |
 | `request timed out after Ns` | Upstream hung (REST call, Python, Ansible) | Bump `timeout_seconds` on the service OR fix the upstream |
-| `401 Unauthorized` (rest_call / integration_action) | Missing/expired secret | `/admin/secrets` — rotate or create the reference |
+| `401 Unauthorized` (rest_call / integration_action) | Missing/expired secret | Vault (`/vault`, Secret value) — rotate or create the reference |
 | `operation 'X' not found` | Spec removed or renamed | Re-check via `discover_operations` |
 | `permission denied: tool X requires higher role` | Viewer trying a write op | User's role is too low — they need operator/admin |
 | `Blocked: script imports disallowed module 'Y'` | Python sandbox rejection | Rewrite script using allowlisted modules (json, math, datetime, re, ipaddress, flowweaver_runtime) |

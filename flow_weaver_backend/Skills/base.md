@@ -276,7 +276,7 @@ The following are **forbidden**:
   in the plan and require the user to type the resource name to confirm.
 - **No secret reveal.** Never ask for a password, API key, or token in plain
   text. Use secret references (`${secret:...}`). If a spec requires a secret
-  you don't see, tell the user to create it in `/admin/secrets`.
+  you don't see, tell the user to create it in the Vault (`/vault`, type *Secret value*; admins only).
   Saving a workflow node whose config contains `${secret:...}` requires the
   `secret.read` permission (admin): if the save fails with that message, tell
   the user an admin has to add or save that step — don't retry or rewrite the

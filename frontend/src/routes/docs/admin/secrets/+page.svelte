@@ -8,17 +8,15 @@
   lead="Named, encrypted values (API keys, bearer tokens, passwords) that API specs and some workflow steps reference by name, so the plaintext never appears in a spec, a node, or the UI."
 >
   <Callout tone="where" title="Where to find it">
-    URL: <a href="/admin/secrets"><code>/admin/secrets</code></a>
-    (breadcrumb <strong>Admin</strong> → <strong>Secrets</strong>). The page is
-    not in the sidebar. Open it from the <strong>AI</strong> hub
-    (<a href="/ai"><code>/ai</code></a>, sidebar → <strong>Intelligence</strong>
-    → <strong>AI</strong>) with the <strong>Secrets (admin)</strong> link, or type
-    the URL.
+    URL: <a href="/vault?type=secret"><code>/vault?type=secret</code></a>.
+    Sidebar → <strong>Operate</strong> → <strong>Vault</strong>, filter
+    <strong>Secret value</strong>. Secrets share the Vault with device credentials;
+    the secret values in it are shown to admins only. The old
+    <code>/admin/secrets</code> address redirects there.
   </Callout>
   <Callout tone="admin" title="Admin only">
     Every <code>/api/secrets</code> endpoint requires the <code>admin</code> role.
-    In the browser, any <code>/admin/…</code> route sends a non-admin back to the
-    dashboard.
+    In the Vault, a non-admin sees no secret values and no Secret value type.
   </Callout>
 
   <section>
@@ -54,7 +52,7 @@
       </li>
       <li>
         Device logins do <strong>not</strong> belong here. Store them as
-        <a href="/docs/credentials">Credentials</a> (<code>/credentials</code>).
+        <a href="/docs/credentials">Credentials</a> (<code>/vault</code>).
         A workflow can still reference those with the <code>credential</code>
         source described below.
       </li>
@@ -293,7 +291,7 @@
     </p>
     <ol>
       <li>
-        On <code>/admin/secrets</code>, create a secret named
+        On <code>/vault</code>, create a secret named
         <code>netbox-token</code> with the value
         <code>&lt;YOUR-NETBOX-TOKEN&gt;</code>.
       </li>

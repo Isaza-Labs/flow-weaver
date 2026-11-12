@@ -8,8 +8,11 @@
   lead="Auth material — username plus password or SSH private key — that devices and Git repositories reference so FlowWeaver can log in at workflow runtime."
 >
   <Callout tone="where" title="Where to find it">
-    URL: <a href="/credentials"><code>/credentials</code></a>.
-    Sidebar → <strong>Operate</strong> → <strong>Credentials</strong>.
+    URL: <a href="/vault"><code>/vault</code></a>.
+    Sidebar → <strong>Operate</strong> → <strong>Vault</strong>. Credentials share the
+    Vault with secret values: <strong>New entry</strong> asks what you are storing
+    (Login, SSH key, SNMPv3 user, Git token or API key) and shows only its fields.
+    The old <code>/credentials</code> address redirects there.
   </Callout>
 
   <section>
@@ -57,7 +60,7 @@
   <section>
     <h2>List page</h2>
     <p>
-      Route: <code>/credentials</code>. Header has <em>Refresh</em> and
+      Route: <code>/vault</code>. Header has <em>Refresh</em> and
       <em>New credential</em> buttons. Large spinner while loading; an empty
       state with a <em>Create first credential</em> button when nothing exists.
     </p>

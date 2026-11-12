@@ -248,7 +248,7 @@
         fill in <em>Name</em> and <em>IP address</em>. <em>Platform</em> and a
         <em>Credential</em> are not needed for a ping, but you will want them as
         soon as you log in to the device (create the credential from
-        <a href="/credentials"><code>/credentials</code></a> first). Make sure the
+        <a href="/vault"><code>/vault</code></a> first). Make sure the
         hammer (<em>draft</em>) icon in the device's <em>Environments</em> column is
         lit, or a draft run will not reach it.
       </li>
@@ -359,7 +359,7 @@
       <dd>
         Admin dashboard. Children include <code>/admin/users</code>,
         <code>/admin/audit</code>, <code>/admin/traces</code>,
-        <code>/admin/artifacts</code>, <code>/admin/secrets</code>,
+        <code>/admin/artifacts</code>,
         <code>/admin/mcp-servers</code>, <code>/admin/messaging-channels</code>,
         <code>/admin/python-packages</code>, <code>/admin/slo</code>,
         <code>/admin/settings</code>, <code>/admin/actions</code>. The

@@ -81,9 +81,9 @@
       has no entry for them.
     </p>
     <Callout tone="info" title="Secrets">
-      Secrets (<a href="/admin/secrets"><code>/admin/secrets</code></a>) has
-      no card here; open it from the AI hub's <em>Secrets (admin)</em> link or
-      by URL. See <a href="/docs/admin/secrets">Secrets</a>.
+      Secret values live in the Vault (<a href="/vault?type=secret"><code>/vault</code></a>,
+      sidebar → <strong>Operate</strong>), which shows them to admins only.
+      See <a href="/docs/admin/secrets">Secrets</a>.
     </Callout>
   </section>
 

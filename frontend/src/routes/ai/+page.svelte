@@ -114,10 +114,10 @@
             </div>
             <ArrowUpRight size={12} class="text-surface-500 group-hover:text-primary-300" />
           </a>
-          <a href="/admin/secrets" class="flex items-center justify-between rounded-md px-2 py-2 hover:bg-surface-200-800/40 transition-colors group">
+          <a href="/vault?type=secret" class="flex items-center justify-between rounded-md px-2 py-2 hover:bg-surface-200-800/40 transition-colors group">
             <div class="flex items-center gap-2 text-sm text-surface-900-100">
               <KeyRound size={14} class="text-primary-300" />
-              Secrets (admin)
+              Secret values (Vault)
             </div>
             <ArrowUpRight size={12} class="text-surface-500 group-hover:text-primary-300" />
           </a>

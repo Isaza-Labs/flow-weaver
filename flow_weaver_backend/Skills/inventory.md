@@ -26,13 +26,13 @@ projection.
 - Credentials hold **metadata only** through the API: username, type
   (ssh / rest / snmp), optional fields. The **password / private key /
   token lives encrypted** and is never returned.
-- To rotate: the user edits in `/credentials` UI (not chat). The agent
+- To rotate: the user edits it in the Vault (`/vault`) UI (not chat). The agent
   can `update_credential` with a new `username` or `type`, but not values.
 - Specs that call external APIs use `${secret:credential:<id>:password}`
   to inject at call time — you don't need (or have) the plaintext.
 
 If a workflow fails because a credential is wrong, tell the user: "the
-credential `<name>` looks stale; rotate it in `/credentials` and rerun."
+credential `<name>` looks stale; rotate it in the Vault (`/vault`) and rerun."
 Don't try to "fix" it from the chat.
 
 ## Device pools — static vs dynamic

@@ -326,15 +326,15 @@
         <p class="text-[11px] text-warning-300 mt-1">
           No matching credential found.
           {#if sshFormUrl}
-            Create one in <a href="/credentials" class="underline">/credentials</a> with <strong>Type=ssh</strong> + <strong>Auth method=SSH private key</strong>.
+            Create one in the <a href="/vault?type=ssh_key&new=1" class="underline">Vault</a> as an <strong>SSH key</strong>.
           {:else}
-            Create one in <a href="/credentials" class="underline">/credentials</a> with <strong>Type=git_token</strong> and the PAT in the password field.
+            Create one in the <a href="/vault?type=git_token&new=1" class="underline">Vault</a> as a <strong>Git token</strong>, with the PAT as the token.
           {/if}
         </p>
       {:else}
         <p class="text-[11px] text-surface-500 mt-1">
           Showing {matchingCreds.length} credential{matchingCreds.length === 1 ? '' : 's'} compatible with this URL.
-          Need another? <a href="/credentials" class="underline">Manage credentials</a>.
+          Need another? <a href="/vault" class="underline">Open the Vault</a>.
         </p>
       {/if}
     </div>

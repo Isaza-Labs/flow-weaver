@@ -1391,10 +1391,15 @@ export const FIELD_HINTS: Record<string, FieldHint> = {
     label: 'Username',
     help: 'The login name sent to the device or service. For a Git HTTPS remote using a personal access token this is the account name, with the token itself in the password field.',
   },
-  'credentials.auth_method': {
-    label: 'Auth method',
-    help: 'Password/token authenticates with a secret string; SSH private key authenticates with a PEM key that never leaves the backend.',
-    detail: 'Switching this after saving does not erase the other secret — the backend keeps whichever you last filled and uses the one this setting selects.',
+  'vault.kind': {
+    label: 'Type',
+    help: 'What this entry is: a login, an SSH key, an SNMPv3 user, a Git token or an API key. It decides which fields the form asks for and whether it authenticates with a password or a private key.',
+    detail: 'Changing it does not erase what is stored — the backend keeps the password or key you last saved and uses the one the new type needs. A secret value cannot be turned into a credential or the other way round: they live in different stores.',
+  },
+  'vault.custom_type': {
+    label: 'Custom type',
+    help: 'The type string stored on the credential when none of the listed ones fits. Pickers on devices, Git remotes and integrations filter on it.',
+    detail: 'Keep it lowercase and stable — renaming it later can hide the credential from a picker that looked for the old string.',
   },
   'credentials.password': {
     label: 'Password or token',

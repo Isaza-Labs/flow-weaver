@@ -52,7 +52,7 @@
         <tr><td>Schedules (all)</td><td><code>/schedules</code>, <code>/schedules/calendar</code></td><td>viewer</td><td><a href="/docs/schedules">Schedules</a></td></tr>
         <tr><td>Devices</td><td><code>/devices</code></td><td>viewer (read-only)</td><td><a href="/docs/devices">Devices</a></td></tr>
         <tr><td>Device pools</td><td><code>/device-pools</code></td><td>viewer (read-only)</td><td><a href="/docs/device-pools">Device pools</a></td></tr>
-        <tr><td>Credentials</td><td><code>/credentials</code></td><td>viewer (metadata only)</td><td><a href="/docs/credentials">Credentials</a></td></tr>
+        <tr><td>Vault — logins, keys, tokens</td><td><code>/vault</code></td><td>viewer (metadata only)</td><td><a href="/docs/credentials">Credentials</a></td></tr>
         <tr><td>QA lab</td><td><code>/qa</code></td><td>viewer</td><td><a href="/docs/qa-lab">QA lab</a></td></tr>
         <tr><td>Artifacts</td><td><code>/admin/artifacts</code>, <code>/admin/artifacts/{'{id}'}</code></td><td>admin</td><td><a href="/docs/admin/artifacts">Artifacts</a></td></tr>
         <tr><td>Policies</td><td><code>/policies</code>, <code>/policies/audit</code></td><td>viewer to read, admin to author (sidebar shows it to admins only)</td><td><a href="/docs/policies">Policies</a></td></tr>
@@ -68,7 +68,7 @@
         <tr><td>Users</td><td><code>/admin/users</code></td><td>admin</td><td><a href="/docs/admin/users">Users</a></td></tr>
         <tr><td>Audit log</td><td><code>/admin/audit</code></td><td>admin</td><td><a href="/docs/admin/audit">Audit log</a></td></tr>
         <tr><td>Traces</td><td><code>/admin/traces</code></td><td>admin</td><td><a href="/docs/admin/traces">Traces</a></td></tr>
-        <tr><td>Secrets</td><td><code>/admin/secrets</code></td><td>admin</td><td><a href="/docs/admin/secrets">Secrets</a></td></tr>
+        <tr><td>Vault — secret values</td><td><code>/vault?type=secret</code></td><td>admin</td><td><a href="/docs/admin/secrets">Secrets</a></td></tr>
         <tr><td>Service-level objectives</td><td><code>/admin/slo</code></td><td>admin</td><td><a href="/docs/admin/slo">Service-level objectives</a></td></tr>
         <tr><td>Application settings</td><td><code>/admin/settings</code></td><td>admin</td><td><a href="/docs/admin/settings">Application settings</a></td></tr>
         <tr><td>Reusable actions (legacy)</td><td><code>/admin/actions</code></td><td>admin</td><td><a href="/docs/admin/actions">Reusable actions (legacy)</a></td></tr>
@@ -78,9 +78,8 @@
       </tbody>
     </table>
     <Callout tone="info" title="Screens not in the sidebar">
-      <code>/admin/secrets</code> is reached from the AI hub's <em>Agent
-      composition</em> card, <code>/admin/slo</code> and
-      <code>/admin/settings</code> from the admin dashboard's
+      <code>/admin/slo</code> and
+      <code>/admin/settings</code> are reached from the admin dashboard's
       <a href="/docs/admin#tools">Tools</a> cards, and
       <code>/admin/actions</code> only by typing its URL.
     </Callout>
