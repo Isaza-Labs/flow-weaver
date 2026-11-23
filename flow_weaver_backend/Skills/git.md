@@ -296,7 +296,7 @@ the UI's file browser at `/integrations/git/{id}` — surface that link.
 | `ssh clone failed: Permission denied (publickey)` | Public key not added to the Git provider | Tell the user to add the public half of the credential to their GitHub/GitLab account. You can't read the key; tell them to extract from the credential or generate a new keypair. |
 | `ssh clone failed: Host key verification failed` | StrictHostKeyChecking flagged a fingerprint change | Investigate; could be MITM or legitimate host migration. Don't auto-bypass. |
 | `passphrase-protected SSH keys are not supported` | Credential's private key has a passphrase | Tell the user to re-import a key without a passphrase, or switch the repo to HTTPS+PAT. |
-| `git operation failed: 403 Forbidden` (HTTPS) | PAT expired or lacks scope | Tell the user to rotate the PAT in `/credentials` with `repo` scope (GitHub) / `read_repository`+`write_repository` (GitLab). |
+| `git operation failed: 403 Forbidden` (HTTPS) | PAT expired or lacks scope | Tell the user to rotate the PAT in the Vault (`/vault`, the Git token entry) with `repo` scope (GitHub) / `read_repository`+`write_repository` (GitLab). |
 
 When you surface an error to the user, paste the verbatim message in a
 fenced block — they'll forward it to whoever runs the Git provider.

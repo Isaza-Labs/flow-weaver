@@ -80,7 +80,7 @@
     <ul>
       <li><strong>Prompt skills</strong> → <a href="/ai/skills"><code>/ai/skills</code></a>.</li>
       <li><strong>API specs</strong> → <a href="/ai/specs"><code>/ai/specs</code></a>.</li>
-      <li><strong>Secrets (admin)</strong> → <a href="/admin/secrets"><code>/admin/secrets</code></a> (admin-only).</li>
+      <li><strong>Secret values (Vault)</strong> → <a href="/vault?type=secret"><code>/vault</code></a> (secret values are shown to admins only).</li>
     </ul>
     <p>
       The text above the links reminds you: <em>"The default assistant

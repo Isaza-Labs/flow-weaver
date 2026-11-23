@@ -82,7 +82,7 @@ code is what you branch on; the message is written for a person and changes.
 2. Call `get_step_logs(step_run_id)`. Read `error` and the tail of `logs`.
 3. Classify the failure:
    - **Credential / auth**: the handler says "401", "permission denied",
-     "SSH auth failed". Point user at `/credentials` or `/admin/secrets`.
+     "SSH auth failed". Point user at the Vault (`/vault`).
    - **Network / timeout**: "connection refused", "dial tcp", "host
      unreachable". Suggest checking device reachability with a ping node.
    - **Config shape**: "input.X is required", "parameter missing". Offer

@@ -15,6 +15,14 @@ const QUICKLINKS_KEY = 'flowweaver:dashboard:quicklinks';
 // hrefs; the dashboard resolves label + icon from $lib/nav at render time.
 const DEFAULT_QUICKLINKS = ['/workflows', '/runs', '/schedules', '/devices'];
 
+// Pages that were replaced, and the page that replaced them. A shortcut saved
+// before the rename is read as the new page, so it keeps showing — and can still
+// be removed or moved, which works by the stored href.
+const RENAMED_QUICKLINKS: Readonly<Record<string, string>> = {
+  '/credentials': '/vault',
+  '/admin/secrets': '/vault',
+};
+
 export type Density = 'compact' | 'comfortable';
 
 function readBool(key: string, fallback: boolean): boolean {
@@ -40,7 +48,20 @@ function readQuickLinks(): string[] {
     if (raw === null) return [...DEFAULT_QUICKLINKS];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [...DEFAULT_QUICKLINKS];
-    return parsed.filter((x): x is string => typeof x === 'string');
+    const stored = parsed.filter((x): x is string => typeof x === 'string');
+    // Credentials and Secrets both pinned become one Vault shortcut.
+    const hrefs = [...new Set(stored.map((href) => RENAMED_QUICKLINKS[href] ?? href))];
+    // Written back once, so the old hrefs do not linger in storage. A write that
+    // fails (quota, blocked storage) costs only that: the migrated list is still
+    // what this session uses, rather than falling back to the defaults.
+    if (hrefs.length !== stored.length || hrefs.some((h, i) => h !== stored[i])) {
+      try {
+        localStorage.setItem(QUICKLINKS_KEY, JSON.stringify(hrefs));
+      } catch {
+        // Keep the in-memory list.
+      }
+    }
+    return hrefs;
   } catch {
     return [...DEFAULT_QUICKLINKS];
   }

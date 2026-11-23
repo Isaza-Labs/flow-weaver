@@ -147,7 +147,7 @@
         Only compatible credentials are listed. SSH URLs show key credentials; other URLs
         show credentials whose type contains <code>git</code>. <em>— public / read-only —</em>
         means none. If nothing matches, the dialog says <em>No matching credential found.</em>
-        and links to <code>/credentials</code>.
+        and links to <code>/vault</code>.
       </dd>
       <dt>Description (optional)</dt><dd>Free text.</dd>
     </dl>
@@ -181,7 +181,7 @@
   <section>
     <h2>Main procedure (admin): connect a test repository</h2>
     <ol>
-      <li>Create the credential in <a href="/credentials"><code>/credentials</code></a>. For HTTPS: Type <code>git_token</code>, username, and the token as password.</li>
+      <li>Create the credential in the Vault (<a href="/vault"><code>/vault</code></a>). For HTTPS: <strong>New entry</strong> → <strong>Git token</strong>, with the account name and the token. For an SSH URL: <strong>SSH key</strong>.</li>
       <li>Go to <code>/integrations/git</code> → <strong>New repository</strong>.</li>
       <li>Fill in <strong>Name</strong> (e.g. <code>lab-configs</code>), <strong>URL</strong>, <strong>Default branch</strong>, and pick the credential. Click <strong>Register</strong>.</li>
       <li>

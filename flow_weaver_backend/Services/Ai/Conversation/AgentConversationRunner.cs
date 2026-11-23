@@ -281,6 +281,13 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
                     ToolCalls = pendingToolCalls,
                 });
 
+                // Skill text auto-loaded by a call waits until every result of this round is
+                // in. Anthropic needs a parallel round's tool_result blocks to lead the user
+                // turn; a skill message added between two results put text before the second
+                // one and the API answered 400 ("tool_use ids were found without tool_result
+                // blocks immediately after").
+                var roundResults = new List<LlmMessage>();
+                var loadedSkills = new List<LlmMessage>();
                 foreach (var tc in pendingToolCalls)
                 {
                     await sink.ToolStartAsync(tc.Name, tc.Arguments, ct);
@@ -305,7 +312,7 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
                     await sink.ToolResultAsync(tc.Name, output, ct);
                     toolCalls.Add(new AgentToolCall(tc.Name, tc.Arguments, output.Success));
 
-                    messages.Add(new LlmMessage
+                    roundResults.Add(new LlmMessage
                     {
                         Role = "tool",
                         Content = CapForLlm(resultRaw, _chatOptions.MaxToolResultChars),
@@ -313,16 +320,17 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
                     });
 
                     // A call against an integration's API is the strongest signal that
-                    // its skill is needed; the text goes in right behind the result so
-                    // the model reads the rules before it interprets the data.
+                    // its skill is needed; the text goes in right behind the round's results
+                    // so the model reads the rules before it interprets the data.
                     if (scopedSkills.Count > 0
                         && await AutoLoadSkillAsync(tc.Name, tc.Arguments, scopedSkills, streamCt) is { } skillMessage)
-                        messages.Add(skillMessage);
+                        loadedSkills.Add(skillMessage);
                     // Same for a topic: the first call to one of its tools brings its
                     // rules in, so the calls that follow are made with them in view.
                     if (topics.Count > 0 && AutoLoadTopicSkills(tc.Name, topics) is { } topicMessage)
-                        messages.Add(topicMessage);
+                        loadedSkills.Add(topicMessage);
                 }
+                AppendToolRound(messages, roundResults, loadedSkills);
 
                 if (!warnAlreadyFired && streamStopwatch.ElapsedMilliseconds >= warnThresholdMs)
                 {
@@ -507,8 +515,19 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
             ? _toolContext.LoadedSkillIntegrationIds
             : null;
 
+    // One round of tool calls goes into the history as every result first, then the
+    // skill text those calls auto-loaded. Anthropic maps the results and the skill
+    // text into one user turn, and its tool_result blocks must lead that turn: text
+    // between two results is answered with a 400.
+    internal static void AppendToolRound(
+        List<LlmMessage> messages, IReadOnlyList<LlmMessage> results, IReadOnlyList<LlmMessage> loadedSkills)
+    {
+        messages.AddRange(results);
+        messages.AddRange(loadedSkills);
+    }
+
     // Loads the skills of the integration a tool call is about, once per
-    // conversation, as a system message placed right after the tool result. Null
+    // conversation, as a system message placed after the round's tool results. Null
     // when the call names no integration or its skills are already in.
     private async Task<LlmMessage?> AutoLoadSkillAsync(
         string toolName, JsonElement args, IReadOnlyList<ScopedSkill> scopedSkills, CancellationToken ct)
@@ -541,7 +560,7 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
     }
 
     // Loads the topic skills a tool belongs to, once per conversation, as a system
-    // message placed right after the tool result. Null when the tool belongs to no
+    // message placed after the round's tool results. Null when the tool belongs to no
     // topic or its topics are already in.
     private LlmMessage? AutoLoadTopicSkills(string toolName, IReadOnlyList<TopicSkill> topics)
     {

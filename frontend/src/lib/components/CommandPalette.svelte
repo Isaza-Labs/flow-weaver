@@ -6,7 +6,7 @@
   import { prefsStore } from '$lib/stores/prefs.svelte';
   import { registerShortcut } from '$lib/utils/shortcuts';
   import {
-    LayoutDashboard, Workflow, Activity, Server, Bot, KeyRound,
+    LayoutDashboard, Workflow, Activity, Server, Bot, Vault,
     CalendarClock, FlaskConical, Cable, BookOpen, Settings2, Network,
     ShieldCheck, Sun, Moon, Layers, Search, Files,
   } from 'lucide-svelte';
@@ -56,11 +56,12 @@
       { id: 'go-schedules', label: 'Go to Schedules', section: 'Navigate', icon: CalendarClock, run: () => goto('/schedules') },
       { id: 'go-devices', label: 'Go to Devices', section: 'Navigate', icon: Server, run: () => goto('/devices') },
       { id: 'go-pools', label: 'Go to Device pools', section: 'Navigate', icon: Network, run: () => goto('/device-pools') },
-      { id: 'go-credentials', label: 'Go to Credentials', section: 'Navigate', icon: KeyRound, run: () => goto('/credentials') },
+      { id: 'go-vault', label: 'Go to Vault', keywords: 'credentials secrets keys tokens passwords', section: 'Navigate', icon: Vault, run: () => goto('/vault') },
       { id: 'go-qa', label: 'Go to QA lab', section: 'Navigate', icon: FlaskConical, run: () => goto('/qa') },
       { id: 'go-ai', label: 'Go to AI', section: 'Navigate', icon: Bot, run: () => goto('/ai') },
       { id: 'go-docs', label: 'Go to Documentation', section: 'Navigate', icon: BookOpen, run: () => goto('/docs') },
       { id: 'new-workflow', label: 'New workflow', section: 'Actions', icon: Workflow, run: () => goto('/workflows?new=1') },
+      { id: 'new-vault-entry', label: 'New Vault entry', keywords: 'credential secret key token password', section: 'Actions', icon: Vault, run: () => goto('/vault?new=1') },
       { id: 'theme-toggle', label: themeStore.mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode', section: 'Appearance', icon: themeStore.mode === 'dark' ? Sun : Moon, run: () => themeStore.toggleMode() },
       { id: 'sidebar-collapse', label: prefsStore.sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar', section: 'Appearance', run: () => prefsStore.toggleSidebar() },
       { id: 'density-toggle', label: prefsStore.density === 'compact' ? 'Comfortable table density' : 'Compact table density', section: 'Appearance', run: () => prefsStore.toggleDensity() },

@@ -10,7 +10,7 @@ import {
   CalendarClock,
   Server,
   Network,
-  KeyRound,
+  Vault,
   KeySquare,
   FlaskConical,
   ShieldCheck,
@@ -55,7 +55,9 @@ export const NAV_DESTS: NavDest[] = [
   { href: '/schedules', label: 'Schedules', icon: CalendarClock, group: 'Operate' },
   { href: '/devices', label: 'Devices', icon: Server, group: 'Operate' },
   { href: '/device-pools', label: 'Device pools', icon: Network, group: 'Operate' },
-  { href: '/credentials', label: 'Credentials', icon: KeyRound, group: 'Operate' },
+  // Logins, keys, tokens and (for admins) secret values; replaced the separate
+  // Credentials and Secrets pages, whose URLs redirect here.
+  { href: '/vault', label: 'Vault', icon: Vault, group: 'Operate' },
   { href: '/qa', label: 'QA lab', icon: FlaskConical, group: 'Operate' },
   { href: '/admin/artifacts', label: 'Artifacts', icon: Files, group: 'Operate', adminOnly: true },
 

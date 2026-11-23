@@ -322,7 +322,7 @@
           {devicesMissingCredential === 1 ? 'has' : 'have'} no credential assigned. SSH / NETCONF
           workflows against them will fail with <code class="font-mono">credential 00000000-… not found</code>.
           Edit the device{devicesMissingCredential === 1 ? '' : 's'} or bulk-assign from the table
-          selection. Create credentials at <a href="/credentials" class="underline font-medium">/credentials</a>.
+          selection. Create credentials at <a href="/vault" class="underline font-medium">/vault</a>.
         </div>
       </div>
     </Alert>
@@ -500,7 +500,7 @@
           <AlertTriangle size={12} class="mt-0.5 shrink-0" />
           <div>
             No credential assigned. SSH / NETCONF workflows against this device will fail.
-            Pick one below or create it at <a href="/credentials" class="underline">/credentials</a>.
+            Pick one below or create it at <a href="/vault" class="underline">/vault</a>.
           </div>
         </div>
       </Alert>

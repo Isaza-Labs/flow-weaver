@@ -104,17 +104,18 @@ export const GUIDE_ENTRIES: GuideEntry[] = [
     docsHref: '/docs/device-pools',
   },
   {
-    match: (p) => p === '/credentials',
-    title: 'Credentials',
-    intro: 'The auth material devices use at run time — username plus password, or an SSH private key. Secrets are encrypted at rest and never returned to the UI.',
+    match: (p) => p === '/vault',
+    title: 'Vault',
+    intro: 'Every login, SSH key, token and API key devices, Git remotes and integrations use — and, for admins, the secret values OpenAPI specs reference. Everything is encrypted at rest and never returned to the UI.',
     tips: [
+      "New entry asks what you are storing first, then shows only that kind's fields",
       'A device with no credential fails its SSH steps with "credential 00000000-… not found"',
-      'You can bulk-assign a credential to many devices at once from the Devices page',
-      'Editing a credential leaves the stored secret untouched unless you type a new one',
-      'Git repositories use this same catalog: HTTPS+PAT for token auth, SSH key for git@ URLs',
+      'Editing an entry leaves the stored secret untouched unless you type a new one',
+      'Git repositories use this same catalog: a Git token for HTTPS, an SSH key for git@ URLs',
+      'Secret values are referenced from a spec as ${secret:secret:<name>:value} — the copy button gives you the exact text',
     ],
     aiContext:
-      'The user is on /credentials, managing the encrypted credential catalog (username/password or SSH key) that devices and Git remotes reference by id.',
+      'The user is on /vault, managing the encrypted credential catalog (logins, SSH keys, SNMPv3 users, Git tokens, API keys) that devices and Git remotes reference by id, and — if admin — the named secret values OpenAPI specs reference as ${secret:secret:<name>:value}.',
     docsHref: '/docs/credentials',
   },
   {
@@ -361,19 +362,6 @@ export const GUIDE_ENTRIES: GuideEntry[] = [
     aiContext:
       'The user is on /admin/settings, changing the per-resource grants toggle, the RBAC mode (legacy/granular) and the import fuzzy-match thresholds, with a server-side cache TTL of about a minute.',
     docsHref: '/docs/admin/settings',
-  },
-  {
-    match: (p) => p === '/admin/secrets',
-    title: 'Secrets',
-    intro: 'Named credentials the AI agent consumes when calling REST operations. Reference them from an OpenAPI spec instead of pasting the value into the document.',
-    tips: [
-      'Reference syntax in a spec is ${secret:secret:<name>:value}',
-      'Values are encrypted at rest and never returned to the UI',
-      'These are separate from device Credentials — those authenticate to devices, these to REST APIs',
-    ],
-    aiContext:
-      'The user is on /admin/secrets, managing named encrypted secrets that OpenAPI specs reference when the agent calls REST operations.',
-    docsHref: '/docs/admin/secrets',
   },
   {
     match: (p) => p === '/admin/mcp-servers',

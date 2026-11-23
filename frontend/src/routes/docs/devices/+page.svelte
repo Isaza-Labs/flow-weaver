@@ -49,7 +49,7 @@
       credential (<code>credential_id</code> is null or the all-zeros GUID).
       It counts the affected rows and warns that SSH / NETCONF workflows will
       fail with <code>credential 00000000-… not found</code>. The banner links
-      to <a href="/credentials"><code>/credentials</code></a> so you can fix
+      to <a href="/vault"><code>/vault</code></a> so you can fix
       the root cause.
     </p>
   </section>
@@ -70,7 +70,7 @@
       <dt>Credential</dt>
       <dd>
         Select from the stored credentials. Options come from
-        <a href="/credentials"><code>/credentials</code></a>; if no credentials
+        <a href="/vault"><code>/vault</code></a>; if no credentials
         exist, the only option is <em>(none)</em>. Empty selection maps to the
         all-zeros GUID on the wire.
       </dd>
