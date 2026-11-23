@@ -28,7 +28,9 @@ Each entry should distinguish verified behavior from known limitations and break
 
 ## Unreleased
 
-Nothing yet.
+### Changed
+
+- The `workflow_run` rate limit (starting a run) is now 40 per minute per user, up from 20 per hour. The hourly budget was exhausted by ordinary use, such as launching a workflow once per device.
 
 ## 0.9.0 - not yet published
 
