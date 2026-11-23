@@ -107,11 +107,13 @@ public sealed class WorkerHostedService : BackgroundService
 
     private async Task DispatchAsync(JobModel job, CancellationToken ct)
     {
-        // The OUTER try/finally guarantees the concurrency slot is
-        // released even if something between this method's entry and
-        // the original inner try (tracing, scope creation, etc.)
-        // throws. Without this, a synchronous failure here would
-        // permanently leak a semaphore slot per crash.
+        // The OUTER try/finally owns the concurrency slot: it is the ONLY
+        // place that releases it, exactly once per dispatched job, whatever
+        // happens inside (tracing, scope creation, handler failure, cancel).
+        // Releasing it from more than one place over-credits the semaphore
+        // whenever other jobs still hold slots (SemaphoreSlim only throws
+        // when it is already full), and the main loop's next Release() then
+        // throws SemaphoreFullException and stops the host.
         try
         {
         // Trace scope covers the entire dispatch lifecycle per job. A separate
@@ -185,24 +187,13 @@ public sealed class WorkerHostedService : BackgroundService
                 catch { /* swallow */ }
             }
         }
+        }
         finally
         {
-            // Inner finally — leaves the original semaphore release in
-            // place for the happy path so traces / dbcontext from the
-            // catch blocks still complete before we hand the slot back.
+            // Single release point for the slot acquired in ExecuteAsync.
+            // Runs after the catch blocks above, so failure traces and the
+            // job's terminal state are written before the slot is handed back.
             _semaphore.Release();
-        }
-        }
-        finally
-        {
-            // Outer finally — defense-in-depth: if anything between
-            // this method's entry and the inner `try` (or anywhere the
-            // inner finally couldn't run) escapes synchronously, we
-            // still release the slot. Calling Release twice on a slot
-            // is also caught by SemaphoreFullException, but the inner
-            // finally always runs first when it gets a chance.
-            try { _semaphore.Release(); }
-            catch (SemaphoreFullException) { /* inner finally already released */ }
         }
     }
 
