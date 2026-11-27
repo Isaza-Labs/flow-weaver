@@ -345,6 +345,14 @@ def _run_netmiko(cfg: dict) -> dict:
         c = ConnectHandler(**device, auto_connect=False)
         _patch_hostkey_policy(c, pin_policy)
         c.establish_connection()
+        # Netmiko's own _open() runs session_preparation() right after
+        # establish_connection(); auto_connect=False skips both, so it has to
+        # be called here. Without it no driver ever learned its prompt or
+        # disabled paging: every send_command re-guessed the prompt from the
+        # last line it read, and on a device with a login banner that line is
+        # banner text (EXOS: "Press the <tab> or '?' key ..."), so the command
+        # timed out waiting for it, and long output stayed paged.
+        c._try_session_preparation()
         if cfg.get("enable_secret"):
             c.enable()
         return c
