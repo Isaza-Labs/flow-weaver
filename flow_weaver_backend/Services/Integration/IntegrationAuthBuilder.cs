@@ -101,12 +101,16 @@ public class IntegrationAuthBuilder
             "integration.auth.apply integration_id={IntegrationId} auth_method={AuthMethod}",
             integrationId, string.IsNullOrEmpty(method) ? "none" : method);
 
+        var applied = false;
         switch (method)
         {
             case "token":
                 var prefix = string.IsNullOrWhiteSpace(auth.Prefix) ? "Token" : auth.Prefix;
                 if (!string.IsNullOrEmpty(auth.Token))
+                {
                     request.Headers.Authorization = new AuthenticationHeaderValue(prefix, auth.Token);
+                    applied = true;
+                }
                 break;
 
             case "basic":
@@ -115,29 +119,43 @@ public class IntegrationAuthBuilder
                     var raw = $"{auth.Username}:{auth.Password}";
                     var encoded = Convert.ToBase64String(Encoding.UTF8.GetBytes(raw));
                     request.Headers.Authorization = new AuthenticationHeaderValue("Basic", encoded);
+                    applied = true;
                 }
                 break;
 
             case "bearer":
             case "oauth2":
                 if (!string.IsNullOrEmpty(auth.Token))
+                {
                     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", auth.Token);
+                    applied = true;
+                }
                 break;
 
             case "api_key":
                 var header = string.IsNullOrWhiteSpace(auth.Header) ? "X-API-Key" : auth.Header;
                 if (!string.IsNullOrEmpty(auth.Token))
-                    request.Headers.TryAddWithoutValidation(header, auth.Token);
+                    applied = request.Headers.TryAddWithoutValidation(header, auth.Token);
                 break;
 
             case IntegrationAuthConfig.OAuth2ClientCredentials:
                 // Applied asynchronously by IIntegrationAuthApplier (token
                 // fetch + cache); nothing to do in the sync builder.
+                applied = true;
                 break;
 
             // Unknown / empty method = no auth applied. The upstream decides
-            // whether to respond 401, which surfaces cleanly in the health check.
+            // whether to respond 401, and the health check reports the config.
         }
+
+        // A filled-in config that produced no header sends every call anonymous;
+        // the upstream's 401/403 then reads like a permissions problem. Say so here,
+        // where the cause is known. Method only — never the values.
+        if (!applied && !string.IsNullOrEmpty(method) && method != "none")
+            _logger.LogWarning(
+                "integration.auth.not_applied integration_id={IntegrationId} auth_method={AuthMethod} "
+                + "— the method is unknown or its token/username is empty, so the request carries no credentials",
+                integrationId, method);
     }
 
     private static string AutoDetect(IntegrationAuthConfig auth)

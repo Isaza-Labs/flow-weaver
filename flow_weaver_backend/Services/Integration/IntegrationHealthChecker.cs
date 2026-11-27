@@ -229,10 +229,52 @@ public class IntegrationHealthChecker : IIntegrationHealthChecker
             }, integration, sw);
         }
 
-        // Reachable and not an auth error. Without credentials there is
-        // nothing more to verify.
+        // Reachable and not an auth error, and no credentials went out.
         if (!main.CredentialsApplied)
         {
+            // An auth_config that is filled in but adds no header (an unknown
+            // method, an empty token) used to read as "no credentials, nothing to
+            // verify" — healthy — while every real API call went out anonymous
+            // and got 403 "Authentication credentials were not provided."
+            if (InertAuthMethod(integration.AuthConfig) is { } inert)
+            {
+                return Finish(new IntegrationHealthCheckResult
+                {
+                    Status = Engine.IntegrationStatus.Unhealthy,
+                    StatusCode = statusCode,
+                    Expected = expected,
+                    AuthVerified = false,
+                    Error = $"auth_config is set (method '{inert}') but adds no credentials to requests: the method "
+                        + "is not one Flow Weaver applies (token, bearer, basic, api_key, oauth2, "
+                        + "oauth2_client_credentials) or its token/username is empty. Every API call goes out "
+                        + "anonymous — re-enter the integration's credentials.",
+                }, integration, sw);
+            }
+
+            // No credentials at all. The probed path answered, but it may be a
+            // public root in front of an API that requires them (NetBox's `/`
+            // is anonymous, `/api/` is not): check the API root anonymously.
+            var openRoot = CommonApiRoot(await _actions.ListActivePathsByIntegrationAsync(integration.IntegrationId, ct));
+            if (openRoot is not null
+                && Uri.TryCreate(CombineUrl(integration.BaseURL, openRoot), UriKind.Absolute, out var openRootUrl)
+                && openRootUrl != url)
+            {
+                var anon = await SendProbeAsync(client, openRootUrl, integration, withAuth: false, ct);
+                if (anon.StatusCode is 401 or 403)
+                {
+                    return Finish(new IntegrationHealthCheckResult
+                    {
+                        Status = Engine.IntegrationStatus.Unhealthy,
+                        StatusCode = anon.StatusCode,
+                        Expected = expected,
+                        AuthVerified = false,
+                        Error = $"the service answers, but its API ({openRoot}) requires authentication "
+                            + $"(HTTP {anon.StatusCode}) and the integration has no credentials configured — "
+                            + "add them to the integration.",
+                    }, integration, sw);
+                }
+            }
+
             return Finish(new IntegrationHealthCheckResult
             {
                 Status = Engine.IntegrationStatus.Healthy,
@@ -408,6 +450,23 @@ public class IntegrationHealthChecker : IIntegrationHealthChecker
             prefix.Add(candidate);
         }
         return prefix.Count == 0 ? null : "/" + string.Join('/', prefix) + "/";
+    }
+
+    // The method of an auth_config that says credentials were configured
+    // (a method other than "none", or a token / username / client id) — for a
+    // caller that has already seen it apply nothing. Null when nothing was
+    // configured, which is a legitimate credential-less integration.
+    internal static string? InertAuthMethod(JsonElement authConfig)
+    {
+        var auth = IntegrationAuthBuilder.TryParse(authConfig);
+        if (auth is null) return null;
+        var method = auth.Method?.Trim() ?? string.Empty;
+        if (method.Equals("none", StringComparison.OrdinalIgnoreCase)) return null;
+        var hasMaterial = !string.IsNullOrEmpty(auth.Token)
+            || !string.IsNullOrEmpty(auth.Username)
+            || !string.IsNullOrEmpty(auth.ClientId);
+        if (method.Length == 0 && !hasMaterial) return null;
+        return method.Length == 0 ? "(auto)" : method;
     }
 
     // Joins base + path without doubling or losing a slash.

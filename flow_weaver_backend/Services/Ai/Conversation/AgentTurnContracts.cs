@@ -34,5 +34,8 @@ public sealed class AgentTurnResult
     // The model stopped for lack of output tokens, not because it was finished.
     // FinalText already ends with the notice the user saw.
     public bool OutputCutOff { get; init; }
+    // The turn used every tool round the agent allows while still calling tools.
+    // FinalText holds the wrap-up the model wrote without tools, then the notice.
+    public bool IterationCapHit { get; init; }
     public string? Error { get; init; }
 }

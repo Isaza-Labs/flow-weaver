@@ -754,7 +754,111 @@ public class AgentConversationRunnerTests
         var result = await f.Build().RunAsync(Turn(), new RecordingSink(), default);
 
         Assert.Equal(3, result.Iterations);
-        Assert.Equal(3, f.Llm.Calls);
+        // Three tool rounds, then the wrap-up round that runs no tool.
+        Assert.Equal(4, f.Llm.Calls);
+        Assert.True(result.IterationCapHit);
+    }
+
+    // Reaching the cap while still calling tools used to end the turn on an empty
+    // answer, recorded as a normal finish. Now the model gets one more round, told
+    // no tool will run, writes what it found, and a notice says why the turn stopped.
+    [Fact]
+    public async Task IterationCapEndsOnAWrapUpAndANotice()
+    {
+        using var f = new Fixture();
+        f.SeedProvider();
+        f.SeedAgent(maxIterations: 2);
+        var handler = f.RegisterTool("list_workflows");
+        f.Llm = new ScriptedLlm(
+            Sse(ToolFrame("call_1", "list_workflows", "{}"), Done()),
+            Sse(ToolFrame("call_2", "list_workflows", "{}"), Done()),
+            Sse(TextFrame("Found 3 workflows; NetBox refused every call (403)."), Done()));
+        var sink = new RecordingSink();
+
+        var result = await f.Build().RunAsync(Turn(), sink, default);
+
+        Assert.Equal(2, handler.Calls);
+        Assert.StartsWith("Found 3 workflows", result.FinalText);
+        Assert.EndsWith(AgentConversationRunner.IterationCapNotice(2, wroteSummary: true), result.FinalText);
+        Assert.Equal(result.FinalText, sink.Text.ToString());
+
+        var wrapUp = TestJson.Element(f.Llm.RequestBodies[2]).GetProperty("messages").EnumerateArray().Last();
+        Assert.Equal("system", wrapUp.GetProperty("role").GetString());
+        Assert.Contains("no more tools will run", wrapUp.GetProperty("content").GetString());
+
+        var conv = await f.Db.AIConversations.SingleAsync();
+        Assert.Equal(result.FinalText, conv.Messages[1].GetProperty("content").GetString());
+        Assert.Equal(AgentRunStatus.Completed, (await f.Db.AgentRuns.SingleAsync()).Status);
+    }
+
+    // A tool the model still calls in the wrap-up round is not run, and the user
+    // still gets a notice instead of an empty answer.
+    [Fact]
+    public async Task IterationCapWrapUpRunsNoToolAndNeverEndsEmpty()
+    {
+        using var f = new Fixture();
+        f.SeedProvider();
+        f.SeedAgent(maxIterations: 1);
+        var handler = f.RegisterTool("list_workflows");
+        f.Llm = new ScriptedLlm(
+            Sse(ToolFrame("call_1", "list_workflows", "{}"), Done()),
+            Sse(ToolFrame("call_2", "list_workflows", "{}"), Done()));
+
+        var result = await f.Build().RunAsync(Turn(), new RecordingSink(), default);
+
+        Assert.Equal(1, handler.Calls);
+        Assert.Equal(AgentConversationRunner.IterationCapNotice(1, wroteSummary: false).TrimStart(), result.FinalText);
+    }
+
+    // A turn that finishes inside the cap gets no wrap-up round and no notice.
+    [Fact]
+    public async Task ATurnInsideTheCapHasNoNotice()
+    {
+        using var f = new Fixture();
+        f.SeedProvider();
+        f.SeedAgent(maxIterations: 2);
+        f.RegisterTool("list_workflows");
+        f.Llm = new ScriptedLlm(
+            Sse(ToolFrame("call_1", "list_workflows", "{}"), Done()),
+            Sse(TextFrame("done"), Done()));
+
+        var result = await f.Build().RunAsync(Turn(), new RecordingSink(), default);
+
+        Assert.Equal("done", result.FinalText);
+        Assert.False(result.IterationCapHit);
+        Assert.Equal(2, f.Llm.Calls);
+    }
+
+    // ─── record of the tools run ────────────────────────────────────────
+
+    // The reply is stored with the calls it made, and the next turn's model reads a
+    // server record of them in front of the new message — so a turn whose reply had
+    // no text still tells the next one what was done.
+    [Fact]
+    public async Task TheNextTurnSeesTheToolsThePreviousReplyRan()
+    {
+        using var f = ReadyFixture(
+            Sse(ToolFrame("call_1", "list_workflows", """{"api_key":"sk-hidden-value"}"""), Done()),
+            Sse(Done()),
+            Sse(TextFrame("ok"), Done()));
+        f.RegisterTool("list_workflows").Result = TestJson.Element("""{"count":3}""");
+        var runner = f.Build();
+
+        var first = await runner.RunAsync(Turn("list them"), new RecordingSink(), default);
+        await runner.RunAsync(Turn("and?", conversationId: first.ConversationId), new RecordingSink(), default);
+
+        var stored = (await f.Db.AIConversations.SingleAsync()).Messages[1];
+        var tool = Assert.Single(stored.GetProperty("tools").EnumerateArray());
+        Assert.Equal("list_workflows", tool.GetProperty("name").GetString());
+        Assert.True(tool.GetProperty("ok").GetBoolean());
+        Assert.DoesNotContain("sk-hidden-value", tool.GetProperty("args").GetString());
+
+        var sent = TestJson.Element(f.Llm.RequestBodies[2]).GetProperty("messages").EnumerateArray().Last();
+        Assert.Equal("user", sent.GetProperty("role").GetString());
+        var content = sent.GetProperty("content").GetString()!;
+        Assert.StartsWith("[Flow Weaver server record of your previous reply — tools actually run: 1", content);
+        Assert.Contains("\"count\":3", content);
+        Assert.EndsWith("and?", content);
     }
 
     // A stream with no tool calls ends the turn immediately.
@@ -821,7 +925,9 @@ public class AgentConversationRunnerTests
             .EnumerateArray().Select(m => m.GetProperty("content").GetString()).ToList();
         Assert.Contains("first question", contents);
         Assert.Contains("first answer", contents);
-        Assert.Contains("second question", contents);
+        // The new message carries the server record of what the first reply ran.
+        Assert.EndsWith("second question", contents[^1]);
+        Assert.Contains("it ran no tools", contents[^1]);
     }
 
     // A conversation born in the web chat is stamped `source = "web"`, so the

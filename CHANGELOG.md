@@ -31,6 +31,11 @@ Each entry should distinguish verified behavior from known limitations and break
 ### Changed
 
 - The `workflow_run` rate limit (starting a run) is now 40 per minute per user, up from 20 per hour. The hourly budget was exhausted by ordinary use, such as launching a workflow once per device.
+- Sessions last longer and are no longer signed out by sign-in traffic. The access token now lives 60 minutes (was 15) and the refresh token 30 days (was 7), set by `Jwt:AccessTokenMinutes` and `Jwt:RefreshTokenDays`. Token refresh has its own `auth_refresh` rate limit, 120 per minute per client IP. It used to share the 5-per-minute `auth_login` budget, so several tabs or users behind one address refreshing at once got 429 and were sent back to the login page. `auth_login` (login and bootstrap) is now 30 per minute per client IP; the per-account lockout (5 failed attempts) is unchanged.
+
+### Fixed
+
+- Rate-limit documentation now matches the enforced limits. The import guide said AI snippet generation had a budget of 30 per hour; the `ai_chat` limit is 60 per minute per user. The source comments in `RateLimitingConfiguration.cs` were corrected the same way.
 
 ## 0.9.0 - not yet published
 

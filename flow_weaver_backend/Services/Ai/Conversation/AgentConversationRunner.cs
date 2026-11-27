@@ -210,12 +210,18 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
         var outputCutOff = false;
         var persisted = false;
         string? lastError = null;
+        // What this turn's tools really did, persisted with the reply so the next
+        // turn's model can see it (ToolRunRecord).
+        var runRecord = new List<StoredToolCall>();
+        var lastRoundCalledTools = false;
+        var iterationCapHit = false;
 
         try
         {
             for (var iter = 0; iter < maxIter && !streamCt.IsCancellationRequested; iter++)
             {
                 iterationsCompleted = iter + 1;
+                lastRoundCalledTools = false;
                 var fullContent = new StringBuilder();
                 var pendingToolCalls = new List<ToolCallResult>();
                 string? stopReason = null;
@@ -311,6 +317,7 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
 
                     await sink.ToolResultAsync(tc.Name, output, ct);
                     toolCalls.Add(new AgentToolCall(tc.Name, tc.Arguments, output.Success));
+                    runRecord.Add(ToolRunRecord.Entry(tc.Name, tc.Arguments, output.Success, resultRaw));
 
                     roundResults.Add(new LlmMessage
                     {
@@ -331,6 +338,7 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
                         loadedSkills.Add(topicMessage);
                 }
                 AppendToolRound(messages, roundResults, loadedSkills);
+                lastRoundCalledTools = true;
 
                 if (!warnAlreadyFired && streamStopwatch.ElapsedMilliseconds >= warnThresholdMs)
                 {
@@ -341,6 +349,75 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
                 }
 
                 if (timedOut) break;
+            }
+
+            // The loop ran out of rounds while the model was still calling tools. That
+            // used to be logged as a normal finish and persisted with whatever text the
+            // rounds had streamed — usually none, because a model working through tools
+            // writes nothing until it is done — so the user got an empty answer and the
+            // chat looked stuck. One more round, with the tools' results in view and a
+            // note that no more tools will run, lets the model say what it found and
+            // what is left; a notice tells the user why the turn stopped.
+            if (!timedOut && !outputCutOff && lastRoundCalledTools
+                && iterationsCompleted >= maxIter && !streamCt.IsCancellationRequested)
+            {
+                iterationCapHit = true;
+                _logger.LogWarning(
+                    "ai.chat.iteration_cap trace={Trace} iterations={Iterations} tool_calls={ToolCalls}",
+                    agentRun.TraceId, iterationsCompleted, toolCalls.Count);
+
+                messages.Add(new LlmMessage { Role = "system", Content = IterationCapNote(maxIter) });
+                var wrote = false;
+                var ignoredCalls = 0;
+                try
+                {
+                    // The tools stay declared: a history holding tool calls is refused
+                    // by some providers when the request declares none. A call the model
+                    // makes anyway is not run.
+                    await foreach (var evt in llm.ChatWithToolsStreamAsync(messages, tools, model, temperature, streamCt))
+                    {
+                        switch (evt.Type)
+                        {
+                            case "text_delta" when !string.IsNullOrEmpty(evt.TextDelta):
+                                if (!wrote && tailText.Length > 0)
+                                {
+                                    tailText.Append("\n\n");
+                                    await sink.TextAsync("\n\n", ct);
+                                }
+                                wrote = true;
+                                tailText.Append(evt.TextDelta);
+                                await sink.TextAsync(evt.TextDelta, ct);
+                                break;
+                            case "tool_call":
+                                ignoredCalls++;
+                                break;
+                            case "done":
+                                if (evt.InputTokens is int ti) totalIn += ti;
+                                if (evt.OutputTokens is int to) totalOut += to;
+                                if (evt.CacheReadTokens is int cr) totalCacheRead += cr;
+                                if (evt.CacheWriteTokens is int cw) totalCacheWrite += cw;
+                                break;
+                        }
+                    }
+                }
+                catch (OperationCanceledException) when (deadlineCts.IsCancellationRequested)
+                {
+                    _logger.LogWarning("ai.chat.request.timeout iter=wrap_up");
+                    timedOut = true;
+                }
+
+                if (ignoredCalls > 0)
+                    _logger.LogInformation(
+                        "ai.chat.iteration_cap.ignored_tool_calls trace={Trace} count={Count}",
+                        agentRun.TraceId, ignoredCalls);
+
+                if (!timedOut)
+                {
+                    var notice = IterationCapNotice(maxIter, wrote);
+                    if (tailText.Length == 0) notice = notice.TrimStart();
+                    tailText.Append(notice);
+                    await sink.TextAsync(notice, ct);
+                }
             }
 
             if (timedOut)
@@ -367,9 +444,9 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
             else
             {
                 _logger.LogInformation(
-                    "ai.chat.done trace={Trace} iterations={Iterations} elapsed_ms={Elapsed} tokens_in={TokensIn} tokens_out={TokensOut} tokens_cache_read={CacheRead} tokens_cache_write={CacheWrite} tool_calls={ToolCalls} output_cut_off={OutputCutOff}",
+                    "ai.chat.done trace={Trace} iterations={Iterations} elapsed_ms={Elapsed} tokens_in={TokensIn} tokens_out={TokensOut} tokens_cache_read={CacheRead} tokens_cache_write={CacheWrite} tool_calls={ToolCalls} output_cut_off={OutputCutOff} iteration_cap={IterationCap}",
                     agentRun.TraceId, iterationsCompleted, streamStopwatch.ElapsedMilliseconds, totalIn, totalOut,
-                    totalCacheRead, totalCacheWrite, toolCalls.Count, outputCutOff);
+                    totalCacheRead, totalCacheWrite, toolCalls.Count, outputCutOff, iterationCapHit);
                 // tokens_in is the whole prompt summed over the turn's rounds; the cache
                 // fields say how much of it was read back at a tenth of the price. A run
                 // of zeros means a silent invalidator in the prefix, or a provider that
@@ -384,6 +461,7 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
                     tokens_cache_write = totalCacheWrite,
                     tool_calls = toolCalls.Count,
                     output_cut_off = outputCutOff,
+                    iteration_cap = iterationCapHit,
                 }, ct);
                 await sink.DoneAsync(totalIn, totalOut, iterationsCompleted, ct);
             }
@@ -396,7 +474,7 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
             await PersistConversationAsync(
                 conversationId, userMessage, agent?.AIAgentId ?? request.AgentId, tailText.ToString(),
                 totalIn, totalOut, ct,
-                NewlyLoadedSkills(previouslyLoaded));
+                NewlyLoadedSkills(previouslyLoaded), runRecord);
             persisted = true;
         }
         catch (Exception ex)
@@ -439,7 +517,7 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
                     await PersistConversationAsync(
                         conversationId, userMessage, agent?.AIAgentId ?? request.AgentId, content,
                         totalIn, totalOut, CancellationToken.None,
-                        NewlyLoadedSkills(previouslyLoaded));
+                        NewlyLoadedSkills(previouslyLoaded), runRecord);
                 }
                 catch (Exception persistEx)
                 {
@@ -459,9 +537,27 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
             Iterations = iterationsCompleted,
             TimedOut = timedOut,
             OutputCutOff = outputCutOff,
+            IterationCapHit = iterationCapHit,
             Error = lastError,
         };
     }
+
+    // Sent to the model, after the last round's tool results, when the turn has
+    // used every round it is allowed.
+    public static string IterationCapNote(int maxIterations) =>
+        $"[Flow Weaver server note — not from the user] This turn has used all {maxIterations} tool rounds it is "
+        + "allowed, so no more tools will run in it: a tool call now is ignored. Without calling any tool, answer "
+        + "the user in their language: what you found, what you actually did (only what the tool results above "
+        + "show — never report an action no tool ran), what failed or is still missing and why, and what they "
+        + "can do next.";
+
+    // Appended to the answer the user reads (and that is persisted) when the turn
+    // stopped at the round limit.
+    public static string IterationCapNotice(int maxIterations, bool wroteSummary) => wroteSummary
+        ? $"\n\n[Turn stopped: the agent used all {maxIterations} tool rounds allowed for one message. The summary "
+          + "above is what it got through; reply \"continue\" to let it carry on, or narrow the request.]"
+        : $"\n\n[Turn stopped: the agent used all {maxIterations} tool rounds allowed for one message before "
+          + "writing an answer. Reply \"continue\" to let it carry on, or narrow the request.]";
 
     // What the user reads when the model stops mid-answer for lack of output
     // tokens. Appended to the answer rather than sent as an error frame: an error
@@ -693,21 +789,24 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
         if (!string.IsNullOrEmpty(scopedPrompt))
             msgs.Add(new LlmMessage { Role = "system", Content = scopedPrompt });
 
+        string? trailingRecord = null;
         if (conversationId.HasValue)
         {
             var conv = await _conversations.FindForHistoryAsync(conversationId.Value, ct);
-            var history = new List<LlmMessage>();
+            var history = new List<StoredMessage>();
             if (conv is not null && conv.Messages.ValueKind == JsonValueKind.Array)
             {
                 foreach (var m in conv.Messages.EnumerateArray())
                 {
                     var role = m.TryGetProperty("role", out var r) ? r.GetString() ?? "user" : "user";
                     var content = m.TryGetProperty("content", out var c) ? c.GetString() ?? "" : "";
-                    if (role != "system") history.Add(new LlmMessage { Role = role, Content = content });
+                    if (role != "system")
+                        history.Add(new StoredMessage(role, content, role == "assistant" ? ToolRunRecord.Read(m) : null));
                 }
             }
 
-            var (kept, omitted) = WindowHistory(history, _chatOptions.HistoryCharBudget);
+            var (kept, omitted, trailing) = ReplayHistory(history, _chatOptions.HistoryCharBudget);
+            trailingRecord = trailing;
             if (omitted > 0)
             {
                 _logger.LogInformation(
@@ -718,23 +817,65 @@ public sealed class AgentConversationRunner : IAgentConversationRunner
             msgs.AddRange(kept);
         }
 
-        msgs.Add(new LlmMessage { Role = "user", Content = userMessage });
+        msgs.Add(new LlmMessage
+        {
+            Role = "user",
+            Content = trailingRecord is null ? userMessage : $"{trailingRecord}\n\n{userMessage}",
+        });
         return msgs;
+    }
+
+    // A message as stored in the conversation; `Tools` is the reply's record of
+    // calls, null for user messages and for replies written before it existed.
+    internal sealed record StoredMessage(string Role, string Content, List<StoredToolCall>? Tools = null);
+
+    // The stored history as the model reads it. Each reply's record of tool calls
+    // goes in front of the user message that followed it — never inside the
+    // reply, where the model would read it as its own words and start writing
+    // such records itself — and the last reply's record comes back as
+    // `TrailingRecord`, for the message being sent now. The window is then
+    // applied; a kept message whose reply fell out of it loses its record, since
+    // the record would describe a reply the model cannot see.
+    internal static (List<LlmMessage> Kept, int Omitted, string? TrailingRecord) ReplayHistory(
+        IReadOnlyList<StoredMessage> stored, int charBudget)
+    {
+        var replayed = new List<LlmMessage>(stored.Count);
+        for (var i = 0; i < stored.Count; i++)
+        {
+            var m = stored[i];
+            var content = m.Content;
+            if (m.Role == "user" && i > 0 && stored[i - 1] is { Role: "assistant", Tools: { } tools })
+                content = $"{ToolRunRecord.Render(tools)}\n\n{content}";
+            replayed.Add(new LlmMessage { Role = m.Role, Content = content });
+        }
+
+        var trailing = stored.Count > 0 && stored[^1] is { Role: "assistant", Tools: { } last }
+            ? ToolRunRecord.Render(last)
+            : null;
+
+        var (kept, omitted) = WindowHistory(replayed, charBudget);
+        if (omitted > 0 && kept.Count > 0 && kept[0].Role == "user")
+            kept[0] = new LlmMessage { Role = "user", Content = stored[omitted].Content };
+
+        return (kept, omitted, trailing);
     }
 
     private async Task PersistConversationAsync(
         Guid conversationId, string? userMessage, Guid? agentId, string assistantContent,
         int inputTokens, int outputTokens, CancellationToken ct,
-        IReadOnlyCollection<Guid>? loadedSkills = null)
+        IReadOnlyCollection<Guid>? loadedSkills = null,
+        IReadOnlyList<StoredToolCall>? toolRecord = null)
     {
         try
         {
             var now = DateTime.UtcNow;
             var userIdStr = _caller.UserId.ToString();
+            // The reply keeps the list of tool calls it made (empty when it made
+            // none), which the next turn replays as a server record.
             var newMessages = new List<object>
             {
                 new { role = "user", content = userMessage ?? string.Empty },
-                new { role = "assistant", content = assistantContent },
+                new { role = "assistant", content = assistantContent, tools = toolRecord ?? Array.Empty<StoredToolCall>() },
             };
 
             var conv = await _conversations.FindTrackedAsync(conversationId, ct);
