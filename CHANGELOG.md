@@ -28,6 +28,16 @@ Each entry should distinguish verified behavior from known limitations and break
 
 ## Unreleased
 
+### Added
+
+- NetBox inventory sync, ported from Nashira. An inventory source of type `netbox` takes `config.base_url`, an optional `config.token_secret_ref`, `config.site_filter` and `config.allow_private_network`. `POST /api/inventorysource/{id}/sync` reads `/api/dcim/devices/` page by page and upserts devices. It matches them by NetBox id, then by name, which adopts manual devices. It follows renames, keeps credentials, environments and SSH fingerprints set in FlowWeaver, and never deletes. `?dryRun=true` reports created, updated, unchanged and skipped counts without writing. The outcome is recorded in `last_sync_at` / `last_sync_status` and in the audit log. Syncing needs `inventory.manage`.
+- The token is never stored in the source: `token_secret_ref` is a `${secret:...}` reference, for example `${secret:integration:<id>:token}` to reuse a NetBox integration's token, or a stored secret's name. Raw tokens are rejected and a legacy literal one is returned as `***`. v2 tokens (`nbt_…`) are sent as `Bearer`, v1 tokens as `Token`.
+- New **Inventory sources** page (`/inventory`, under Operate) to create and edit NetBox sources, run a dry run or a sync, and see the last result.
+
+### Security
+
+- Setting a source's token reference, or changing its `base_url` while one is set, requires an admin. `inventory.manage` is an Operator capability, and the sync sends the resolved secret to `base_url`. Without this rule an Operator could point a source at their own host and read any stored secret.
+
 ### Changed
 
 - The `workflow_run` rate limit (starting a run) is now 40 per minute per user, up from 20 per hour. The hourly budget was exhausted by ordinary use, such as launching a workflow once per device.

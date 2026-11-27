@@ -13,10 +13,10 @@ public class InventorySourceServiceTests
     private readonly FakeUser _caller = new();
 
     private static InventorySourceService NewSvc(AppDbContext db, FakeUser user)
-        => new(new RepositoryBase<InventorySourceModel>(db), user, new FakeAudit(), NullLogger<InventorySourceService>.Instance);
+        => TestInventory.Service(db, user);
 
     private static CreateInventorySource Sample(string name = "netbox-prod", string type = "netbox")
-        => new() { Name = name, Type = type };
+        => new() { Name = name, Type = type, Config = TestInventory.NetBoxConfig };
 
     private static Guid CreatedId(ActionResult<InventorySourceResponse> r)
         => ((InventorySourceResponse)((CreatedAtActionResult)r.Result!).Value!).InventorySourceId;

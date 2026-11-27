@@ -780,7 +780,29 @@ export const inventorySources = {
       INVENTORY_SOURCE_MAP,
     ),
   delete: (id: string) => api<void>(`/inventorysource/${id}`, { method: 'DELETE' }),
+  // NetBox only. A dry run reports what would change and writes nothing.
+  sync: (id: string, dryRun = false) =>
+    api<InventorySyncResult>(`/inventorysource/${id}/sync?dryRun=${dryRun}`, { method: 'POST' }),
 };
+
+// `config` of an inventory source whose type is "netbox". token_secret_ref is a
+// ${secret:...} reference (or a stored secret's name); the API rejects raw
+// tokens and returns a legacy literal one as "***".
+export interface NetBoxSourceConfig {
+  base_url: string;
+  token_secret_ref?: string | null;
+  site_filter?: string | null;
+  allow_private_network?: boolean;
+}
+
+export interface InventorySyncResult {
+  created: number;
+  updated: number;
+  unchanged: number;
+  skipped: number;
+  total: number;
+  dry_run: boolean;
+}
 
 // Snippets — /api/snippet
 export interface SnippetTestRequest {

@@ -67,10 +67,10 @@ public class InventorySourceControllerTests
     public async Task Endpoints_forward_to_service()
     {
         using var db = TestDb.NewContext();
-        var c = new InventorySourceController(new InventorySourceService(new RepositoryBase<InventorySourceModel>(db), _caller, new FakeAudit(), NullLogger<InventorySourceService>.Instance));
+        var c = new InventorySourceController(TestInventory.Service(db, _caller));
 
         Assert.IsType<OkObjectResult>((await c.Get()).Result);
-        var created = Assert.IsType<CreatedAtActionResult>((await c.Post(new CreateInventorySource { Name = "nb", Type = "netbox" })).Result);
+        var created = Assert.IsType<CreatedAtActionResult>((await c.Post(new CreateInventorySource { Name = "nb", Type = "netbox", Config = TestInventory.NetBoxConfig })).Result);
         var id = ((InventorySourceResponse)created.Value!).InventorySourceId;
         Assert.IsType<InventorySourceResponse>((await c.GetById(id)).Value);
         Assert.IsType<InventorySourceResponse>((await c.Update(id, new UpdateInventorySource { Name = "x" })).Value);

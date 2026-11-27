@@ -48,4 +48,14 @@ public class InventorySourceController : ControllerBase
     [EnableRateLimiting(RateLimitingConfiguration.WriteNormal)]
     public Task<ActionResult<InventorySourceResponse>> Delete(Guid id)
         => _service.DeleteAsync(id);
+
+    // Pulls the source's devices from NetBox into the inventory. `dryRun=true`
+    // reports created/updated/unchanged/skipped without writing anything.
+    // Same capability as editing a source: Operator by default.
+    [HttpPost("{id:guid}/sync")]
+    [HasPermission("inventory.manage")]
+    [EnableRateLimiting(RateLimitingConfiguration.WriteNormal)]
+    public Task<ActionResult<InventorySyncResult>> Sync(
+        Guid id, [FromQuery] bool dryRun = false, CancellationToken ct = default)
+        => _service.SyncAsync(id, dryRun, ct);
 }

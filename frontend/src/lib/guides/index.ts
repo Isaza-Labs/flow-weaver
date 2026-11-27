@@ -104,6 +104,21 @@ export const GUIDE_ENTRIES: GuideEntry[] = [
     docsHref: '/docs/device-pools',
   },
   {
+    match: (p) => p === '/inventory',
+    title: 'Inventory sources',
+    intro: 'NetBox instances whose devices are imported into Devices on demand.',
+    tips: [
+      'Dry run first: it reports created / updated / unchanged / skipped without writing anything',
+      'Devices are matched by NetBox id, then by name; a manual device with the same name is adopted, keeping its credential and environments',
+      'A sync never deletes devices — removing one from NetBox leaves it here',
+      'The token is a Vault reference — reuse the token of the NetBox integration, pick a secret, or paste one (admins only)',
+      'On-prem NetBox on a private address needs "Allow private-network base URL"',
+    ],
+    aiContext:
+      'The user is on /inventory, managing NetBox inventory sources (base_url, token_secret_ref as a ${secret:...} reference, site_filter, allow_private_network) and running a sync or dry run that upserts devices from NetBox /api/dcim/devices/.',
+    docsHref: '/docs/devices',
+  },
+  {
     match: (p) => p === '/vault',
     title: 'Vault',
     intro: 'Every login, SSH key, token and API key devices, Git remotes and integrations use — and, for admins, the secret values OpenAPI specs reference. Everything is encrypted at rest and never returned to the UI.',
@@ -674,7 +689,7 @@ export const GUIDE_ENTRIES: GuideEntry[] = [
     intro: 'Your network device inventory — every router, switch, firewall, and host that workflows can target.',
     tips: [
       'Devices have a name, IP, platform, vendor, model, OS version, site, role, and arbitrary JSONB properties',
-      'Inventory sources (NetBox etc.) sync into this table automatically — see /inventory-sources',
+      'NetBox inventory sources import into this table when synced — see /inventory',
       'Devices can also be pooled (/pools) into static or dynamic groups for easy targeting',
     ],
     aiContext:
