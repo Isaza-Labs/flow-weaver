@@ -76,6 +76,10 @@ public class SnippetResponse
     [JsonPropertyName("network_enabled")]
     public bool NetworkEnabled { get; set; }
 
+    // Null = the image's system python3.
+    [JsonPropertyName("python_environment_id")]
+    public Guid? PythonEnvironmentId { get; set; }
+
     // How many times a step using this snippet has reached `completed`, and
     // when it last did. Zero / null means nobody has ever got this snippet to
     // finish — it is a draft, not a reusable building block, and the workflow

@@ -177,12 +177,22 @@ def _load_pkey(pem: str, passphrase: str | None):
     import paramiko  # local import so import cost is paid once, at connect
 
     errors: list[str] = []
-    for KeyCls in (
-        paramiko.Ed25519Key,
-        paramiko.ECDSAKey,
-        paramiko.RSAKey,
-        paramiko.DSSKey,
-    ):
+    # paramiko >= 4.0 removed DSSKey (DSA). Referencing the attribute directly
+    # raised AttributeError for EVERY private-key credential — even Ed25519 /
+    # RSA ones — so the class list is built from whatever this paramiko still
+    # ships. The runner also runs under admin-defined uv environments that pin
+    # older paramiko (e.g. `ssh-legacy`), where DSSKey is still present.
+    key_classes = tuple(
+        cls
+        for cls in (
+            getattr(paramiko, "Ed25519Key", None),
+            getattr(paramiko, "ECDSAKey", None),
+            getattr(paramiko, "RSAKey", None),
+            getattr(paramiko, "DSSKey", None),
+        )
+        if cls is not None
+    )
+    for KeyCls in key_classes:
         buf = StringIO(pem)
         try:
             return KeyCls.from_private_key(buf, password=passphrase or None)

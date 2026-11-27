@@ -122,6 +122,10 @@ export interface Device {
   // successful connect pins whatever it sees (trust-on-first-use). Send '' to
   // clear the pin — e.g. after a legitimate key rotation.
   expected_ssh_host_key_fingerprint?: string | null;
+  // Python environment the ssh runner uses for this device (an admin-defined
+  // uv venv, see /admin/python-environments). Null = the image's system
+  // python3. On update, send NO_PYTHON_ENVIRONMENT to clear it.
+  python_environment_id?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -171,6 +175,10 @@ export interface Snippet {
   // python_snippet only: runs in the relaxed (network-enabled) sandbox with
   // netmiko/paramiko for interactive SSH. Admin-gated on the backend.
   network_enabled?: boolean;
+  // python_snippet / ansible_playbook only: run with this admin-defined Python
+  // environment's interpreter (or its bin dir for ansible). Null = system
+  // python3. On update, send NO_PYTHON_ENVIRONMENT to clear it.
+  python_environment_id?: string | null;
   verified?: boolean;
   // How many times a step using this snippet reached `completed`, and when it
   // last did. Derived from step_runs on read — 0 means nobody has ever got this
@@ -878,6 +886,8 @@ export const snippets = {
       // said" and every step using the copy FAILS until a node declares it.
       changes_state: source.changes_state,
       network_enabled: source.network_enabled,
+      // Only sent when set: the server accepts the field on python/ansible types only.
+      ...(source.python_environment_id ? { python_environment_id: source.python_environment_id } : {}),
       ...overrides,
     });
   },
@@ -3123,6 +3133,67 @@ export const allowedPythonModules = {
   retry: (id: string) =>
     api<AllowedPythonModule>(`/admin/python-modules/${id}/retry`, { method: 'POST' }),
 };
+
+// ─── Python environments (admin) ──────────────────────────────────────
+// Admin-defined virtualenvs built at runtime with uv, each with its own pinned
+// requirements. Devices (ssh runner) and python_snippet / ansible_playbook
+// snippets may pick one; null everywhere means the image's system python3.
+// Requirements come back with URL credentials masked (`https://***@host`);
+// re-submitting a masked line unchanged keeps the stored credentials.
+export type PythonEnvironmentStatus = 'pending' | 'building' | 'ready' | 'failed';
+
+export interface PythonEnvironment {
+  python_environment_id: string;
+  name: string;
+  description: string | null;
+  python_version: string | null;
+  requirements: string;
+  is_ssh_fallback: boolean;
+  status: PythonEnvironmentStatus | string;
+  last_error: string | null;
+  resolved_packages: string | null;
+  requirements_hash: string | null;
+  built_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreatePythonEnvironmentBody {
+  name: string;
+  description?: string | null;
+  python_version?: string | null;
+  requirements: string;
+  is_ssh_fallback?: boolean;
+}
+
+export type UpdatePythonEnvironmentBody = Partial<CreatePythonEnvironmentBody>;
+
+// Sent on a device/snippet UPDATE to clear python_environment_id back to the
+// system interpreter (omitting the field leaves it unchanged).
+export const NO_PYTHON_ENVIRONMENT = '00000000-0000-0000-0000-000000000000';
+
+export const pythonEnvironments = {
+  list: async (limit = 100, offset = 0) => {
+    const res = await api<{ data: PythonEnvironment[]; total?: number }>(
+      `/python-environments?limit=${limit}&offset=${offset}`,
+    );
+    return { data: res.data, total: res.total ?? res.data.length };
+  },
+  get: (id: string) => api<PythonEnvironment>(`/python-environments/${id}`),
+  create: (body: CreatePythonEnvironmentBody) =>
+    api<PythonEnvironment>('/python-environments', { method: 'POST', body: JSON.stringify(body) }),
+  update: (id: string, body: UpdatePythonEnvironmentBody) =>
+    api<PythonEnvironment>(`/python-environments/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  remove: (id: string) =>
+    api<void>(`/python-environments/${id}`, { method: 'DELETE' }),
+  rebuild: (id: string) =>
+    api<PythonEnvironment>(`/python-environments/${id}/rebuild`, { method: 'POST' }),
+};
+
+// Option label for an environment picker: non-ready envs show their status.
+export function pythonEnvironmentLabel(e: PythonEnvironment): string {
+  return e.status === 'ready' ? e.name : `${e.name} (${e.status})`;
+}
 
 // ─── Colour themes (user-authored) ────────────────────────────────────
 // Themes offered in the picker next to the built-in fw-* ones. `colors` holds

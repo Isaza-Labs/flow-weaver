@@ -24,7 +24,9 @@
   import {
     snippets, workflows, type Snippet, type Integration, type Workflow,
     type IntegrationActionWithIntegration, type McpServer, type McpTool, errorMessage,
+    NO_PYTHON_ENVIRONMENT,
   } from '$lib/api/client';
+  import PythonEnvironmentSelect from '$lib/components/PythonEnvironmentSelect.svelte';
   import { authStore } from '$lib/stores/auth.svelte';
   import { AlertTriangle, Save, Check, ExternalLink, GitBranch } from 'lucide-svelte';
   import { lintConfig, type LintIssue } from '$lib/workflow/templates';
@@ -355,6 +357,10 @@
   // ─── Tab 2: service draft ───────────────────────────────────────────
 
   let serviceDraft = $state<Snippet | null>(null);
+
+  function usesPythonEnvironment(type: string): boolean {
+    return type === 'python_snippet' || type === 'python' || type === 'ansible_playbook';
+  }
   let savingService = $state(false);
 
   const serviceDirty = $derived.by(() => {
@@ -366,6 +372,8 @@
       'idempotency',
       // python_snippet interactive-SSH sandbox flag (admin-gated).
       'network_enabled',
+      // python_snippet / ansible_playbook Python environment.
+      'python_environment_id',
     ];
     return fields.some((k) => (service[k] ?? '') !== (serviceDraft![k] ?? ''));
   });
@@ -394,6 +402,10 @@
         timeout_seconds: serviceDraft.timeout_seconds,
         idempotency: serviceDraft.idempotency,
         network_enabled: serviceDraft.network_enabled,
+        // Only python/ansible snippets carry an environment; null clears it.
+        ...(usesPythonEnvironment(serviceDraft.type)
+          ? { python_environment_id: serviceDraft.python_environment_id || NO_PYTHON_ENVIRONMENT }
+          : {}),
       });
       onServiceRefresh(updated);
       toast.success('Service saved');
@@ -986,6 +998,14 @@
           <Input label="Timeout (seconds)" help="node.timeout" type="number" min={1} max={86400} bind:value={serviceDraft.timeout_seconds} />
           <Input label="Max parallel" help="node.max_parallel" type="number" min={1} max={1000} bind:value={serviceDraft.max_parallel} />
         </div>
+        {#if usesPythonEnvironment(serviceDraft.type)}
+          <PythonEnvironmentSelect
+            bind:value={
+              () => serviceDraft?.python_environment_id ?? '',
+              (v) => { if (serviceDraft) serviceDraft.python_environment_id = v || null; }
+            }
+          />
+        {/if}
         {#if serviceDraft.type === 'python_snippet'}
           <Select
             label="Script language"

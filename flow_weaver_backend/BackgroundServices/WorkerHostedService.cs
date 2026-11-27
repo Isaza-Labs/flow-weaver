@@ -310,6 +310,7 @@ public sealed class WorkerHostedService : BackgroundService
         var snippetTimeoutSeconds = 0;
         string? targetMode = null;
         var networkEnabled = false;
+        Guid? pythonEnvironmentId = null;
         var retryPolicy = new RetryPolicy();
         if (step.SnippetId.HasValue)
         {
@@ -327,6 +328,7 @@ public sealed class WorkerHostedService : BackgroundService
                 snippetTimeoutSeconds = snippet.TimeoutSeconds;
                 targetMode = snippet.TargetMode;
                 networkEnabled = snippet.NetworkEnabled;
+                pythonEnvironmentId = snippet.PythonEnvironmentId;
                 retryPolicy = RetryPolicyExecutor.Parse(snippet.RetryPolicy);
             }
         }
@@ -361,6 +363,7 @@ public sealed class WorkerHostedService : BackgroundService
             SnippetTimeoutSeconds = snippetTimeoutSeconds,
             TargetMode = targetMode,
             NetworkEnabled = networkEnabled,
+            PythonEnvironmentId = pythonEnvironmentId,
         };
 
         // Every attempt the snippet's retry_policy allows runs inside this job

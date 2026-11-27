@@ -309,14 +309,14 @@
       </h3>
       {#if formError}<div class="mb-3"><Alert tone="error">{formError}</Alert></div>{/if}
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <Input label="Name" bind:value={form.name} placeholder="netbox-prod" />
-        <Input label="Base URL" bind:value={form.baseUrl} placeholder="https://netbox.example.com" hint="Without /api — the sync calls /api/dcim/devices/." />
-        <Input label="Site filter (optional)" bind:value={form.siteFilter} placeholder="hq" hint="NetBox site slug; empty imports every site." />
-        <Input label="Description (optional)" bind:value={form.description} />
+        <Input label="Name" help="inventory.name" bind:value={form.name} placeholder="netbox-prod" />
+        <Input label="Base URL" help="inventory.base_url" bind:value={form.baseUrl} placeholder="https://netbox.example.com" hint="Without /api — the sync calls /api/dcim/devices/." />
+        <Input label="Site filter (optional)" help="inventory.site_filter" bind:value={form.siteFilter} placeholder="hq" hint="NetBox site slug; empty imports every site." />
+        <Input label="Description (optional)" help="inventory.description" bind:value={form.description} />
 
         <div class="md:col-span-2 space-y-3">
           {#if isAdmin}
-            <Select label="Authentication" bind:value={form.authMode}>
+            <Select label="Authentication" help="inventory.auth" bind:value={form.authMode}>
               <option value="none">No token (NetBox allows anonymous reads)</option>
               <option value="integration">Reuse the token of an integration</option>
               <option value="secret">Existing Vault secret</option>
@@ -325,7 +325,7 @@
             </Select>
 
             {#if form.authMode === 'integration'}
-              <Select label="Integration" bind:value={form.integrationId} onchange={onIntegrationPicked}
+              <Select label="Integration" help="inventory.integration" bind:value={form.integrationId} onchange={onIntegrationPicked}
                 hint="The sync sends that integration's token (auth_config.token) — bearer or token auth.">
                 <option value="" disabled>Choose an integration…</option>
                 {#each integrationList as i (i.id)}
@@ -333,7 +333,7 @@
                 {/each}
               </Select>
             {:else if form.authMode === 'secret'}
-              <Select label="Secret" bind:value={form.secretName} hint="Managed in Operate → Vault. The value never leaves the server.">
+              <Select label="Secret" help="inventory.secret" bind:value={form.secretName} hint="Managed in Operate → Vault. The value never leaves the server.">
                 <option value="" disabled>Choose a secret…</option>
                 {#each secretList as s (s.secret_id)}
                   <option value={s.name}>{s.name}</option>
@@ -342,6 +342,7 @@
             {:else if form.authMode === 'token'}
               <Input
                 label="API token"
+                help="inventory.token"
                 type="password"
                 revealable
                 autocomplete="off"
@@ -351,7 +352,7 @@
                   : `Stored encrypted in the Vault as "${secretNameFor(form.name)}"; the source only keeps the reference. v1 and v2 (nbt_…) tokens both work.`}
               />
             {:else if form.authMode === 'ref'}
-              <Input label="Secret reference" bind:value={form.rawRef} placeholder={'${secret:secret:<name>:value}'} />
+              <Input label="Secret reference" help="inventory.secret_ref" bind:value={form.rawRef} placeholder={'${secret:secret:<name>:value}'} />
             {/if}
           {:else}
             <p class="text-sm text-surface-600-400">
@@ -362,8 +363,8 @@
         </div>
 
         <div class="md:col-span-2 flex flex-wrap gap-6">
-          <Checkbox bind:checked={form.allowPrivate} label="Allow private-network base URL (on-prem NetBox on 10/8, 172.16/12, 192.168/16)" />
-          <Checkbox bind:checked={form.enabled} label="Enabled" />
+          <Checkbox bind:checked={form.allowPrivate} help="inventory.allow_private" label="Allow private-network base URL (on-prem NetBox on 10/8, 172.16/12, 192.168/16)" />
+          <Checkbox bind:checked={form.enabled} help="inventory.enabled" label="Enabled" />
         </div>
       </div>
       <div class="mt-4 flex justify-end gap-2">

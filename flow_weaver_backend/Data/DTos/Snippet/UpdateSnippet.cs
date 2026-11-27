@@ -57,4 +57,11 @@ public class UpdateSnippet
     // python_snippet only; setting true requires admin (SnippetService).
     [JsonPropertyName("network_enabled")]
     public bool? NetworkEnabled { get; set; }
+
+    // python_snippet / ansible_playbook only. PATCH-style: omit (null) to
+    // keep the current environment; the empty GUID
+    // ("00000000-0000-0000-0000-000000000000") clears it back to the image's
+    // system python3; any other id selects that environment.
+    [JsonPropertyName("python_environment_id")]
+    public Guid? PythonEnvironmentId { get; set; }
 }

@@ -74,4 +74,10 @@ public class CreateSnippet
     // requires the admin role — enforced by SnippetService.
     [JsonPropertyName("network_enabled")]
     public bool? NetworkEnabled { get; set; }
+
+    // python_snippet / ansible_playbook only: the Python environment the
+    // script / playbook runs from. Null or omitted = the image's system
+    // python3 (the default). Must name an existing, active environment.
+    [JsonPropertyName("python_environment_id")]
+    public Guid? PythonEnvironmentId { get; set; }
 }

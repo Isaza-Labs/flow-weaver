@@ -43,4 +43,11 @@ public class Device : BaseModel
     // first successful connect by pasting the fingerprint reported in
     // the step's logs.
     public string? ExpectedSshHostKeyFingerprint { get; set; }
+
+    // Python environment (see PythonEnvironment) the SSH runner is spawned
+    // with for this device. Null = the image's system python3 — the default,
+    // and what every device had before environments existed. Set it for a box
+    // that needs older packages, e.g. `ssh-legacy` for a switch that only
+    // offers the ssh-rsa host key paramiko 5 removed.
+    public Guid? PythonEnvironmentId { get; set; }
 }

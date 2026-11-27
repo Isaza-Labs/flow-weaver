@@ -2,7 +2,8 @@
   import { toast } from '$lib/components/ui';
   import { onMount } from 'svelte';
   import { page } from '$app/state';
-  import { snippets, errorMessage, type Snippet } from '$lib/api/client';
+  import { snippets, errorMessage, NO_PYTHON_ENVIRONMENT, type Snippet } from '$lib/api/client';
+  import PythonEnvironmentSelect from '$lib/components/PythonEnvironmentSelect.svelte';
   import { authStore } from '$lib/stores/auth.svelte';
   import TransformPlayground from '$lib/components/TransformPlayground.svelte';
   import SnippetTestDialog from '$lib/components/SnippetTestDialog.svelte';
@@ -36,6 +37,9 @@
   // python_snippet only: lifts the sandbox network isolation for interactive
   // SSH (netmiko/paramiko). Admin-gated by the backend.
   let networkEnabled = $state(false);
+  // python_snippet / ansible_playbook: admin-defined Python environment the
+  // script (or ansible-playbook) runs with. '' = system python3.
+  let pythonEnvironmentId = $state('');
 
   // REST
   let restUrl = $state('');
@@ -57,6 +61,9 @@
   const isRestType = $derived(snippet?.type === 'rest_call');
   const isPingType = $derived(snippet?.type === 'ping');
   const isAdmin = $derived(authStore.session?.role === 'admin');
+  const usesPythonEnvironment = $derived(
+    snippet?.type === 'python_snippet' || snippet?.type === 'python' || snippet?.type === 'ansible_playbook',
+  );
 
   onMount(loadSnippet);
 
@@ -79,6 +86,7 @@
       logicDiagramMermaid = snip.logic_diagram_mermaid ?? '';
       idempotency = (snip.idempotency ?? '') as typeof idempotency;
       networkEnabled = snip.network_enabled ?? false;
+      pythonEnvironmentId = snip.python_environment_id ?? '';
 
       if (snip.type === 'rest_call' && snip.code) {
         try {
@@ -162,6 +170,11 @@
         logic_diagram_mermaid: logicDiagramMermaid.trim() || null,
         idempotency: idempotency || null,
         network_enabled: networkEnabled,
+        // Only python/ansible snippets carry an environment (the API rejects it
+        // elsewhere); '' clears it back to the system interpreter.
+        ...(usesPythonEnvironment
+          ? { python_environment_id: pythonEnvironmentId || NO_PYTHON_ENVIRONMENT }
+          : {}),
       });
       saveStatus = 'saved';
       setTimeout(() => { saveStatus = 'idle'; }, 2500);
@@ -314,6 +327,14 @@
               <Input label="Max parallel" help="snippets.max_parallel" type="number" bind:value={maxParallel} min="1" max="1000" />
               <Input label="Timeout (s)" help="snippets.timeout" type="number" bind:value={timeoutSeconds} min="1" max="86400" />
             </div>
+            {#if usesPythonEnvironment}
+              <PythonEnvironmentSelect
+                bind:value={pythonEnvironmentId}
+                hint={snippet.type === 'ansible_playbook'
+                  ? 'ansible-playbook runs from this environment — it must include ansible-core.'
+                  : undefined}
+              />
+            {/if}
             {#if snippet.type === 'python_snippet'}
               <Select label="Script language" help="snippets.script_language" bind:value={scriptLanguage}>
                 <option value="python">Python</option>

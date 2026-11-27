@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using flow_weaver_backend.Data.Repositories;
+using flow_weaver_backend.Services.PythonEnvironments;
 using CredentialModel = flow_weaver_backend.Models.Credential;
 
 namespace flow_weaver_backend.Services.Worker.Handlers;
@@ -19,6 +20,13 @@ namespace flow_weaver_backend.Services.Worker.Handlers;
 //
 // Platform: only Linux containers. Windows returns a clear error rather
 // than crashing on a missing `ansible-playbook` binary.
+//
+// Python environment: when the snippet names one (Snippet.PythonEnvironmentId)
+// `ansible-playbook` runs from `<env>/bin` and that bin dir leads PATH, so the
+// siblings ansible spawns (ansible-galaxy, the env's python for local tasks)
+// come from the same environment. The env must list `ansible-core` (or
+// `ansible`) in its requirements. No environment = the image's apt-installed
+// ansible on PATH, exactly as before.
 public sealed class AnsibleHandler : ISnippetHandler
 {
     public string Type => "ansible_playbook";
@@ -29,17 +37,22 @@ public sealed class AnsibleHandler : ISnippetHandler
     private readonly IRepository<CredentialModel> _credentials;
     private readonly ICredentialEncryptionService _crypto;
     private readonly ILogger<AnsibleHandler> _logger;
+    // Optional: without it (tests, tools) a snippet pinned to an environment
+    // fails clearly instead of running the system ansible.
+    private readonly IPythonEnvironmentResolver? _environments;
 
     public AnsibleHandler(
         IDeviceRepository devices,
         IRepository<CredentialModel> credentials,
         ICredentialEncryptionService crypto,
-        ILogger<AnsibleHandler> logger)
+        ILogger<AnsibleHandler> logger,
+        IPythonEnvironmentResolver? environments = null)
     {
         _devices = devices;
         _credentials = credentials;
         _crypto = crypto;
         _logger = logger;
+        _environments = environments;
     }
 
     public async Task<SnippetResult> ExecuteAsync(SnippetRequest request, CancellationToken ct)
@@ -69,6 +82,34 @@ public sealed class AnsibleHandler : ISnippetHandler
                     ? request.SnippetTimeoutSeconds
                     : 600;
         timeoutSec = Math.Clamp(timeoutSec, 10, 3600);
+
+        // The snippet's python environment, if any. Resolved before the run so
+        // a pinned-but-unusable environment fails clearly rather than running
+        // the system ansible with different collections / python deps.
+        var ansiblePlaybook = "ansible-playbook";
+        string? envBinDir = null;
+        string envLabel = PythonEnvironmentText.SystemName;
+        if (request.PythonEnvironmentId is { } envId)
+        {
+            if (_environments is null)
+                return Fail($"snippet uses python environment {envId}, but python environments are not "
+                    + "available in this process");
+            ResolvedPythonEnvironment pyEnv;
+            try
+            {
+                pyEnv = await _environments.ResolveAsync(envId, ct);
+            }
+            catch (PythonEnvironmentUnavailableException ex)
+            {
+                return Fail($"snippet python environment: {ex.Message}");
+            }
+            ansiblePlaybook = Path.Combine(pyEnv.BinDir, "ansible-playbook");
+            if (!File.Exists(ansiblePlaybook))
+                return Fail($"python environment '{pyEnv.Name}' has no ansible-playbook — add "
+                    + "`ansible-core` (or `ansible`) to its requirements and rebuild it.");
+            envBinDir = pyEnv.BinDir;
+            envLabel = pyEnv.Name;
+        }
 
         // Resolve targets: per-step DeviceId preferred, otherwise input.hosts
         // (a single name/address or an array of them). EVERY host runs — a
@@ -114,7 +155,7 @@ public sealed class AnsibleHandler : ISnippetHandler
 
             var psi = new ProcessStartInfo
             {
-                FileName = "ansible-playbook",
+                FileName = ansiblePlaybook,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -132,6 +173,12 @@ public sealed class AnsibleHandler : ISnippetHandler
             // Password + host-key policy travel as env vars only.
             psi.EnvironmentVariables["ANSIBLE_HOST_KEY_CHECKING"] = "False";
             psi.EnvironmentVariables["ANSIBLE_STDOUT_CALLBACK"] = "default";
+            if (envBinDir is not null)
+            {
+                var path = Environment.GetEnvironmentVariable("PATH");
+                psi.EnvironmentVariables["PATH"] = string.IsNullOrEmpty(path) ? envBinDir : $"{envBinDir}:{path}";
+                psi.EnvironmentVariables["VIRTUAL_ENV"] = Path.GetDirectoryName(envBinDir);
+            }
             if (!string.IsNullOrWhiteSpace(password))
                 psi.EnvironmentVariables["ANSIBLE_SSH_PASS"] = password;
 
@@ -169,6 +216,7 @@ public sealed class AnsibleHandler : ISnippetHandler
             var output = JsonSerializer.SerializeToElement(new
             {
                 exit_code = exitCode,
+                python_environment = envLabel,
                 // `host` / `recap` stay singular for the one-host case every
                 // existing template was written against; `hosts` / `recaps`
                 // are the honest answer when the step fanned out.

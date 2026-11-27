@@ -345,4 +345,75 @@ public class PythonHandlerSandboxTests
         var (_, none) = ((string, List<string>))m.Invoke(null, new object?[] { "/tmp/fw-test.py", false, null })!;
         Assert.DoesNotContain("PYTHONPATH", none);
     }
+
+    // ─── python environments ────────────────────────────────────────────
+    // A snippet that names a python environment runs under that env's
+    // interpreter, inside the SAME sandbox: every isolation flag stays, the
+    // env dir is bound read-only, and PYTHONPATH keeps the approved package
+    // dir and the runtime bridge — with the env's site-packages first.
+
+    private static (string, List<string>) BwrapWithEnv(
+        bool networkEnabled, string? pkgDir,
+        flow_weaver_backend.Services.PythonEnvironments.ResolvedPythonEnvironment? env)
+    {
+        var m = typeof(PythonHandler)
+            .GetMethod("BuildBwrapWithEnvironment", BindingFlags.Static | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException("BuildBwrapWithEnvironment not found");
+        return ((string, List<string>))m.Invoke(null, new object?[] { "/tmp/fw-test.py", networkEnabled, pkgDir, env })!;
+    }
+
+    [Fact]
+    public void Bwrap_with_an_environment_keeps_every_isolation_flag_and_binds_it_read_only()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "fw-env-" + Guid.NewGuid().ToString("N"));
+        var envDir = Path.Combine(root, "ssh-legacy.abcd1234");
+        var site = Path.Combine(envDir, "lib", "python3.12", "site-packages");
+        Directory.CreateDirectory(site);
+        try
+        {
+            var env = new flow_weaver_backend.Services.PythonEnvironments.ResolvedPythonEnvironment(
+                Guid.NewGuid(), "ssh-legacy",
+                EnvDir: Path.Combine(root, "ssh-legacy"),
+                RealEnvDir: envDir,
+                BinDir: Path.Combine(root, "ssh-legacy", "bin"),
+                Interpreter: Path.Combine(root, "ssh-legacy", "bin", "python"));
+            const string pkg = "/app/pyenv/site";
+
+            var (file, args) = BwrapWithEnv(networkEnabled: false, pkg, env);
+            var (_, baseline) = BwrapWithEnv(networkEnabled: false, pkg, null);
+
+            Assert.Equal("bwrap", file);
+            foreach (var flag in new[] { "--unshare-all", "--die-with-parent", "--new-session", "--cap-drop", "--tmpfs" })
+                Assert.Contains(flag, args);
+            Assert.DoesNotContain("--share-net", args);
+            Assert.Equal(baseline.Count(a => a == "--ro-bind" || a == "--ro-bind-try") + 1,
+                args.Count(a => a == "--ro-bind" || a == "--ro-bind-try"));
+
+            // The env's real build dir is bound read-only, never writable.
+            var bind = args.IndexOf(envDir);
+            Assert.True(bind > 0 && args[bind - 1] == "--ro-bind", "env dir must be --ro-bind");
+            Assert.DoesNotContain("--bind", args);
+
+            // Interpreter = the env's, addressed through the bound build dir.
+            Assert.Equal(env.RealInterpreter, args[^2]);
+            Assert.Equal("/tmp/fw-test.py", args[^1]);
+
+            // PYTHONPATH: env site-packages first, then the approved packages
+            // and the runtime bridge exactly as without an environment.
+            var pp = args[args.IndexOf("PYTHONPATH") + 1];
+            Assert.Equal($"{site}:{pkg}:/usr/local/lib", pp);
+        }
+        finally
+        {
+            try { Directory.Delete(root, recursive: true); } catch { /* best effort */ }
+        }
+    }
+
+    [Fact]
+    public void Bwrap_without_an_environment_is_unchanged()
+    {
+        var (_, args) = BwrapWithEnv(networkEnabled: false, "/app/pyenv/site", null);
+        Assert.Equal("python3", args[^2]);
+        Assert.Equal("/app/pyenv/site:/usr/local/lib", args[args.IndexOf("PYTHONPATH") + 1]);
+    }
 }

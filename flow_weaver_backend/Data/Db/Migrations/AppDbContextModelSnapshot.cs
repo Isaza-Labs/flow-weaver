@@ -662,6 +662,9 @@ namespace flow_weaver_backend.Data.Db.Migrations
                         .IsRequired()
                         .HasColumnType("jsonb");
 
+                    b.Property<Guid?>("PythonEnvironmentId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasColumnType("text");
@@ -1726,6 +1729,76 @@ namespace flow_weaver_backend.Data.Db.Migrations
                     b.ToTable("policies", (string)null);
                 });
 
+            modelBuilder.Entity("flow_weaver_backend.Models.PythonEnvironment", b =>
+                {
+                    b.Property<Guid>("PythonEnvironmentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("BuiltAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsSshFallback")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LastError")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("PythonVersion")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Requirements")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RequirementsHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("ResolvedPackages")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("PythonEnvironmentId");
+
+                    b.HasIndex("IsSshFallback")
+                        .IsUnique()
+                        .HasFilter("\"IsActive\" = true AND \"IsSshFallback\" = true");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasFilter("\"IsActive\" = true");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("python_environments", (string)null);
+                });
+
             modelBuilder.Entity("flow_weaver_backend.Models.RefreshToken", b =>
                 {
                     b.Property<Guid>("RefreshTokenId")
@@ -2151,6 +2224,9 @@ namespace flow_weaver_backend.Data.Db.Migrations
                     b.Property<string>("OutputSchema")
                         .IsRequired()
                         .HasColumnType("jsonb");
+
+                    b.Property<Guid?>("PythonEnvironmentId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("RetryPolicy")
                         .IsRequired()

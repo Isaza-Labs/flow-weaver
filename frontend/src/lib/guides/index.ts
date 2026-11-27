@@ -431,6 +431,20 @@ export const GUIDE_ENTRIES: GuideEntry[] = [
     docsHref: '/docs/admin/python-packages',
   },
   {
+    match: (p) => p === '/admin/python-environments',
+    title: 'Python environments',
+    intro: 'Separate Python virtualenvs, each with its own pinned packages, built on the worker at runtime with uv. Devices (SSH), Python snippets and Ansible playbooks can pick one; leaving it empty uses the image’s system python3.',
+    tips: [
+      'Editing the requirements or the Python version rebuilds the environment; the previous good build keeps serving until the new one is ready',
+      'The environment flagged as SSH fallback is retried automatically once when an SSH device rejects every host key the runner offers (e.g. ssh-rsa only)',
+      'ssh-legacy is seeded with paramiko<5 because paramiko 5 removed ssh-rsa, which older switches such as Extreme EXOS still require',
+      'Credentials inside index URLs are masked when shown; leave a masked line untouched to keep them',
+    ],
+    aiContext:
+      'The user is on /admin/python-environments, managing admin-defined uv virtualenvs (name, python version, requirements.txt, SSH fallback flag) that devices, python_snippet and ansible_playbook snippets can select instead of the system python3.',
+    docsHref: '/docs/admin/python-environments',
+  },
+  {
     match: (p) => p === '/admin/slo',
     title: 'Service-level objectives',
     intro: 'The operational targets the platform commits to, aggregated over the window you pick.',

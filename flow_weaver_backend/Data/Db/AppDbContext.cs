@@ -116,6 +116,7 @@ public class AppDbContext : DbContext
     // ─── Python snippet sandbox ─────────────────────────────────────
     // Admin-managed allow-list of extra importable modules.
     public DbSet<AllowedPythonModule> AllowedPythonModules => Set<AllowedPythonModule>();
+    public DbSet<PythonEnvironment> PythonEnvironments => Set<PythonEnvironment>();
 
     // ─── Appearance ─────────────────────────────────────────────────
     // User-authored colour themes offered next to the built-in fw-* ones.
@@ -425,6 +426,31 @@ public class AppDbContext : DbContext
             // One row per import name. The unique index counts
             // inactive rows too, so the service hard-deletes on removal.
             e.HasIndex(x => x.ImportName).IsUnique();
+        });
+
+        // Admin-defined uv virtual environments (see PythonEnvironment).
+        // PythonEnvironmentService enforces both rules with a readable error;
+        // the filtered unique indexes are the backstop against two concurrent
+        // writes:
+        //   - Name is unique among ACTIVE rows only, so a soft-deleted env
+        //     does not block re-using its name;
+        //   - at most one ACTIVE row is the SSH fallback.
+        // The status index serves the builder's claim query.
+        modelBuilder.Entity<PythonEnvironment>(e =>
+        {
+            e.ToTable("python_environments");
+            e.HasKey(x => x.PythonEnvironmentId);
+            e.Property(x => x.Name).HasMaxLength(50);
+            e.Property(x => x.Status).HasMaxLength(16);
+            e.Property(x => x.PythonVersion).HasMaxLength(64);
+            e.Property(x => x.RequirementsHash).HasMaxLength(64);
+            e.HasIndex(x => x.Name)
+                .IsUnique()
+                .HasFilter("\"IsActive\" = true");
+            e.HasIndex(x => x.IsSshFallback)
+                .IsUnique()
+                .HasFilter("\"IsActive\" = true AND \"IsSshFallback\" = true");
+            e.HasIndex(x => x.Status);
         });
 
         // ─── Appearance ─────────────────────────────────────────────────

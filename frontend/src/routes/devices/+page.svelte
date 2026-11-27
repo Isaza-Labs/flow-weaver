@@ -2,9 +2,10 @@
   import { toast } from '$lib/components/ui';
   import { onMount } from 'svelte';
   import {
-    devices, credentials, errorMessage,
+    devices, credentials, errorMessage, NO_PYTHON_ENVIRONMENT,
     type Device, type Credential,
   } from '$lib/api/client';
+  import PythonEnvironmentSelect from '$lib/components/PythonEnvironmentSelect.svelte';
   import {
     PageHeader, Card, DataTable, Button, IconButton, EmptyState,
     Alert, Spinner, Input, Select, Dialog, SearchInput, confirm, FieldHint,
@@ -22,10 +23,14 @@
     // an existing pin re-arms that. Only surfaced in the edit dialog — at
     // create time nobody has connected yet, so there is no key to paste.
     expected_ssh_host_key_fingerprint: string;
+    // Python environment the ssh runner uses for this device. '' = system
+    // python3; mapped to null on create and NO_PYTHON_ENVIRONMENT on update.
+    python_environment_id: string;
   };
   const emptyForm: DeviceFormFields = {
     name: '', ip_address: '', platform: '', vendor: '',
     site: '', role: '', credential_id: '', expected_ssh_host_key_fingerprint: '',
+    python_environment_id: '',
   };
 
   // GUID of all zeros — what the backend stores when a Device row has
@@ -142,6 +147,7 @@
       await devices.create({
         ...newDevice,
         credential_id: normalizeCredentialId(newDevice.credential_id),
+        python_environment_id: newDevice.python_environment_id || null,
       });
       newDevice = { ...emptyForm };
       showForm = false;
@@ -165,6 +171,7 @@
       role: d.role ?? '',
       credential_id: d.credential_id && d.credential_id !== EMPTY_GUID ? d.credential_id : '',
       expected_ssh_host_key_fingerprint: d.expected_ssh_host_key_fingerprint ?? '',
+      python_environment_id: d.python_environment_id ?? '',
     };
     editError = null;
     showEdit = true;
@@ -179,6 +186,7 @@
       await devices.update(editing.id, {
         ...editForm,
         credential_id: normalizeCredentialId(editForm.credential_id),
+        python_environment_id: editForm.python_environment_id || NO_PYTHON_ENVIRONMENT,
       });
       toast.success(`Updated ${editForm.name || editing.name}`);
       showEdit = false;
@@ -344,6 +352,7 @@
               <option value={c.credential_id}>{c.name} ({c.type})</option>
             {/each}
           </Select>
+          <PythonEnvironmentSelect label="Python environment (SSH)" bind:value={newDevice.python_environment_id} disabled={creating} />
         </div>
         <div class="flex justify-end gap-2">
           <Button variant="ghost" onclick={() => (showForm = false)} disabled={creating}>Cancel</Button>
@@ -518,6 +527,7 @@
           <option value={c.credential_id}>{c.name} ({c.type})</option>
         {/each}
       </Select>
+      <PythonEnvironmentSelect label="Python environment (SSH)" bind:value={editForm.python_environment_id} disabled={editSaving} />
     </div>
 
     <div class="space-y-1">
