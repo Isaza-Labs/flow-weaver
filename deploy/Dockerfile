@@ -83,6 +83,18 @@ RUN apt-get update \
 RUN pip3 install --no-cache-dir --break-system-packages --ignore-installed \
       "netmiko>=4,<5" "paramiko>=3" "textfsm>=1.1" "ntc-templates>=4"
 
+# uv builds the admin-defined Python environments at RUNTIME
+# (PythonEnvironmentBuilderHostedService → /app/pyenv/envs/<name>), each with
+# its own pinned packages — e.g. `ssh-legacy` keeps paramiko < 5 for devices
+# that only offer the ssh-rsa host key paramiko 5 removed. The system python3
+# + pip install above stays the default environment ("system"). Static
+# binaries copied from the official image, pinned to an exact release.
+COPY --from=ghcr.io/astral-sh/uv:0.13.8 /uv /uvx /usr/local/bin/
+# Cache and uv-managed interpreters live on the persistent python_packages
+# volume (shared by backend + worker), so rebuilds after a restart are fast
+# and an env built on a downloaded CPython works in both containers.
+ENV UV_CACHE_DIR=/app/pyenv/uv-cache     UV_PYTHON_INSTALL_DIR=/app/pyenv/python     UV_NO_PROGRESS=1
+
 # Ship the flowweaver_runtime bridge (get_input / set_output) on the
 # interpreter's import path so snippets written from the starter template
 # work out of the box. Stays at /usr/local/lib/... which is persistent
@@ -112,7 +124,8 @@ RUN chmod 0755 /usr/local/lib/flow_weaver_ssh_runner.py \
 ENV PYTHONPATH=/usr/local/lib
 
 # /app/pyenv holds admin-approved pip packages installed at runtime for
-# python_snippet (installed under /site). Owned by `app` so the non-root worker
+# python_snippet (installed under /site), the uv-built Python environments
+# (/envs), and uv's cache (/uv-cache). Owned by `app` so the non-root worker
 # can write to it; it's a named volume in compose so installs persist.
 RUN mkdir -p /app/keyring /app/pyenv \
  && chown -R app:app /app

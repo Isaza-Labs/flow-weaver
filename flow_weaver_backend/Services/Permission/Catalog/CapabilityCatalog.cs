@@ -135,6 +135,12 @@ public static class CapabilityCatalog
         Cap("pythonmodule.read",   "pythonmodule", LegacyTier.Admin, None, "View the allowed Python module list."),
         Cap("pythonmodule.manage", "pythonmodule", LegacyTier.Admin, None, "Manage the Python sandbox import allowlist."),
 
+        // Reading the environment list feeds the device / snippet pickers, so
+        // device.manage and snippet.manage holders may read it too (see
+        // PythonEnvironmentController). Writes are admin-only by policy:
+        // building an environment installs third-party packages.
+        Cap("pythonenv.read", "pythonenv", LegacyTier.Operator, None, "View Python environments (names, status, credential-masked requirements)."),
+
         // ── git ───────────────────────────────────────────────────────────
         Cap("git.read",   "git", LegacyTier.Viewer, None, "Read git repositories (list/read/diff)."),
         Cap("git.manage", "git", LegacyTier.Admin,  None, "Git write ops (pull/write/commit/push, remote/webhook creation)."),

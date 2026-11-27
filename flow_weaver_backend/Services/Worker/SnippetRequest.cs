@@ -26,4 +26,8 @@ public sealed class SnippetRequest
     // python_snippet opt-in: run in the relaxed (network-enabled) sandbox with
     // the extended import allowlist. Mirrors Snippet.NetworkEnabled.
     public bool NetworkEnabled { get; init; }
+
+    // python_snippet / ansible_playbook: the Python environment to run from.
+    // Mirrors Snippet.PythonEnvironmentId; null = the image's system python3.
+    public Guid? PythonEnvironmentId { get; init; }
 }

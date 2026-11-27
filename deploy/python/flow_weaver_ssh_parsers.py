@@ -56,6 +56,7 @@ VENDOR_FAMILY: dict[str, str] = {
     "nokia_sros": "nokia",
     "nokia_srl": "nokia",
     "fortinet": "fortinet",
+    "extreme_exos": "extreme",
     "mikrotik_routeros": "mikrotik",
     "linux": "linux",
     "risecom_ros": "risecom",
@@ -108,6 +109,12 @@ VENDOR_ALIASES: dict[str, str] = {
     # Fortinet
     "fortigate": "fortinet",
     "fortios": "fortinet",
+    # Extreme Networks (EXOS / Switch Engine)
+    "exos": "extreme_exos",
+    "extreme": "extreme_exos",
+    "extremexos": "extreme_exos",
+    "extreme-exos": "extreme_exos",
+    "switch engine": "extreme_exos",
     # MikroTik
     "mikrotik": "mikrotik_routeros",
     "routeros": "mikrotik_routeros",
@@ -132,6 +139,7 @@ VENDOR_LABELS: dict[str, str] = {
     "risecom": "Risecom",
     "linux": "Linux",
     "hpe": "HPE Comware",
+    "extreme": "Extreme Networks",
     "generic": "Generic / unknown",
 }
 
@@ -151,6 +159,7 @@ DEVICE_TYPE_LABELS: dict[str, str] = {
     "huawei": "Huawei VRP",
     "nokia_sros": "Nokia SR OS",
     "nokia_srl": "Nokia SR Linux",
+    "extreme_exos": "Extreme EXOS",
     "fortinet": "Fortinet FortiGate",
     "mikrotik_routeros": "MikroTik RouterOS",
     "risecom_ros": "Risecom ROS",

@@ -959,6 +959,35 @@ export const FIELD_HINTS: Record<string, FieldHint> = {
     detail: 'Installation happens on the worker, so a newly added package becomes usable once that finishes, not the moment you save.',
   },
 
+  // ------------------------------------------------------------ Python environments
+  'pyenvs.name': {
+    label: 'Name',
+    help: 'Lowercase letters, digits and dashes (3–50 characters). Also the directory the environment is built into. "system" is reserved.',
+  },
+  'pyenvs.description': {
+    label: 'Description',
+    help: 'Why this environment exists — e.g. which devices need the older paramiko. Shown in the list and in the pickers’ context.',
+  },
+  'pyenvs.python_version': {
+    label: 'Python version',
+    help: 'Passed to uv venv --python, e.g. 3.11. Leave empty to use the image’s python3.',
+    detail: 'A version the image does not ship is downloaded by uv when the environment is built, so the worker needs network access for that.',
+  },
+  'pyenvs.requirements': {
+    label: 'Requirements',
+    help: 'requirements.txt format, one requirement per line — pin versions here (e.g. paramiko>=3.5,<5).',
+    detail: 'Saving a change rebuilds the environment. Installing runs third-party packaging code on the worker, which is why only admins can edit this.',
+  },
+  'pyenvs.is_ssh_fallback': {
+    label: 'SSH fallback',
+    help: 'When an SSH step fails with "no acceptable host key", the runner retries once with this environment. At most one environment can have it.',
+  },
+  'pyenvs.select': {
+    label: 'Python environment',
+    help: 'Which admin-defined Python environment runs this. System default is the image’s python3.',
+    detail: 'Environments are managed under Govern → Python environments. One that is not ready makes the step fail with a clear error rather than silently using another interpreter.',
+  },
+
   // ------------------------------------------------------------ Workflow editor
   'node.name': {
     label: 'Node name',
@@ -1325,6 +1354,54 @@ export const FIELD_HINTS: Record<string, FieldHint> = {
     label: 'Devices',
     help: 'The static list of devices this pool expands to at dispatch time. Search by name, IP, site, role or vendor and click to toggle membership.',
     detail: 'Membership is a plain list — the backend also has a filter-rules field for dynamic pools, but it is never evaluated, so a pool only ever resolves to what is picked here.',
+  },
+
+  // ------------------------------------------------------------ Inventory sources
+  'inventory.name': {
+    label: 'Name',
+    help: 'How this NetBox source is listed and audited. Name it after the instance it reads — "netbox-prod", "netbox-lab".',
+  },
+  'inventory.base_url': {
+    label: 'Base URL',
+    help: 'The NetBox root URL, without /api. The sync calls <base URL>/api/dcim/devices/ and follows its pagination.',
+    detail: 'Changing it while a token is set is admin-only: the sync sends the resolved token to this address.',
+  },
+  'inventory.site_filter': {
+    label: 'Site filter',
+    help: 'A NetBox site slug. When set, only devices of that site are imported; empty imports every site.',
+  },
+  'inventory.description': {
+    label: 'Description',
+    help: 'Free-text context for whoever inherits this source. Optional, and shown on the source card.',
+  },
+  'inventory.auth': {
+    label: 'Authentication',
+    help: 'Where the NetBox API token comes from. The source never stores the token itself, only a Vault reference resolved at sync time.',
+    detail: 'Reusing the NetBox integration’s token is the simplest option when that integration already works. Only admins can change this.',
+  },
+  'inventory.integration': {
+    label: 'Integration',
+    help: 'The integration whose token the sync sends (its auth_config.token). Picking one also fills an empty base URL with the integration’s.',
+  },
+  'inventory.secret': {
+    label: 'Secret',
+    help: 'A Vault secret holding the NetBox API token. The value never leaves the server.',
+  },
+  'inventory.token': {
+    label: 'API token',
+    help: 'Paste a NetBox API token. It is stored encrypted in the Vault and the source keeps only the reference. v1 tokens and v2 (nbt_…) tokens both work.',
+  },
+  'inventory.secret_ref': {
+    label: 'Secret reference',
+    help: 'Any ${secret:<source>:<id|name>:<field>} reference that resolves to the token, e.g. ${secret:secret:netbox:value}.',
+  },
+  'inventory.allow_private': {
+    label: 'Allow private-network base URL',
+    help: 'Required for an on-prem NetBox on 10/8, 172.16/12 or 192.168/16. Loopback, link-local and cloud metadata addresses stay blocked.',
+  },
+  'inventory.enabled': {
+    label: 'Enabled',
+    help: 'A disabled source keeps its configuration but cannot be synced.',
   },
 
   // ------------------------------------------------------------------ Schedules

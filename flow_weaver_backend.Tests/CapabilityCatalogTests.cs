@@ -128,6 +128,7 @@ public class CapabilityCatalogTests
             ["AiPromptSkillController"] = "promptskill",
             ["AiApiSpecController"] = "apispec",
             ["AllowedPythonModuleController"] = "pythonmodule",
+            ["PythonEnvironmentController"] = "pythonenv",
             ["GitController"] = "git",
             ["GitWebhookCrudController"] = "gitwebhook",
             ["MessagingLinkController"] = "messaging",

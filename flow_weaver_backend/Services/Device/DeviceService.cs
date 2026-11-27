@@ -17,15 +17,32 @@ public class DeviceService : IDevice
     private readonly ICurrentUser _caller;
     private readonly IAuditLogger _audit;
     private readonly ILogger<DeviceService> _logger;
+    // Optional so callers that never set an environment (tests, tools) need not
+    // supply it; DI always does. Without it a non-null environment id is refused.
+    private readonly IPythonEnvironmentRepository? _pythonEnvironments;
 
     public DeviceService(
         IDeviceRepository devices, ICurrentUser caller,
-        IAuditLogger audit, ILogger<DeviceService> logger)
+        IAuditLogger audit, ILogger<DeviceService> logger,
+        IPythonEnvironmentRepository? pythonEnvironments = null)
     {
         _devices = devices;
         _caller = caller;
         _audit = audit;
         _logger = logger;
+        _pythonEnvironments = pythonEnvironments;
+    }
+
+    // Null when the id names an active environment (or is null / the empty
+    // GUID), else the 400 message. Readiness is NOT required: the env may
+    // still be building, and the SSH handler fails clearly if it is not ready
+    // at run time.
+    private async Task<string?> ValidatePythonEnvironmentAsync(Guid? id)
+    {
+        if (id is null || id == Guid.Empty) return null;
+        if (_pythonEnvironments is null || !await _pythonEnvironments.ExistsAsync(id.Value))
+            return $"python_environment_id {id} does not name an existing python environment";
+        return null;
     }
 
     // Shared audit projection so create/update/delete describe a device the
@@ -46,6 +63,8 @@ public class DeviceService : IDevice
         // Pinning state is security-relevant: clearing a pin re-opens the
         // device to any host key, so the before/after pair has to show it.
         expected_ssh_host_key_fingerprint = d.ExpectedSshHostKeyFingerprint,
+        // Which interpreter (and so which paramiko) the SSH runner uses.
+        python_environment_id = d.PythonEnvironmentId,
     };
 
     // Normalises a caller-supplied host key pin. Returns:
@@ -120,6 +139,13 @@ public class DeviceService : IDevice
             return new BadRequestObjectResult(new { error = pinError });
         }
 
+        var envError = await ValidatePythonEnvironmentAsync(dto.PythonEnvironmentId);
+        if (envError is not null)
+        {
+            _logger.LogWarning("device.create.validation_failed reason=python_environment_invalid");
+            return new BadRequestObjectResult(new { error = envError });
+        }
+
         var now = DateTime.UtcNow;
         var device = new DeviceModel
         {
@@ -141,6 +167,7 @@ public class DeviceService : IDevice
             AllowQa = dto.AllowQa ?? false,
             AllowProduction = dto.AllowProduction ?? true,
             ExpectedSshHostKeyFingerprint = pin,
+            PythonEnvironmentId = dto.PythonEnvironmentId == Guid.Empty ? null : dto.PythonEnvironmentId,
             IsActive = true,
             CreatedAt = now,
             UpdatedAt = now,
@@ -200,6 +227,14 @@ public class DeviceService : IDevice
             return new BadRequestObjectResult(new { error = pinError });
         }
 
+        var updateEnvError = await ValidatePythonEnvironmentAsync(dto.PythonEnvironmentId);
+        if (updateEnvError is not null)
+        {
+            _logger.LogWarning(
+                "device.update.validation_failed device_id={DeviceId} reason=python_environment_invalid", id);
+            return new BadRequestObjectResult(new { error = updateEnvError });
+        }
+
         // Snapshot before the dto lands (`device` is tracked).
         var auditBefore = DeviceAudit(device);
 
@@ -224,6 +259,10 @@ public class DeviceService : IDevice
         // TryResolvePin already mapped the latter to null.
         if (dto.ExpectedSshHostKeyFingerprint is not null)
             device.ExpectedSshHostKeyFingerprint = pin;
+        // Omitted keeps it; the empty GUID clears it back to system python3.
+        if (dto.PythonEnvironmentId is not null)
+            device.PythonEnvironmentId =
+                dto.PythonEnvironmentId == Guid.Empty ? null : dto.PythonEnvironmentId;
 
         device.UpdatedAt = DateTime.UtcNow;
         try
@@ -290,6 +329,7 @@ public class DeviceService : IDevice
         AllowQa = d.AllowQa,
         AllowProduction = d.AllowProduction,
         ExpectedSshHostKeyFingerprint = d.ExpectedSshHostKeyFingerprint,
+        PythonEnvironmentId = d.PythonEnvironmentId,
         CreatedAt = d.CreatedAt,
         UpdatedAt = d.UpdatedAt,
     };

@@ -70,6 +70,14 @@ public class Snippet : BaseModel
     // keeps every other snippet fully isolated.
     public bool NetworkEnabled { get; set; }
 
+    // python_snippet / ansible_playbook ONLY: the Python environment (see
+    // PythonEnvironment) the script / ansible-playbook runs from. Null = the
+    // image's system python3 / ansible — the behaviour before environments
+    // existed. For python_snippet every sandbox protection still applies (the
+    // import allow-list decides which module NAMES may be imported; the env
+    // only decides which installed VERSION a permitted import resolves to).
+    public Guid? PythonEnvironmentId { get; set; }
+
     // Mermaid source describing the internal logic of this snippet/task.
     // Rendered in the UI on snippet edit AND when the user selects a node
     // in the workflow canvas — the goal is that someone opening a workflow

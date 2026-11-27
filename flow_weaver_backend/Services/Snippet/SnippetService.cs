@@ -23,6 +23,9 @@ public class SnippetService : ISnippet
     private readonly IAuditLogger _audit;
     private readonly ITraceLogger _trace;
     private readonly ILogger<SnippetService> _logger;
+    // Optional so callers that never set an environment (tests, tools) need not
+    // supply it; DI always does. Without it a non-null environment id is refused.
+    private readonly IPythonEnvironmentRepository? _pythonEnvironments;
 
     public SnippetService(
         ISnippetRepository snippets,
@@ -30,7 +33,8 @@ public class SnippetService : ISnippet
         ICurrentUser caller,
         IAuditLogger audit,
         ITraceLogger trace,
-        ILogger<SnippetService> logger)
+        ILogger<SnippetService> logger,
+        IPythonEnvironmentRepository? pythonEnvironments = null)
     {
         _snippets = snippets;
         _stepRuns = stepRuns;
@@ -38,6 +42,27 @@ public class SnippetService : ISnippet
         _audit = audit;
         _trace = trace;
         _logger = logger;
+        _pythonEnvironments = pythonEnvironments;
+    }
+
+    // Snippet types whose handler can run from a python environment: the
+    // python_snippet sandbox (interpreter) and ansible_playbook (`<env>/bin`).
+    private static readonly HashSet<string> PythonEnvironmentTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "python_snippet", "python", "ansible_playbook",
+    };
+
+    // Null when acceptable. `id` null / empty GUID = system interpreter, valid
+    // for every type. Readiness is NOT required here (the env may still be
+    // building); the handler fails clearly at run time if it is not ready.
+    private async Task<string?> ValidatePythonEnvironmentAsync(Guid? id, string? type)
+    {
+        if (id is null || id == Guid.Empty) return null;
+        if (!PythonEnvironmentTypes.Contains(type ?? string.Empty))
+            return "python_environment_id only applies to python_snippet and ansible_playbook snippets";
+        if (_pythonEnvironments is null || !await _pythonEnvironments.ExistsAsync(id.Value))
+            return $"python_environment_id {id} does not name an existing python environment";
+        return null;
     }
 
     public async Task<ActionResult<ListResponse<SnippetResponse>>> GetAsync(int limit = 50, int offset = 0)
@@ -125,6 +150,14 @@ public class SnippetService : ISnippet
             return netGuard;
         }
 
+        var envError = await ValidatePythonEnvironmentAsync(dto.PythonEnvironmentId, dto.Type);
+        if (envError is not null)
+        {
+            _logger.LogWarning(
+                "snippet.create.validation_failed reason=python_environment_invalid snippet_type={Type}", dto.Type);
+            return new BadRequestObjectResult(new { error = envError });
+        }
+
         var now = DateTime.UtcNow;
         var def = new SnippetModel
         {
@@ -148,6 +181,7 @@ public class SnippetService : ISnippet
             Idempotency = NormalizeIdempotency(dto.Idempotency),
             ChangesState = dto.ChangesState,
             NetworkEnabled = dto.NetworkEnabled ?? false,
+            PythonEnvironmentId = dto.PythonEnvironmentId == Guid.Empty ? null : dto.PythonEnvironmentId,
             // Same attribution the import pipeline stamps. Covers the UI and
             // the agent's create_snippet tool (both route through here) —
             // before this, every snippet they created had created_by=null.
@@ -229,6 +263,23 @@ public class SnippetService : ISnippet
             return new BadRequestObjectResult(new { error = pendingMermaidError });
         }
 
+        // Checked against the merged type: an env id on a snippet that is (or
+        // is being changed to) a non-python type is refused. Omitted keeps the
+        // current id; the empty GUID clears it.
+        var mergedEnvId = dto.PythonEnvironmentId is null
+            ? def.PythonEnvironmentId
+            : (dto.PythonEnvironmentId == Guid.Empty ? null : dto.PythonEnvironmentId);
+        var pendingEnvError = dto.PythonEnvironmentId is null && dto.Type is null
+            ? null
+            : await ValidatePythonEnvironmentAsync(mergedEnvId, mergedType);
+        if (pendingEnvError is not null)
+        {
+            _logger.LogWarning(
+                "snippet.update.validation_failed snippet_id={SnippetId} reason=python_environment_invalid",
+                def.SnippetId);
+            return new BadRequestObjectResult(new { error = pendingEnvError });
+        }
+
         // Pre-mutation snapshot for the audit (`def` is tracked). Code is not
         // copied in — it can be large and lands in the snippet's own history —
         // but `code_changed` records that the executed body was rewritten,
@@ -240,6 +291,7 @@ public class SnippetService : ISnippet
             def.TargetMode,
             def.Verified,
             def.NetworkEnabled,
+            python_environment_id = def.PythonEnvironmentId,
         };
 
         if (dto.Name is not null) def.Name = dto.Name;
@@ -276,6 +328,7 @@ public class SnippetService : ISnippet
         if (dto.TimeoutSeconds is not null) def.TimeoutSeconds = dto.TimeoutSeconds.Value;
         if (dto.Verified is not null) def.Verified = dto.Verified.Value;
         if (dto.RetryPolicy is not null) def.RetryPolicy = dto.RetryPolicy.Value;
+        if (dto.PythonEnvironmentId is not null) def.PythonEnvironmentId = mergedEnvId;
 
         def.UpdatedAt = DateTime.UtcNow;
         try
@@ -297,6 +350,7 @@ public class SnippetService : ISnippet
                 def.TargetMode,
                 def.Verified,
                 def.NetworkEnabled,
+                python_environment_id = def.PythonEnvironmentId,
                 code_changed = dto.Code is not null,
             });
         await _trace.EventAsync("snippet.update", "workflow", "completed",
@@ -531,6 +585,7 @@ public class SnippetService : ISnippet
         Idempotency = s.Idempotency,
         ChangesState = s.ChangesState,
         NetworkEnabled = s.NetworkEnabled,
+        PythonEnvironmentId = s.PythonEnvironmentId,
         CreatedBy = s.CreatedBy,
         CreatedAt = s.CreatedAt,
         UpdatedAt = s.UpdatedAt,

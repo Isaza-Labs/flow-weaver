@@ -62,6 +62,11 @@ public class DeviceResponse
     [JsonPropertyName("expected_ssh_host_key_fingerprint")]
     public string? ExpectedSshHostKeyFingerprint { get; set; }
 
+    // Python environment the SSH runner uses for this device; null = the
+    // image's system python3.
+    [JsonPropertyName("python_environment_id")]
+    public Guid? PythonEnvironmentId { get; set; }
+
     [JsonPropertyName("created_at")]
     public DateTime CreatedAt { get; set; }
 

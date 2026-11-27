@@ -124,8 +124,10 @@ services:
       - "${BACKEND_PORT:-8080}:8080"
     volumes:
       - backend_keyring:/app/keyring
-      # Admin-approved pip packages for python_snippet (installed under /site).
-      # Shared so the worker's provisioner writes and every step container reads.
+      # Admin-approved pip packages for python_snippet (installed under /site)
+      # and the uv-built Python environments (/envs, cache in /uv-cache).
+      # Shared so the worker's provisioner/builder writes and every step
+      # container reads — environments must resolve at the same path in both.
       - python_packages:/app/pyenv
     networks:
       - flow-weaver-net
@@ -232,9 +234,10 @@ services:
       # baseline thread count or bwrap's clone() fails with EAGAIN. Raise on a
       # busy worker; lower only to tighten the fork-bomb cap.
       Python__MaxProcesses: ${PYTHON_MAX_PROCESSES:-1024}
-      # Admin-approved python_snippet packages are installed wheels-only by
-      # default — pip never builds/runs sdist packaging code. Set false to allow
-      # source installs (some packages ship no wheel).
+      # Admin-approved python_snippet packages AND admin-defined Python
+      # environments (built with uv) are installed wheels-only by default —
+      # nothing builds/runs sdist packaging code. Set false to allow source
+      # installs (some packages ship no wheel).
       Python__PipOnlyBinary: ${PYTHON_PIP_ONLY_BINARY:-true}
       ConnectionStrings__DefaultConnection: Host=${DB_HOST:-db};Port=${DB_PORT:-5432};Database=${POSTGRES_DB:-flowweaver};Username=${POSTGRES_USER:-flowweaver};Password=${POSTGRES_PASSWORD:-flowweaver}
       DataProtection__KeyRingPath: /app/keyring
@@ -251,8 +254,10 @@ services:
       Slack__BotToken: ${SLACK_BOT_TOKEN:-}
     volumes:
       - backend_keyring:/app/keyring
-      # Admin-approved pip packages for python_snippet (installed under /site).
-      # Shared so the worker's provisioner writes and every step container reads.
+      # Admin-approved pip packages for python_snippet (installed under /site)
+      # and the uv-built Python environments (/envs, cache in /uv-cache).
+      # Shared so the worker's provisioner/builder writes and every step
+      # container reads — environments must resolve at the same path in both.
       - python_packages:/app/pyenv
     networks:
       - flow-weaver-net

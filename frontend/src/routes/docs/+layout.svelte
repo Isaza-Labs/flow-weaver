@@ -59,6 +59,7 @@
         { href: '/docs/policies', label: 'Policies', adminOnly: true },
         { href: '/docs/permissions', label: 'Permissions', adminOnly: true },
         { href: '/docs/admin/python-packages', label: 'Python packages', adminOnly: true },
+        { href: '/docs/admin/python-environments', label: 'Python environments', adminOnly: true },
       ],
     },
     {

@@ -337,6 +337,7 @@
         <tr><td><code>aiagent.read</code> / <code>.manage</code></td><td>✓ / —</td><td>✓ / ✓</td><td>✓ / ✓</td><td>none</td></tr>
         <tr><td><code>aiprovider.read</code> / <code>.manage</code></td><td>✓ / —</td><td>✓ / —</td><td>✓ / ✓</td><td>none</td></tr>
         <tr><td><code>promptskill.*</code>, <code>apispec.*</code>, <code>pythonmodule.*</code></td><td>—</td><td>—</td><td>✓</td><td>none</td></tr>
+        <tr><td><code>pythonenv.read</code> (also granted by <code>device.manage</code> or <code>snippet.manage</code>; writes are admin-only)</td><td>—</td><td>✓</td><td>✓</td><td>none</td></tr>
         <tr><td><code>git.read</code>, <code>gitwebhook.read</code></td><td>✓</td><td>✓</td><td>✓</td><td>none</td></tr>
         <tr><td><code>git.manage</code>, <code>gitwebhook.manage</code></td><td>—</td><td>—</td><td>✓</td><td>none</td></tr>
         <tr><td><code>messaging.link</code> / <code>messaging.manage</code></td><td>✓ / —</td><td>✓ / —</td><td>✓ / ✓</td><td>none</td></tr>

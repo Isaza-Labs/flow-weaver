@@ -64,4 +64,10 @@ public class CreateDevice
     // Ssh:AutoPinHostKeyOnFirstUse is turned off.
     [JsonPropertyName("expected_ssh_host_key_fingerprint")]
     public string? ExpectedSshHostKeyFingerprint { get; set; }
+
+    // Python environment the SSH runner uses for this device. Null or
+    // omitted = the image's system python3. Must name an existing, active
+    // environment.
+    [JsonPropertyName("python_environment_id")]
+    public Guid? PythonEnvironmentId { get; set; }
 }

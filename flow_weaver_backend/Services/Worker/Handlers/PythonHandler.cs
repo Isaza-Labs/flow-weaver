@@ -6,6 +6,7 @@ using flow_weaver_backend.Data.Repositories;
 using flow_weaver_backend.Models;
 using flow_weaver_backend.Services.Ai.Secrets;
 using flow_weaver_backend.Services.Integration;
+using flow_weaver_backend.Services.PythonEnvironments;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -32,6 +33,26 @@ namespace flow_weaver_backend.Services.Worker.Handlers;
 // calls — the script never sees the raw token, and URLs are clamped to
 // the integration's base_url so the sandbox can't reach anything the
 // admin didn't pre-authorize.
+//
+// Python environments (Snippet.PythonEnvironmentId): the script may run under
+// an admin-defined uv environment's interpreter instead of the image's
+// python3. That changes WHICH INSTALLED VERSION a permitted import resolves
+// to — never WHICH IMPORTS are permitted, nor how the process is confined:
+//   - the static checks (CheckDangerousCode + flow_weaver_import_guard.py)
+//     run exactly as before, against the same allow-list (safe-list + ready
+//     admin modules), and the guard itself still runs on the SYSTEM
+//     interpreter (Python:Executable) — it only ast-parses, and an env cannot
+//     swap the checker. A package that exists in the env but is not on the
+//     allow-list is still refused before the sandbox starts;
+//   - the sandbox (bwrap/nsjail/custom), prlimit caps, timeouts, launch
+//     throttle and network isolation are identical; the env directory is
+//     bound READ-ONLY (as is a uv-managed CPython it links to), so a script
+//     cannot modify the environment other runs use;
+//   - PYTHONPATH keeps the admin-approved package dir and /usr/local/lib
+//     (flowweaver_runtime); the env's site-packages is put first so the
+//     versions the env pins win over a same-named approved package.
+// Environments can only be defined by admins (installing packages = running
+// third-party code), the same trust level as approving a pip package.
 public sealed class PythonHandler : ISnippetHandler
 {
     public string Type => "python_snippet";
@@ -48,6 +69,9 @@ public sealed class PythonHandler : ISnippetHandler
     private readonly IConfiguration _configuration;
     private readonly IHostEnvironment _env;
     private readonly ILogger<PythonHandler> _logger;
+    // Optional: without it (tests, tools) a snippet pinned to an environment
+    // fails clearly instead of silently running the system interpreter.
+    private readonly IPythonEnvironmentResolver? _environments;
 
     public PythonHandler(
         IIntegrationRepository integrations,
@@ -57,7 +81,8 @@ public sealed class PythonHandler : ISnippetHandler
         IMemoryCache cache,
         IConfiguration configuration,
         IHostEnvironment env,
-        ILogger<PythonHandler> logger)
+        ILogger<PythonHandler> logger,
+        IPythonEnvironmentResolver? environments = null)
     {
         _integrations = integrations;
         _authApplier = authApplier;
@@ -67,6 +92,7 @@ public sealed class PythonHandler : ISnippetHandler
         _configuration = configuration;
         _env = env;
         _logger = logger;
+        _environments = environments;
     }
 
     // Loads the admin-approved extra import names (only `ready` rows),
@@ -123,7 +149,12 @@ public sealed class PythonHandler : ISnippetHandler
     // wrapper layered ON TOP of the sandbox; the kernel enforces them
     // even if the script swaps `python3` for something else (it can't,
     // because the bwrap mounts are RO, but defense in depth).
-    private (string Mode, string File, List<string> Args) ResolvePythonInvocation(string scriptPath, int timeoutSec, bool networkEnabled, string? pkgDir)
+    //
+    // `pyEnv` (optional) swaps the interpreter for a python environment's; see
+    // the class comment for why every protection above still applies.
+    private (string Mode, string File, List<string> Args) ResolvePythonInvocation(
+        string scriptPath, int timeoutSec, bool networkEnabled, string? pkgDir,
+        ResolvedPythonEnvironment? pyEnv = null)
     {
         var mode = (_configuration["Python:SandboxMode"] ?? string.Empty).Trim().ToLowerInvariant();
         var custom = _configuration["Python:SandboxCommand"];
@@ -147,12 +178,20 @@ public sealed class PythonHandler : ISnippetHandler
         // baseline while still bounding a runaway fork bomb; tune per host.
         var maxProc = _configuration.GetValue("Python:MaxProcesses", DefaultMaxProcesses);
 
+        // Inside the sandbox the interpreter is addressed through the env's
+        // REAL build directory (the one bound below), so an atomic swap of
+        // `<envs>/<name>` mid-run cannot change what this run executes.
+        var interpreter = pyEnv?.RealInterpreter ?? "python3";
+
         var (innerFile, innerArgs) = mode switch
         {
-            "bwrap" => BuildBwrap(scriptPath, networkEnabled, pkgDir),
-            "nsjail" => BuildNsjail(scriptPath),
-            "custom" => BuildCustom(custom!, scriptPath),
-            _ => ("python3", new List<string> { scriptPath }),
+            "bwrap" => BuildBwrapWithEnvironment(scriptPath, networkEnabled, pkgDir, pyEnv),
+            // nsjail / custom: the admin's jail config decides the mount
+            // layout; it must expose <PackagesDir>/envs read-only for snippets
+            // that use an environment (they fail to start otherwise — closed).
+            "nsjail" => BuildNsjail(scriptPath, interpreter),
+            "custom" => BuildCustom(custom!, scriptPath, interpreter),
+            _ => (interpreter, new List<string> { scriptPath }),
         };
 
         // prlimit wraps everything: caps virtual memory, cpu time, and
@@ -177,6 +216,10 @@ public sealed class PythonHandler : ISnippetHandler
     }
 
     private static (string, List<string>) BuildBwrap(string scriptPath, bool networkEnabled, string? pkgDir)
+        => BuildBwrapWithEnvironment(scriptPath, networkEnabled, pkgDir, pyEnv: null);
+
+    private static (string, List<string>) BuildBwrapWithEnvironment(
+        string scriptPath, bool networkEnabled, string? pkgDir, ResolvedPythonEnvironment? pyEnv)
     {
         // Default (networkEnabled=false): no /etc binds → no DNS, and
         // --unshare-all gives no network namespace even if the script imports
@@ -228,6 +271,29 @@ public sealed class PythonHandler : ISnippetHandler
             args.Add(pkgDir);
         }
 
+        // Python environment: its build directory, READ-ONLY, at the same
+        // path (outside /tmp, so mount order vs the tmpfs is irrelevant). A
+        // venv's bin/python is a symlink to its base interpreter — under /usr
+        // for the image's python3 (already bound), or a uv-managed CPython on
+        // the shared volume, which is bound read-only too.
+        string? envSitePackages = null;
+        if (pyEnv is not null)
+        {
+            args.Add("--ro-bind");
+            args.Add(pyEnv.RealEnvDir);
+            args.Add(pyEnv.RealEnvDir);
+
+            var baseRoot = ResolveBaseInterpreterRoot(pyEnv.RealInterpreter);
+            if (baseRoot is not null)
+            {
+                args.Add("--ro-bind");
+                args.Add(baseRoot);
+                args.Add(baseRoot);
+            }
+
+            envSitePackages = FindSitePackages(pyEnv.RealEnvDir);
+        }
+
         args.AddRange(new[]
         {
             "--tmpfs", "/tmp",
@@ -244,11 +310,19 @@ public sealed class PythonHandler : ISnippetHandler
 
         // Make the installed packages importable (prepend so they win
         // over a same-named system module; keep the flowweaver_runtime bridge).
-        if (!string.IsNullOrEmpty(pkgDir))
+        //
+        // With a python environment its site-packages goes FIRST, so the
+        // versions it pins win over a same-named approved package; the
+        // approved dir and the runtime bridge stay on the path as before.
+        var pythonPath = new List<string>();
+        if (envSitePackages is not null) pythonPath.Add(envSitePackages);
+        if (!string.IsNullOrEmpty(pkgDir)) pythonPath.Add(pkgDir);
+        if (pythonPath.Count > 0)
         {
+            pythonPath.Add("/usr/local/lib");
             args.Add("--setenv");
             args.Add("PYTHONPATH");
-            args.Add($"{pkgDir}:/usr/local/lib");
+            args.Add(string.Join(':', pythonPath));
         }
 
         args.AddRange(new[]
@@ -257,13 +331,53 @@ public sealed class PythonHandler : ISnippetHandler
             "--new-session",
             "--cap-drop", "ALL",
             "--",
-            "python3",
+            pyEnv?.RealInterpreter ?? "python3",
             scriptPath,
         });
         return ("bwrap", args);
     }
 
-    private (string, List<string>) BuildNsjail(string scriptPath)
+    // The install root of the interpreter a venv's bin/python links to, when it
+    // lives OUTSIDE the directories the sandbox already binds (/usr, /lib*):
+    // e.g. `<PackagesDir>/python/cpython-3.12…/bin/python3.12` → that
+    // cpython dir. Null for the image's own python3 (under /usr).
+    private static string? ResolveBaseInterpreterRoot(string interpreter)
+    {
+        try
+        {
+            var target = File.ResolveLinkTarget(interpreter, returnFinalTarget: true)?.FullName;
+            if (string.IsNullOrEmpty(target)) return null;
+            foreach (var bound in new[] { "/usr/", "/lib/", "/lib64/" })
+                if (target.StartsWith(bound, StringComparison.Ordinal)) return null;
+            // <root>/bin/pythonX.Y → <root>
+            var bin = Path.GetDirectoryName(target);
+            var root = bin is null ? null : Path.GetDirectoryName(bin);
+            return string.IsNullOrEmpty(root) || root == "/" ? null : root;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    // <env>/lib/pythonX.Y/site-packages, or null when it cannot be found.
+    private static string? FindSitePackages(string envDir)
+    {
+        try
+        {
+            var lib = Path.Combine(envDir, "lib");
+            if (!Directory.Exists(lib)) return null;
+            return Directory.EnumerateDirectories(lib, "python*")
+                .Select(d => Path.Combine(d, "site-packages"))
+                .FirstOrDefault(Directory.Exists);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private (string, List<string>) BuildNsjail(string scriptPath, string interpreter = "python3")
     {
         var cfg = _configuration["Python:NsjailConfig"]
             ?? throw new InvalidOperationException("Python:SandboxMode=nsjail requires Python:NsjailConfig.");
@@ -271,17 +385,17 @@ public sealed class PythonHandler : ISnippetHandler
         {
             "--config", cfg,
             "--",
-            "python3", scriptPath,
+            interpreter, scriptPath,
         });
     }
 
-    private static (string, List<string>) BuildCustom(string custom, string scriptPath)
+    private static (string, List<string>) BuildCustom(string custom, string scriptPath, string interpreter = "python3")
     {
         var parts = custom.Split(';', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 0) return ("python3", new List<string> { scriptPath });
+        if (parts.Length == 0) return (interpreter, new List<string> { scriptPath });
         var args = new List<string>(parts.Length);
         for (var i = 1; i < parts.Length; i++) args.Add(parts[i]);
-        args.Add("python3");
+        args.Add(interpreter);
         args.Add(scriptPath);
         return (parts[0], args);
     }
@@ -784,6 +898,29 @@ public sealed class PythonHandler : ISnippetHandler
         if (guardError is not null)
             return Fail(guardError);
 
+        // The snippet's python environment, if any. Resolved AFTER the static
+        // checks (which never depend on it) and before anything is written or
+        // spawned. Not ready / deleted / missing on disk → the step fails with
+        // that reason; it never silently falls back to the system python3.
+        ResolvedPythonEnvironment? pyEnv = null;
+        if (request.PythonEnvironmentId is { } envId)
+        {
+            if (_environments is null)
+                return Fail($"snippet uses python environment {envId}, but python environments are not "
+                    + "available in this process");
+            try
+            {
+                pyEnv = await _environments.ResolveAsync(envId, ct);
+            }
+            catch (PythonEnvironmentUnavailableException ex)
+            {
+                return Fail($"snippet python environment: {ex.Message}");
+            }
+            _logger.LogInformation(
+                "worker.python.environment step_run_id={StepRunId} snippet_id={SnippetId} python_environment={Env}",
+                request.StepRunId, request.SnippetId, pyEnv.Name);
+        }
+
         // Network-enabled snippets run with the sandbox's network isolation
         // lifted (admin-gated at create time). Log it so the escalation is
         // visible in the worker audit trail.
@@ -831,7 +968,7 @@ public sealed class PythonHandler : ISnippetHandler
             var inputJson = EmbedIntegrations(effectiveInput, integrations);
 
             var pkgDir = ResolvePackagesDir();
-            var (mode, fileName, argv) = ResolvePythonInvocation(tmpFile, timeoutSec, request.NetworkEnabled, pkgDir);
+            var (mode, fileName, argv) = ResolvePythonInvocation(tmpFile, timeoutSec, request.NetworkEnabled, pkgDir, pyEnv);
 
             var integrationNetworkError = IntegrationsWithoutNetworkError(mode, request.NetworkEnabled, integrations.Keys);
             if (integrationNetworkError is not null)

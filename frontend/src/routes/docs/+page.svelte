@@ -5,7 +5,7 @@
     Workflow, Activity, Server, Network, KeyRound, FlaskConical,
     Bot, Shield, Settings2, Cable, CalendarClock, Users,
     LayoutDashboard, BookOpen, Layers, GitBranch, Terminal, KeySquare,
-    Package, Webhook, Upload, LifeBuoy, BookA, Table2,
+    Package, Webhook, Upload, LifeBuoy, BookA, Table2, Boxes,
   } from 'lucide-svelte';
 
   const tiles: Array<{
@@ -34,6 +34,7 @@
     { href: '/docs/policies', label: 'Policies', description: 'Guardrails and approval gates (authored by admins).', icon: Shield },
     { href: '/docs/permissions', label: 'Permissions', description: 'Capability grants and per-resource access (admin).', icon: KeySquare },
     { href: '/docs/admin/python-packages', label: 'Python packages', description: 'Extra imports for Python snippets (admin).', icon: Package },
+    { href: '/docs/admin/python-environments', label: 'Python environments', description: 'Pinned uv virtualenvs for SSH, Python snippets and Ansible (admin).', icon: Boxes },
     { href: '/docs/admin', label: 'Administration', description: 'Users, audit, traces, artifacts, secrets, SLOs, settings (admin).', icon: Users },
     { href: '/docs/reference', label: 'Screens and roles', description: 'Every screen with its route, minimum role and chapter.', icon: Table2 },
     { href: '/docs/troubleshooting', label: 'Troubleshooting', description: 'Find the fix by symptom.', icon: LifeBuoy },

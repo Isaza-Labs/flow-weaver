@@ -24,6 +24,7 @@
     MessageSquare,
     Mail,
     Package,
+    Boxes,
     Plug,
     Files,
     DatabaseZap,
@@ -98,6 +99,7 @@
         { href: '/policies', label: 'Policies', icon: ShieldCheck, adminOnly: true },
         { href: '/permissions', label: 'Permissions', icon: KeySquare, adminOnly: true },
         { href: '/admin/python-packages', label: 'Python packages', icon: Package, adminOnly: true },
+        { href: '/admin/python-environments', label: 'Python environments', icon: Boxes, adminOnly: true },
       ],
     },
     {

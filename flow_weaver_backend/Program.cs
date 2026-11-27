@@ -407,6 +407,8 @@ builder.Services.AddScoped<flow_weaver_backend.Data.Repositories.IEmailChannelRe
 // python_snippet import allow-list (admin-managed).
 builder.Services.AddScoped<flow_weaver_backend.Data.Repositories.IAllowedPythonModuleRepository,
     flow_weaver_backend.Data.Repositories.AllowedPythonModuleRepository>();
+builder.Services.AddScoped<flow_weaver_backend.Data.Repositories.IPythonEnvironmentRepository,
+    flow_weaver_backend.Data.Repositories.PythonEnvironmentRepository>();
 // User-authored colour themes (shared + private).
 builder.Services.AddScoped<flow_weaver_backend.Data.Repositories.IThemeRepository,
     flow_weaver_backend.Data.Repositories.ThemeRepository>();
@@ -614,6 +616,12 @@ builder.Services.AddScoped<flow_weaver_backend.Services.Messaging.IMessagingLink
 // Admin CRUD for the python_snippet import allow-list.
 builder.Services.AddScoped<flow_weaver_backend.Services.PythonModules.IAllowedPythonModuleService,
     flow_weaver_backend.Services.PythonModules.AllowedPythonModuleService>();
+// Admin-defined uv environments: CRUD (API) + id → interpreter resolution
+// (ssh / python_snippet / ansible_playbook handlers on the worker).
+builder.Services.AddScoped<flow_weaver_backend.Services.PythonEnvironments.IPythonEnvironmentService,
+    flow_weaver_backend.Services.PythonEnvironments.PythonEnvironmentService>();
+builder.Services.AddScoped<flow_weaver_backend.Services.PythonEnvironments.IPythonEnvironmentResolver,
+    flow_weaver_backend.Services.PythonEnvironments.PythonEnvironmentResolver>();
 // Colour themes. Any user may keep private ones; publishing is admin-gated
 // inside the service, not by the controller.
 builder.Services.AddScoped<flow_weaver_backend.Services.Themes.IThemeService,
@@ -823,7 +831,13 @@ builder.Services.AddHostedService<flow_weaver_backend.BackgroundServices.WorkerH
 // tag the API container doesn't claim; see WorkerOptions.Tags). The atomic
 // per-row claim still guards against multiple worker replicas.
 if (workerOnly)
+{
     builder.Services.AddHostedService<flow_weaver_backend.BackgroundServices.PythonPackageProvisionerHostedService>();
+    // Builds admin-defined Python environments with uv into the same shared
+    // volume (<PackagesDir>/envs). Same gate and same reasoning as the
+    // provisioner above: one writer to the shared volume.
+    builder.Services.AddHostedService<flow_weaver_backend.BackgroundServices.PythonEnvironmentBuilderHostedService>();
+}
 
 // Sweeper that returns expired job claims to the pending pool. Runs in
 // both API and worker-only modes so a crashed worker is always eventually
@@ -1269,6 +1283,18 @@ if (app.Environment.IsDevelopment())
     // only insert what the curated catalogue did not cover.
     await flow_weaver_backend.Services.Ai.Seed.VendorCommandYamlSeedService.SeedAsync(
         scopeFactory, app.Environment, vendorCommandsLogger);
+}
+
+// Seed the `ssh-legacy` SSH-fallback python environment on a table with no
+// rows at all (paramiko 5 removed ssh-rsa; see PythonEnvironmentSeeder). API
+// process only — single owner, like the other one-shot sweepers; the fixed id
+// makes a concurrent seed collide instead of duplicating.
+if (!workerOnly)
+{
+    var scopeFactory = app.Services.GetRequiredService<IServiceScopeFactory>();
+    var pyEnvSeedLogger = app.Services.GetRequiredService<ILogger<Program>>();
+    await flow_weaver_backend.Services.PythonEnvironments.PythonEnvironmentSeeder.SeedAsync(
+        scopeFactory, pyEnvSeedLogger);
 }
 
 // Sample policies. Idempotent by name; ships disabled.

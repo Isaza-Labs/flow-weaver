@@ -4,6 +4,7 @@ using System.Text.Json;
 using flow_weaver_backend.Data.Repositories;
 using flow_weaver_backend.Services.Ai.Secrets;
 using flow_weaver_backend.Services.Policy;
+using flow_weaver_backend.Services.PythonEnvironments;
 using flow_weaver_backend.Services.Security;
 using flow_weaver_backend.Services.Validation;
 using CredentialModel = flow_weaver_backend.Models.Credential;
@@ -52,6 +53,16 @@ namespace flow_weaver_backend.Services.Worker.Handlers;
 //     ]
 //   }
 //
+// Plus, always: `python_environment` (the environment name the runner ran
+// under, or "system"), `ssh_env_fallback` (true when the SSH-fallback retry
+// below ran) and `ssh_env_fallback_error` (the first attempt's error then).
+//
+// Python environments: the runner is spawned with Device.PythonEnvironmentId's
+// interpreter when set (else Python:Executable — the image's python3). If an
+// attempt fails because the peer only offers a host key the installed
+// paramiko cannot negotiate (paramiko 5 removed ssh-rsa), the step is retried
+// ONCE with the IsSshFallback environment — see SshEnvironmentFallback.
+//
 // `output` and `stdout` have ANSI/control sequences stripped by the runner.
 // `output_raw` / `stdout_raw` keep the bytes Netmiko returned. Set
 // `preserve_ansi: true` in the node's config_overrides to leave both
@@ -77,6 +88,9 @@ public sealed class SshHandler : ISnippetHandler
     private readonly ISecretResolver _secrets;
     private readonly IConfiguration _configuration;
     private readonly ILogger<SshHandler> _logger;
+    // Optional: without it (tests, tools) every device runs on the system
+    // interpreter and a device pinned to an environment fails clearly.
+    private readonly IPythonEnvironmentResolver? _environments;
 
     public SshHandler(
         IDeviceRepository devices,
@@ -87,7 +101,8 @@ public sealed class SshHandler : ISnippetHandler
         IVendorCommandValidator vendorCommands,
         ISecretResolver secrets,
         IConfiguration configuration,
-        ILogger<SshHandler> logger)
+        ILogger<SshHandler> logger,
+        IPythonEnvironmentResolver? environments = null)
     {
         _devices = devices;
         _credentials = credentials;
@@ -98,6 +113,7 @@ public sealed class SshHandler : ISnippetHandler
         _secrets = secrets;
         _configuration = configuration;
         _logger = logger;
+        _environments = environments;
     }
 
     public async Task<SnippetResult> ExecuteAsync(SnippetRequest request, CancellationToken ct)
@@ -200,6 +216,8 @@ public sealed class SshHandler : ISnippetHandler
 
         string? expectedFingerprint = null;
         string? deviceType = explicitDeviceType;
+        // The resolved device's python environment (null = system python3).
+        Guid? pythonEnvironmentId = null;
 
         if (request.DeviceId.HasValue)
         {
@@ -213,6 +231,7 @@ public sealed class SshHandler : ISnippetHandler
                 if (credentialId is null)
                     credentialId = device.CredentialId == Guid.Empty ? null : device.CredentialId;
                 expectedFingerprint = device.ExpectedSshHostKeyFingerprint;
+                pythonEnvironmentId = device.PythonEnvironmentId;
                 if (string.IsNullOrWhiteSpace(deviceType) && !string.IsNullOrWhiteSpace(device.Platform))
                     deviceType = device.Platform;
             }
@@ -245,6 +264,7 @@ public sealed class SshHandler : ISnippetHandler
             if (credentialId is null)
                 credentialId = named.CredentialId == Guid.Empty ? null : named.CredentialId;
             expectedFingerprint ??= named.ExpectedSshHostKeyFingerprint;
+            pythonEnvironmentId ??= named.PythonEnvironmentId;
             if (string.IsNullOrWhiteSpace(deviceType) && !string.IsNullOrWhiteSpace(named.Platform))
                 deviceType = named.Platform;
         }
@@ -266,6 +286,7 @@ public sealed class SshHandler : ISnippetHandler
             if (credentialId is null)
                 credentialId = byIp.CredentialId == Guid.Empty ? null : byIp.CredentialId;
             expectedFingerprint ??= byIp.ExpectedSshHostKeyFingerprint;
+            pythonEnvironmentId ??= byIp.PythonEnvironmentId;
             if (string.IsNullOrWhiteSpace(deviceType) && !string.IsNullOrWhiteSpace(byIp.Platform))
                 deviceType = byIp.Platform;
         }
@@ -338,6 +359,25 @@ public sealed class SshHandler : ISnippetHandler
                 "worker.ssh.device_type.default step_run_id={StepRunId} device_id={DeviceId} host={Host}",
                 request.StepRunId, request.DeviceId, host);
             deviceType = "generic";
+        }
+
+        // The device's python environment. Resolved before anything touches
+        // the network: a device pinned to an env that is not ready fails
+        // clearly instead of silently running on the image's paramiko.
+        ResolvedPythonEnvironment? pyEnv = null;
+        if (pythonEnvironmentId is { } envId)
+        {
+            if (_environments is null)
+                return Fail($"device uses python environment {envId}, but python environments are not "
+                    + "available in this process");
+            try
+            {
+                pyEnv = await _environments.ResolveAsync(envId, ct);
+            }
+            catch (PythonEnvironmentUnavailableException ex)
+            {
+                return Fail($"device python environment: {ex.Message}");
+            }
         }
 
         var environment = await ResolveEnvironmentAsync(request.WorkflowRunId, ct);
@@ -428,6 +468,8 @@ public sealed class SshHandler : ISnippetHandler
         });
 
         RunnerResult runnerResult;
+        var usedEnvName = pyEnv?.Name ?? PythonEnvironmentText.SystemName;
+        string? fallbackFromError = null;
         if (allowedCommands.Count == 0)
         {
             // Every command was denied — no point spawning Python.
@@ -439,15 +481,54 @@ public sealed class SshHandler : ISnippetHandler
         }
         else
         {
-            runnerResult = await RunNetmikoAsync(runnerInput, timeoutSec, ct);
+            runnerResult = await RunNetmikoAsync(runnerInput, timeoutSec, pyEnv?.Interpreter, ct);
+
+            // Automatic fallback: the installed paramiko could not negotiate a
+            // host key with the peer (paramiko 5 removed ssh-rsa). Retry ONCE
+            // with the ready SSH-fallback environment, if there is one and it
+            // is not the environment that just failed. The handshake fails
+            // before authentication, so no command reached the device.
+            if (runnerResult.FatalError is not null
+                && SshEnvironmentFallback.IsHostKeyIncompatibility(runnerResult.FatalError)
+                && _environments is not null)
+            {
+                var fallback = await _environments.ResolveSshFallbackAsync(pyEnv?.Id, ct);
+                if (SshEnvironmentFallback.ShouldRetry(runnerResult.FatalError, pyEnv?.Id, fallback?.Id))
+                {
+                    fallbackFromError = runnerResult.FatalError;
+                    _logger.LogWarning(
+                        "worker.ssh.env_fallback step_run_id={StepRunId} device_id={DeviceId} host={Host} "
+                        + "from={FromEnv} to={ToEnv} error={Error}",
+                        request.StepRunId, request.DeviceId, host, usedEnvName, fallback!.Name, fallbackFromError);
+                    usedEnvName = fallback.Name;
+                    runnerResult = await RunNetmikoAsync(runnerInput, timeoutSec, fallback.Interpreter, ct);
+                }
+            }
         }
 
         if (runnerResult.FatalError is not null)
         {
             _logger.LogWarning(
-                "worker.ssh.runner_fatal step_run_id={StepRunId} device_id={DeviceId} host={Host} error={Error}",
-                request.StepRunId, request.DeviceId, host, runnerResult.FatalError);
-            return Fail(runnerResult.FatalError, runnerResult.Retryable);
+                "worker.ssh.runner_fatal step_run_id={StepRunId} device_id={DeviceId} host={Host} python_environment={PythonEnvironment} error={Error}",
+                request.StepRunId, request.DeviceId, host, usedEnvName, runnerResult.FatalError);
+            var fatal = fallbackFromError is null
+                ? runnerResult.FatalError
+                : $"{runnerResult.FatalError} (after retrying with SSH fallback python environment "
+                  + $"'{usedEnvName}'; first attempt: {fallbackFromError})";
+            return new SnippetResult
+            {
+                // The session never opened, so nothing changed.
+                Change = StepChange.Unchanged,
+                Success = false,
+                Error = fatal,
+                Retryable = runnerResult.Retryable,
+                Output = JsonSerializer.SerializeToElement(new
+                {
+                    python_environment = usedEnvName,
+                    ssh_env_fallback = fallbackFromError is not null,
+                    ssh_env_fallback_error = fallbackFromError,
+                }),
+            };
         }
 
         // Merge policy denials with runner results in the original command order.
@@ -544,8 +625,18 @@ public sealed class SshHandler : ISnippetHandler
             host_key_fingerprint = runnerResult.HostKeyFingerprint,
             device_type = runnerResult.DeviceType,
             device_type_fallback = runnerResult.DeviceTypeFallback,
+            python_environment = usedEnvName,
+            ssh_env_fallback = fallbackFromError is not null,
+            ssh_env_fallback_error = fallbackFromError,
             results = mergedResults,
         });
+
+        if (fallbackFromError is not null)
+        {
+            logsBuilder.Insert(0,
+                $"WARN: retried with SSH fallback python environment '{usedEnvName}' after: "
+                + $"{fallbackFromError}{Environment.NewLine}");
+        }
 
         if (!string.IsNullOrEmpty(runnerResult.DeviceTypeFallback))
         {
@@ -714,9 +805,15 @@ public sealed class SshHandler : ISnippetHandler
     // step's `timeout_seconds` + a 10s grace for Python/netmiko import
     // and teardown; if Paramiko hangs the CancellationToken kills the
     // process tree.
-    private async Task<RunnerResult> RunNetmikoAsync(string payload, int timeoutSec, CancellationToken ct)
+    //
+    // `interpreter` is a python environment's `<env>/bin/python`; null runs the
+    // image's python3 (Python:Executable). The runner script itself is the
+    // same file either way: it is our code, not the environment's.
+    private async Task<RunnerResult> RunNetmikoAsync(
+        string payload, int timeoutSec, string? interpreter, CancellationToken ct)
     {
-        var exe = _configuration["Python:Executable"];
+        var exe = interpreter;
+        if (string.IsNullOrWhiteSpace(exe)) exe = _configuration["Python:Executable"];
         if (string.IsNullOrWhiteSpace(exe)) exe = DefaultPythonExecutable;
 
         var runner = _configuration["Python:SshRunnerPath"];
@@ -732,6 +829,24 @@ public sealed class SshHandler : ISnippetHandler
             CreateNoWindow = true,
         };
         psi.ArgumentList.Add(runner);
+
+        // Under an environment interpreter the runner's sibling modules
+        // (flow_weaver_ssh_parsers / _clean, shipped next to it in
+        // /usr/local/lib) are not in the venv's site-packages: keep the
+        // runner's directory on PYTHONPATH, ahead of whatever the worker
+        // already had there. The venv's own site-packages still supply
+        // netmiko/paramiko — PYTHONPATH only adds plain module dirs.
+        if (!string.IsNullOrWhiteSpace(interpreter))
+        {
+            var runnerDir = Path.GetDirectoryName(runner);
+            var inherited = Environment.GetEnvironmentVariable("PYTHONPATH");
+            var parts = new List<string>();
+            if (!string.IsNullOrEmpty(runnerDir)) parts.Add(runnerDir);
+            if (!string.IsNullOrEmpty(inherited))
+                parts.AddRange(inherited.Split(':', StringSplitOptions.RemoveEmptyEntries)
+                    .Where(p => p != runnerDir));
+            if (parts.Count > 0) psi.Environment["PYTHONPATH"] = string.Join(':', parts);
+        }
 
         using var proc = new Process { StartInfo = psi };
 
