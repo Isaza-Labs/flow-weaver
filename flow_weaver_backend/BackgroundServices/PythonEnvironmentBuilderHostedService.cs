@@ -28,6 +28,13 @@ namespace flow_weaver_backend.BackgroundServices;
 // find their interpreter relative to themselves, so they keep working after
 // the rename from the .tmp directory.
 //
+// What gets installed is the environment's EFFECTIVE requirements: its own
+// Requirements plus the pip specs of the Packages-allowlist rows that target
+// it (python_module_environments), merged and de-duplicated by
+// PythonEnvironmentText.BuildEffectiveRequirements. The hash and the stale-
+// claim check use the effective text too, so a target change made during a
+// build is never marked ready with the old package set.
+//
 // Rows are claimed atomically (ClaimNextForBuildAsync) so multiple worker
 // replicas never build the same env twice. Success records `uv pip freeze`;
 // failure records the (masked, truncated) error and leaves the previous good
@@ -116,6 +123,10 @@ public sealed class PythonEnvironmentBuilderHostedService : BackgroundService
 
         var claimedRequirements = env.Requirements;
         var claimedVersion = env.PythonVersion;
+        // Own requirements + the specs the Packages allowlist targets at this
+        // environment. This is what is installed and hashed.
+        var effectiveRequirements = await repo.GetEffectiveRequirementsAsync(env, ct);
+        var claim = PythonEnvironmentBuildGuard.Capture(env, effectiveRequirements);
         var shortId = Guid.NewGuid().ToString("N")[..8];
         var buildDir = Path.Combine(EnvsRoot, $"{env.Name}.{shortId}");
         var tmpDir = buildDir + ".tmp";
@@ -136,7 +147,7 @@ public sealed class PythonEnvironmentBuilderHostedService : BackgroundService
             // deleted in `finally`. Never inside the env (which is bound into
             // python_snippet sandboxes).
             var reqFile = Path.Combine(privateDir, "requirements.txt");
-            await File.WriteAllTextAsync(reqFile, claimedRequirements, ct);
+            await File.WriteAllTextAsync(reqFile, effectiveRequirements, ct);
             TrySetMode(reqFile, UnixFileMode.UserRead | UnixFileMode.UserWrite);
 
             // 1. venv
@@ -174,15 +185,14 @@ public sealed class PythonEnvironmentBuilderHostedService : BackgroundService
                     $"uv pip freeze failed (exit {exit}): {Tail(Pick(stderr, stdout), 1500)}", ct);
             var freeze = stdout.Trim();
 
-            // The definition may have been edited while we built. If so the
-            // row is already back to `pending`: drop this build rather than
-            // swap in packages nobody asked for any more.
+            // The definition may have been edited while we built: the row's
+            // own requirements / version / name, or the allowlist rows that
+            // target it. Either way the row is already back to `pending`:
+            // drop this build rather than swap in packages nobody asked for
+            // any more. Compared on the EFFECTIVE requirements.
             var current = await repo.GetByIdAsync(env.PythonEnvironmentId, activeOnly: false, tracking: false, ct);
-            if (current is null || !current.IsActive
-                || current.Status != PythonEnvironment.StatusBuilding
-                || current.Requirements != claimedRequirements
-                || current.PythonVersion != claimedVersion
-                || current.Name != env.Name)
+            var currentEffective = current is null ? null : await repo.GetEffectiveRequirementsAsync(current, ct);
+            if (!PythonEnvironmentBuildGuard.IsStillCurrent(claim, current, currentEffective))
             {
                 TryDeleteDir(tmpDir);
                 _logger.LogInformation(
@@ -195,7 +205,7 @@ public sealed class PythonEnvironmentBuilderHostedService : BackgroundService
             Directory.Move(tmpDir, buildDir);
             var previous = SwapSymlink(env.Name, buildDir);
 
-            var hash = PythonEnvironmentText.ComputeHash(claimedVersion, claimedRequirements);
+            var hash = PythonEnvironmentText.ComputeHash(claimedVersion, effectiveRequirements);
             var marked = await repo.MarkReadyAsync(
                 env.PythonEnvironmentId, claimedRequirements, claimedVersion, freeze, hash, ct);
 

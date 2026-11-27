@@ -24,6 +24,40 @@ export interface GuideEntry {
   docsHref?: string;
 }
 
+// The two tabs of /admin/python. The matcher only sees the pathname, not
+// ?tab=, so the page itself gets the combined entry in GUIDE_ENTRIES and each
+// tab passes its own entry to the ⓘ hint next to its description. They still
+// match the old /admin/python-packages and /admin/python-environments paths,
+// which now only redirect to the matching tab.
+export const PYTHON_PACKAGES_GUIDE: GuideEntry = {
+  match: (p) => p === '/admin/python-packages',
+  title: 'Python packages',
+  intro: 'The extra modules python_snippet scripts are allowed to import. Adding a pip package makes the worker install it into the shared environment.',
+  tips: [
+    'The import name and the pip spec are separate fields — they often differ (e.g. yaml vs PyYAML)',
+    'Installation happens on the worker, so a newly added package is usable once that finishes',
+    'A snippet importing a module that is not on this list fails at run time, not at save time',
+  ],
+  aiContext:
+    'The user is on the Packages tab of /admin/python, managing the allowlist of importable modules for python_snippet plus the pip spec the worker installs.',
+  docsHref: '/docs/admin/python-packages',
+};
+
+export const PYTHON_ENVIRONMENTS_GUIDE: GuideEntry = {
+  match: (p) => p === '/admin/python-environments',
+  title: 'Python environments',
+  intro: 'Separate Python virtualenvs, each with its own pinned packages, built on the worker at runtime with uv. Devices (SSH), Python snippets and Ansible playbooks can pick one; leaving it empty uses the image’s system python3.',
+  tips: [
+    'Editing the requirements or the Python version rebuilds the environment; the previous good build keeps serving until the new one is ready',
+    'The environment flagged as SSH fallback is retried automatically once when an SSH device rejects every host key the runner offers (e.g. ssh-rsa only)',
+    'ssh-legacy is seeded with paramiko<5 because paramiko 5 removed ssh-rsa, which older switches such as Extreme EXOS still require',
+    'Credentials inside index URLs are masked when shown; leave a masked line untouched to keep them',
+  ],
+  aiContext:
+    'The user is on the Environments tab of /admin/python, managing admin-defined uv virtualenvs (name, python version, requirements.txt, SSH fallback flag) that devices, python_snippet and ansible_playbook snippets can select instead of the system python3.',
+  docsHref: '/docs/admin/python-environments',
+};
+
 export const GUIDE_ENTRIES: GuideEntry[] = [
   // ---------- Import ----------
   // Listed before the /workflows/<id> editor entry: "import" is a literal
@@ -418,32 +452,22 @@ export const GUIDE_ENTRIES: GuideEntry[] = [
     docsHref: '/docs/email',
   },
   {
-    match: (p) => p === '/admin/python-packages',
-    title: 'Python packages',
-    intro: 'The extra modules python_snippet scripts are allowed to import. Adding a pip package makes the worker install it into the shared environment.',
+    match: (p) => p === '/admin/python',
+    title: 'Python',
+    intro: 'Everything Python on the worker, in two tabs. Packages is the allowlist of modules python_snippet scripts may import, plus the pip packages the worker installs for them. Environments are separate uv virtualenvs with their own pinned packages that devices (SSH), Python snippets and Ansible playbooks can pick instead of the system python3.',
     tips: [
-      'The import name and the pip spec are separate fields — they often differ (e.g. yaml vs PyYAML)',
-      'Installation happens on the worker, so a newly added package is usable once that finishes',
-      'A snippet importing a module that is not on this list fails at run time, not at save time',
+      'The tab is in the URL (?tab=packages or ?tab=environments), so a link or Back lands on the same tab',
+      'Packages: the import name and the pip spec are separate fields; they often differ (e.g. yaml vs PyYAML)',
+      'Packages: a snippet importing a module that is not on the list fails at run time, not at save time',
+      'Environments: editing the requirements or the Python version rebuilds the environment; the previous good build keeps serving until the new one is ready',
+      'Environments: the one flagged as SSH fallback is retried once when an SSH device rejects every host key the runner offers (e.g. ssh-rsa only)',
     ],
     aiContext:
-      'The user is on /admin/python-packages, managing the allowlist of importable modules for python_snippet plus the pip spec the worker installs.',
+      'The user is on /admin/python, which has two tabs. Packages manages the allowlist of importable modules for python_snippet plus the pip spec the worker installs. Environments manages admin-defined uv virtualenvs (name, python version, requirements.txt, SSH fallback flag) that devices, python_snippet and ansible_playbook snippets can select instead of the system python3.',
     docsHref: '/docs/admin/python-packages',
   },
-  {
-    match: (p) => p === '/admin/python-environments',
-    title: 'Python environments',
-    intro: 'Separate Python virtualenvs, each with its own pinned packages, built on the worker at runtime with uv. Devices (SSH), Python snippets and Ansible playbooks can pick one; leaving it empty uses the image’s system python3.',
-    tips: [
-      'Editing the requirements or the Python version rebuilds the environment; the previous good build keeps serving until the new one is ready',
-      'The environment flagged as SSH fallback is retried automatically once when an SSH device rejects every host key the runner offers (e.g. ssh-rsa only)',
-      'ssh-legacy is seeded with paramiko<5 because paramiko 5 removed ssh-rsa, which older switches such as Extreme EXOS still require',
-      'Credentials inside index URLs are masked when shown; leave a masked line untouched to keep them',
-    ],
-    aiContext:
-      'The user is on /admin/python-environments, managing admin-defined uv virtualenvs (name, python version, requirements.txt, SSH fallback flag) that devices, python_snippet and ansible_playbook snippets can select instead of the system python3.',
-    docsHref: '/docs/admin/python-environments',
-  },
+  PYTHON_PACKAGES_GUIDE,
+  PYTHON_ENVIRONMENTS_GUIDE,
   {
     match: (p) => p === '/admin/slo',
     title: 'Service-level objectives',

@@ -21,6 +21,8 @@ const DEFAULT_QUICKLINKS = ['/workflows', '/runs', '/schedules', '/devices'];
 const RENAMED_QUICKLINKS: Readonly<Record<string, string>> = {
   '/credentials': '/vault',
   '/admin/secrets': '/vault',
+  '/admin/python-packages': '/admin/python',
+  '/admin/python-environments': '/admin/python',
 };
 
 export type Density = 'compact' | 'comfortable';

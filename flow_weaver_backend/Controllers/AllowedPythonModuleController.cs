@@ -33,6 +33,13 @@ public class AllowedPythonModuleController : ControllerBase
     public Task<ActionResult<AllowedPythonModuleResponse>> Create([FromBody] CreateAllowedPythonModule dto)
         => _service.CreateAsync(dto);
 
+    // PATCH-style (omitted fields keep their value): pip_spec, and the install
+    // targets install_in_system / environment_ids. Pip rows only.
+    [HttpPut("{id:guid}")]
+    [EnableRateLimiting(RateLimitingConfiguration.WriteNormal)]
+    public Task<ActionResult<AllowedPythonModuleResponse>> Update(Guid id, [FromBody] UpdateAllowedPythonModule dto)
+        => _service.UpdateAsync(id, dto);
+
     [HttpDelete("{id:guid}")]
     [EnableRateLimiting(RateLimitingConfiguration.WriteNormal)]
     public Task<IActionResult> Delete(Guid id) => _service.DeleteAsync(id);

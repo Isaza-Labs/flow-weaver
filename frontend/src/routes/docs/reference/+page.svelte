@@ -57,7 +57,7 @@
         <tr><td>Artifacts</td><td><code>/admin/artifacts</code>, <code>/admin/artifacts/{'{id}'}</code></td><td>admin</td><td><a href="/docs/admin/artifacts">Artifacts</a></td></tr>
         <tr><td>Policies</td><td><code>/policies</code>, <code>/policies/audit</code></td><td>viewer to read, admin to author (sidebar shows it to admins only)</td><td><a href="/docs/policies">Policies</a></td></tr>
         <tr><td>Permissions</td><td><code>/permissions</code></td><td>admin</td><td><a href="/docs/permissions">Permissions</a></td></tr>
-        <tr><td>Python packages</td><td><code>/admin/python-packages</code></td><td>admin</td><td><a href="/docs/admin/python-packages">Python packages</a></td></tr>
+        <tr><td>Python — packages and environments</td><td><code>/admin/python?tab=packages</code>, <code>/admin/python?tab=environments</code></td><td>admin</td><td><a href="/docs/admin/python-packages">Python packages</a>, <a href="/docs/admin/python-environments">Python environments</a></td></tr>
         <tr><td>AI hub</td><td><code>/ai</code></td><td>viewer</td><td><a href="/docs/ai">AI overview</a></td></tr>
         <tr><td>AI chat</td><td><code>/ai/chat</code></td><td>viewer</td><td><a href="/docs/ai/chat">Chat</a></td></tr>
         <tr><td>AI providers</td><td><code>/ai/providers</code></td><td>viewer (read-only)</td><td><a href="/docs/ai/providers">Providers</a></td></tr>

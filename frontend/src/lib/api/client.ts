@@ -123,7 +123,7 @@ export interface Device {
   // clear the pin — e.g. after a legitimate key rotation.
   expected_ssh_host_key_fingerprint?: string | null;
   // Python environment the ssh runner uses for this device (an admin-defined
-  // uv venv, see /admin/python-environments). Null = the image's system
+  // uv venv, see /admin/python?tab=environments). Null = the image's system
   // python3. On update, send NO_PYTHON_ENVIRONMENT to clear it.
   python_environment_id?: string | null;
   created_at: string;
@@ -3101,6 +3101,18 @@ export const emailChannels = {
 // ─── Python module allow-list (admin) ─────────────────────────────────
 // Admin-managed extra imports for python_snippet. Adding a `pip` module makes
 // the worker install it; only `ready` rows become importable.
+//
+// Install targets (pip rows only): `install_in_system` installs pip_spec into
+// the system interpreter's package dir (the default); `environment_ids` adds
+// it to those uv environments' effective requirements, and they rebuild.
+// `status` / `installed_version` / `error` describe the SYSTEM install; a row
+// with the system target off is `ready` without one.
+export interface AllowedPythonModuleEnvironmentTarget {
+  python_environment_id: string;
+  name: string;
+  status: PythonEnvironmentStatus | string;
+}
+
 export interface AllowedPythonModule {
   allowed_python_module_id: string;
   import_name: string;
@@ -3109,6 +3121,9 @@ export interface AllowedPythonModule {
   status: string; // 'pending' | 'installing' | 'ready' | 'failed'
   installed_version: string | null;
   error: string | null;
+  install_in_system: boolean;
+  environment_ids: string[];
+  environments: AllowedPythonModuleEnvironmentTarget[];
   created_at: string;
   updated_at: string;
 }
@@ -3117,6 +3132,16 @@ export interface CreateAllowedPythonModuleBody {
   import_name: string;
   source?: string;
   pip_spec?: string;
+  install_in_system?: boolean;
+  environment_ids?: string[];
+}
+
+// Pip rows only. Omitted fields keep their value; environment_ids is the full
+// new set.
+export interface UpdateAllowedPythonModuleBody {
+  pip_spec?: string;
+  install_in_system?: boolean;
+  environment_ids?: string[];
 }
 
 export const allowedPythonModules = {
@@ -3128,6 +3153,8 @@ export const allowedPythonModules = {
   },
   create: (body: CreateAllowedPythonModuleBody) =>
     api<AllowedPythonModule>('/admin/python-modules', { method: 'POST', body: JSON.stringify(body) }),
+  update: (id: string, body: UpdateAllowedPythonModuleBody) =>
+    api<AllowedPythonModule>(`/admin/python-modules/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   remove: (id: string) =>
     api<void>(`/admin/python-modules/${id}`, { method: 'DELETE' }),
   retry: (id: string) =>
@@ -3153,6 +3180,10 @@ export interface PythonEnvironment {
   last_error: string | null;
   resolved_packages: string | null;
   requirements_hash: string | null;
+  // Pip specs contributed by Packages-allowlist rows that target this
+  // environment (masked). Installed with `requirements`; edited on the
+  // Packages tab.
+  included_packages: string[];
   built_at: string | null;
   created_at: string;
   updated_at: string;

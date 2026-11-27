@@ -117,6 +117,7 @@ public class AppDbContext : DbContext
     // Admin-managed allow-list of extra importable modules.
     public DbSet<AllowedPythonModule> AllowedPythonModules => Set<AllowedPythonModule>();
     public DbSet<PythonEnvironment> PythonEnvironments => Set<PythonEnvironment>();
+    public DbSet<PythonModuleEnvironment> PythonModuleEnvironments => Set<PythonModuleEnvironment>();
 
     // ─── Appearance ─────────────────────────────────────────────────
     // User-authored colour themes offered next to the built-in fw-* ones.
@@ -426,6 +427,29 @@ public class AppDbContext : DbContext
             // One row per import name. The unique index counts
             // inactive rows too, so the service hard-deletes on removal.
             e.HasIndex(x => x.ImportName).IsUnique();
+            // InstallInSystem: the migration backfills existing rows with true
+            // (today's behaviour). No HasDefaultValue here on purpose — with a
+            // store default EF would omit an explicit `false` on insert.
+        });
+
+        // Install targets: which uv environments an allowlist row's pip spec
+        // is part of (see AllowedPythonModule.EnvironmentLinks). The module
+        // is hard-deleted → cascade. The environment is soft-deleted, so its
+        // rows are removed by PythonEnvironmentService; the cascade there is
+        // only the backstop for a hard delete.
+        modelBuilder.Entity<PythonModuleEnvironment>(e =>
+        {
+            e.ToTable("python_module_environments");
+            e.HasKey(x => new { x.AllowedPythonModuleId, x.PythonEnvironmentId });
+            e.HasOne(x => x.Module)
+                .WithMany(m => m.EnvironmentLinks)
+                .HasForeignKey(x => x.AllowedPythonModuleId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Environment)
+                .WithMany()
+                .HasForeignKey(x => x.PythonEnvironmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.PythonEnvironmentId);
         });
 
         // Admin-defined uv virtual environments (see PythonEnvironment).

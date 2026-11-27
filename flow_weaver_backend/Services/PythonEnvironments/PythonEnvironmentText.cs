@@ -138,6 +138,67 @@ public static class PythonEnvironmentText
     public static string NormalizeRequirements(string requirements) =>
         requirements.Replace("\r\n", "\n").Replace('\r', '\n').Trim() + "\n";
 
+    // Header line placed above the specs contributed by allowlist rows, so the
+    // requirements file the builder writes (and a build error quoting it)
+    // shows where they came from.
+    public const string IncludedHeader = "# included from the Python packages allowlist";
+
+    // An environment's EFFECTIVE requirements: its own `requirements` plus the
+    // pip specs of the allowlist rows that target it. This — not the raw
+    // Requirements column — is what the builder installs and hashes, so a
+    // build is reproducible from the database and ResolvedPackages records
+    // everything that went in.
+    //
+    // Deterministic: the own text comes first, unchanged (normalised); the
+    // included specs follow, trimmed, de-duplicated case-insensitively against
+    // each other AND against the lines already in the own text, and sorted
+    // ordinally. With nothing to add the result equals the normalised own
+    // text, so environments no row targets keep their previous hash.
+    //
+    // De-duplication is by the exact requirement line (whitespace and case
+    // ignored), not by package name: `paramiko>=3.5` from the env and
+    // `paramiko` from a row both stay, and uv resolves them together (a real
+    // conflict fails the build with uv's own message).
+    public static string BuildEffectiveRequirements(string? requirements, IEnumerable<string?> includedSpecs)
+    {
+        var own = string.IsNullOrWhiteSpace(requirements) ? string.Empty : NormalizeRequirements(requirements);
+
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var line in SplitLines(own))
+        {
+            var key = DedupKey(line);
+            if (key is not null) seen.Add(key);
+        }
+
+        var extra = new SortedSet<string>(StringComparer.Ordinal);
+        foreach (var raw in includedSpecs)
+        {
+            var spec = (raw ?? string.Empty).Trim();
+            if (spec.Length == 0) continue;
+            var key = DedupKey(spec);
+            if (key is null || !seen.Add(key)) continue;
+            extra.Add(spec);
+        }
+
+        if (extra.Count == 0) return own;
+
+        var sb = new StringBuilder(own);
+        sb.Append(IncludedHeader).Append('\n');
+        foreach (var spec in extra) sb.Append(spec).Append('\n');
+        return sb.ToString();
+    }
+
+    // Comparison key of a requirement line: comment stripped, whitespace
+    // removed, lower-cased. Null for blank / comment-only lines.
+    private static string? DedupKey(string line)
+    {
+        var hash = line.IndexOf(" #", StringComparison.Ordinal);
+        if (hash >= 0) line = line[..hash];
+        line = line.Trim();
+        if (line.Length == 0 || line.StartsWith('#')) return null;
+        return new string(line.Where(c => !char.IsWhiteSpace(c)).ToArray()).ToLowerInvariant();
+    }
+
     // SHA-256 over what a build depends on (interpreter request +
     // requirements). Hex, lowercase.
     public static string ComputeHash(string? pythonVersion, string requirements)

@@ -19,6 +19,51 @@ public class CreateAllowedPythonModule
     // Ignored for stdlib; defaults to import_name for pip.
     [JsonPropertyName("pip_spec")]
     public string? PipSpec { get; set; }
+
+    // Install targets (pip rows only; refused on a stdlib row).
+    // install_in_system: install into the system interpreter's package dir
+    // (today's behaviour). Defaults to true.
+    [JsonPropertyName("install_in_system")]
+    public bool? InstallInSystem { get; set; }
+
+    // uv environments (python_environment_id) that get pip_spec: it joins
+    // each one's effective requirements and the environment rebuilds. Every
+    // id must name an active environment.
+    [JsonPropertyName("environment_ids")]
+    public List<Guid>? EnvironmentIds { get; set; }
+}
+
+// PATCH-style edit of a pip row: every field is optional; omitted keeps the
+// current value. Changing pip_spec re-queues the system install (when that
+// target is on) and rebuilds every environment the row targets; changing the
+// targets rebuilds the environments added AND removed.
+public class UpdateAllowedPythonModule
+{
+    [JsonPropertyName("pip_spec")]
+    public string? PipSpec { get; set; }
+
+    // Turning it off does not uninstall what an earlier install put in the
+    // system package dir (there is no uninstall); it only stops installing.
+    [JsonPropertyName("install_in_system")]
+    public bool? InstallInSystem { get; set; }
+
+    // The full new set ([] = no environments).
+    [JsonPropertyName("environment_ids")]
+    public List<Guid>? EnvironmentIds { get; set; }
+}
+
+// One uv environment a row is installed in.
+public class AllowedPythonModuleEnvironmentTarget
+{
+    [JsonPropertyName("python_environment_id")]
+    public Guid PythonEnvironmentId { get; set; }
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
+
+    // The environment's build status (pending | building | ready | failed).
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = string.Empty;
 }
 
 public class AllowedPythonModuleResponse
@@ -43,6 +88,19 @@ public class AllowedPythonModuleResponse
 
     [JsonPropertyName("error")]
     public string? Error { get; set; }
+
+    // System target. `status` / `installed_version` / `error` above describe
+    // the system install; a row with this off is `ready` without one.
+    // Always false for a stdlib row (no install anywhere).
+    [JsonPropertyName("install_in_system")]
+    public bool InstallInSystem { get; set; }
+
+    [JsonPropertyName("environment_ids")]
+    public List<Guid> EnvironmentIds { get; set; } = new();
+
+    // The environment targets with their name and build status.
+    [JsonPropertyName("environments")]
+    public List<AllowedPythonModuleEnvironmentTarget> Environments { get; set; } = new();
 
     [JsonPropertyName("created_at")]
     public DateTime CreatedAt { get; set; }

@@ -19,7 +19,6 @@ import {
   MessageSquare,
   Mail,
   Package,
-  Boxes,
   Plug,
   Bot,
   BookOpen,
@@ -66,8 +65,9 @@ export const NAV_DESTS: NavDest[] = [
 
   { href: '/policies', label: 'Policies', icon: ShieldCheck, group: 'Govern', adminOnly: true },
   { href: '/permissions', label: 'Permissions', icon: KeySquare, group: 'Govern', adminOnly: true },
-  { href: '/admin/python-packages', label: 'Python packages', icon: Package, group: 'Govern', adminOnly: true },
-  { href: '/admin/python-environments', label: 'Python environments', icon: Boxes, group: 'Govern', adminOnly: true },
+  // Packages and uv environments, one tab each; replaced the separate Python
+  // packages and Python environments pages, whose URLs redirect here.
+  { href: '/admin/python', label: 'Python', icon: Package, group: 'Govern', adminOnly: true },
 
   { href: '/ai', label: 'AI', icon: Bot, group: 'Intelligence' },
   { href: '/docs', label: 'Documentation', icon: BookOpen, group: 'Help' },

@@ -439,7 +439,7 @@
       A <code>python_snippet</code> can only import a fixed safe-list of stdlib
       modules (<code>json</code>, <code>re</code>, <code>datetime</code>, …). When
       a snippet needs more, an <strong>admin</strong> extends the list
-      at <a href="/admin/python-packages"><code>/admin/python-packages</code></a>.
+      at <a href="/admin/python?tab=packages"><code>/admin/python?tab=packages</code></a>.
       This section is a summary; the full procedure is in
       <a href="/docs/admin/python-packages">Python packages</a>.
     </p>
@@ -550,7 +550,7 @@
         <code>python_snippet</code> (toggling it on, or editing an
         already-network-enabled snippet) and the
         <a href="#extra-imports">extra-imports</a> list at
-        <code>/admin/python-packages</code>.</li>
+        <code>/admin/python?tab=packages</code>.</li>
     </ul>
   </section>
 
