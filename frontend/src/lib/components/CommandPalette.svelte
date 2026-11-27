@@ -7,7 +7,7 @@
   import { registerShortcut } from '$lib/utils/shortcuts';
   import {
     LayoutDashboard, Workflow, Activity, Server, Bot, Vault,
-    CalendarClock, FlaskConical, Cable, BookOpen, Settings2, Network,
+    CalendarClock, FlaskConical, Cable, BookOpen, Settings2, Network, DatabaseZap,
     ShieldCheck, Sun, Moon, Layers, Search, Files,
   } from 'lucide-svelte';
   import type { IconComponent } from '$lib/components/ui';
@@ -56,6 +56,7 @@
       { id: 'go-schedules', label: 'Go to Schedules', section: 'Navigate', icon: CalendarClock, run: () => goto('/schedules') },
       { id: 'go-devices', label: 'Go to Devices', section: 'Navigate', icon: Server, run: () => goto('/devices') },
       { id: 'go-pools', label: 'Go to Device pools', section: 'Navigate', icon: Network, run: () => goto('/device-pools') },
+      { id: 'go-inventory', label: 'Go to Inventory sources', keywords: 'netbox sync import devices', section: 'Navigate', icon: DatabaseZap, run: () => goto('/inventory') },
       { id: 'go-vault', label: 'Go to Vault', keywords: 'credentials secrets keys tokens passwords', section: 'Navigate', icon: Vault, run: () => goto('/vault') },
       { id: 'go-qa', label: 'Go to QA lab', section: 'Navigate', icon: FlaskConical, run: () => goto('/qa') },
       { id: 'go-ai', label: 'Go to AI', section: 'Navigate', icon: Bot, run: () => goto('/ai') },

@@ -418,6 +418,7 @@ builder.Services.AddScoped<flow_weaver_backend.Data.Repositories.IUnitOfWork,
 builder.Services.AddScoped<IDevice, DeviceService>();
 builder.Services.AddScoped<ICredential, CredentialService>();
 builder.Services.AddScoped<IInventorySource, InventorySourceService>();
+builder.Services.AddScoped<INetBoxSyncService, NetBoxSyncService>();
 builder.Services.AddScoped<IDevicePool, DevicePoolService>();
 builder.Services.AddScoped<ISnippet, SnippetService>();
 builder.Services.AddScoped<IWorkflow, WorkflowService>();

@@ -26,6 +26,7 @@
     Package,
     Plug,
     Files,
+    DatabaseZap,
   } from 'lucide-svelte';
   import type { IconComponent } from '$lib/components/ui';
 
@@ -84,6 +85,7 @@
         { href: '/schedules', label: 'Schedules', icon: CalendarClock },
         { href: '/devices', label: 'Devices', icon: Server },
         { href: '/device-pools', label: 'Device pools', icon: Network },
+        { href: '/inventory', label: 'Inventory sources', icon: DatabaseZap },
         { href: '/vault', label: 'Vault', icon: Vault },
         { href: '/qa', label: 'QA lab', icon: FlaskConical },
         { href: '/admin/artifacts', label: 'Artifacts', icon: Files, adminOnly: true },
