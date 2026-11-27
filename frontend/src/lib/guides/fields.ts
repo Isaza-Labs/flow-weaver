@@ -969,8 +969,8 @@ export const FIELD_HINTS: Record<string, FieldHint> = {
     detail: 'Turning it off stops future installs but does not uninstall: files an earlier install put in the shared package dir stay importable from the system python3 until the volume is cleaned. Without it the import name must be the real module name — nothing reads it off an install.',
   },
   'pypackages.install_env': {
-    label: 'Environment',
-    help: 'Adds the package to this environment’s requirements. The environment rebuilds with it; its status shows when that is done.',
+    label: 'uv environments',
+    help: 'Adds the package to each chosen environment’s requirements. Pick them with “Choose environments…”; each one rebuilds with it, and its status badge shows when that is done.',
     detail: 'Changing the package, its targets or deleting it rebuilds every environment affected. The previous good build keeps serving until the new one is ready.',
   },
 

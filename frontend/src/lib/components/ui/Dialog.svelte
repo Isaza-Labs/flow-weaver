@@ -1,3 +1,11 @@
+<script module lang="ts">
+  // Shared across every Dialog instance so a dialog stacked on top of another
+  // (a picker over a form) neither re-enables page scroll when it closes nor
+  // borrows the lower dialog's title as its accessible name.
+  let openCount = 0;
+  let uid = 0;
+</script>
+
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { Snippet } from 'svelte';
@@ -26,6 +34,7 @@
 
   let dialogEl = $state<HTMLDivElement | null>(null);
   let prevFocus = $state<HTMLElement | null>(null);
+  const titleId = `dialog-title-${++uid}`;
 
   const sizeClass = $derived({
     sm: 'max-w-md',
@@ -81,14 +90,14 @@
           });
         }
       });
+      openCount++;
       document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-      prevFocus?.focus();
+      return () => {
+        openCount = Math.max(0, openCount - 1);
+        if (openCount === 0) document.body.style.overflow = '';
+        prevFocus?.focus();
+      };
     }
-    return () => {
-      document.body.style.overflow = '';
-    };
   });
 </script>
 
@@ -104,14 +113,14 @@
       class="w-full {sizeClass} max-h-[90vh] flex flex-col bg-surface-100-900 border border-surface-300-700 rounded-xl shadow-2xl"
       role="dialog"
       aria-modal="true"
-      aria-labelledby={title ? 'dialog-title' : undefined}
+      aria-labelledby={title ? titleId : undefined}
       tabindex="-1"
     >
       {#if title || closable}
         <header class="flex items-start justify-between gap-3 px-5 py-4 border-b border-surface-200-800">
           <div class="min-w-0 flex-1">
             {#if title}
-              <h2 id="dialog-title" class="text-base font-semibold tracking-tight text-surface-900-100">{title}</h2>
+              <h2 id={titleId} class="text-base font-semibold tracking-tight text-surface-900-100">{title}</h2>
             {/if}
             {#if description}
               <p class="text-sm text-surface-600-400 mt-1">{description}</p>

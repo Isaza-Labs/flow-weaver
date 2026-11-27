@@ -22,7 +22,14 @@
     Input, Select, Checkbox, Alert, Spinner, EmptyState, ErrorState, toast, confirm,
   } from '$lib/components/ui';
   import { PYTHON_PACKAGES_GUIDE } from '$lib/guides';
-  import { Plus, Trash2, RefreshCw, Package, RotateCw, Pencil } from 'lucide-svelte';
+  import { Plus, Trash2, RefreshCw, Package, RotateCw, Pencil, X, ListChecks } from 'lucide-svelte';
+  import PythonEnvironmentMultiPicker from './PythonEnvironmentMultiPicker.svelte';
+  import { installStatusTone as statusTone } from './envStatus';
+
+  // How many selected-environment chips the form shows before "+N more", and
+  // how many install-target badges a list row shows before "+N".
+  const FORM_CHIPS = 5;
+  const ROW_BADGES = 3;
 
   // Built-in safe modules — always importable, shown read-only for context so
   // admins don't re-add them. Mirrors PythonHandler.SafeModules.
@@ -126,14 +133,38 @@
     void loadEnvironments();
   }
 
-  function hasEnv(id: string) {
-    return form.environment_ids.includes(id);
+  // The environment picker stacks on top of the form dialog.
+  let showEnvPicker = $state(false);
+
+  const envById = $derived(new Map(environments.map((e) => [e.python_environment_id, e])));
+
+  // Selected targets in the form, resolved against the loaded list. An id
+  // that is not in it (deleted, or the list failed to load) is kept and shown
+  // as unknown so saving doesn't silently drop it.
+  const selectedEnvs = $derived(
+    form.environment_ids.map((id) => ({ id, env: envById.get(id) ?? null })),
+  );
+
+  function removeEnv(id: string) {
+    form.environment_ids = form.environment_ids.filter((x) => x !== id);
   }
 
-  function setEnv(id: string, on: boolean) {
-    form.environment_ids = on
-      ? [...form.environment_ids.filter((x) => x !== id), id]
-      : form.environment_ids.filter((x) => x !== id);
+  // Rows whose "Installed in" badges are expanded past ROW_BADGES.
+  let expandedRows = $state<Record<string, boolean>>({});
+
+  type Target = { key: string; label: string; status: string; title: string };
+  function targets(m: AllowedPythonModule): Target[] {
+    return [
+      ...(m.install_in_system
+        ? [{ key: 'system', label: 'system', status: m.status, title: `System Python: ${m.status}` }]
+        : []),
+      ...m.environments.map((t) => ({
+        key: t.python_environment_id,
+        label: t.name,
+        status: t.status,
+        title: `Environment ${t.name}: ${t.status}`,
+      })),
+    ];
   }
 
   function installSummary(m: AllowedPythonModule): string | undefined {
@@ -212,13 +243,6 @@
       toast.fromError(e, 'Retry failed');
     }
   }
-
-  function statusTone(s: string): 'success' | 'warning' | 'error' | 'info' {
-    if (s === 'ready') return 'success';
-    if (s === 'failed') return 'error';
-    if (s === 'building' || s === 'installing') return 'info';
-    return 'warning'; // pending
-  }
 </script>
 
 <div class="space-y-6">
@@ -289,18 +313,30 @@
               </td>
               <td>
                 {#if m.source === 'pip'}
-                  <div class="flex flex-wrap gap-1">
-                    {#if m.install_in_system}
-                      <span title={`System Python: ${m.status}`}>
-                        <Badge tone={statusTone(m.status)} mono>system · {m.status}</Badge>
-                      </span>
-                    {/if}
-                    {#each m.environments as t (t.python_environment_id)}
-                      <span title={`Environment ${t.name}: ${t.status}`}>
-                        <Badge tone={statusTone(t.status)} mono>{t.name} · {t.status}</Badge>
+                  {@const all = targets(m)}
+                  {@const expanded = !!expandedRows[m.allowed_python_module_id]}
+                  {@const shown = expanded ? all : all.slice(0, ROW_BADGES)}
+                  <div class="flex flex-wrap items-center gap-1 max-w-md">
+                    {#each shown as t (t.key)}
+                      <span title={t.title}>
+                        <Badge tone={statusTone(t.status)} mono>{t.label} · {t.status}</Badge>
                       </span>
                     {/each}
-                    {#if !m.install_in_system && m.environments.length === 0}
+                    {#if all.length > ROW_BADGES}
+                      <button
+                        type="button"
+                        class="text-xs font-medium rounded px-1.5 py-0.5 text-primary-500 hover:bg-surface-200-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+                        title={expanded ? undefined : all.map((t) => `${t.label} · ${t.status}`).join('\n')}
+                        aria-expanded={expanded}
+                        aria-label={expanded
+                          ? `Show fewer install targets for ${m.import_name}`
+                          : `Show all ${all.length} install targets for ${m.import_name}`}
+                        onclick={() => (expandedRows[m.allowed_python_module_id] = !expanded)}
+                      >
+                        {expanded ? 'Show less' : `+${all.length - ROW_BADGES}`}
+                      </button>
+                    {/if}
+                    {#if all.length === 0}
                       <span class="text-xs text-surface-500" title="Allowed to import, but not installed anywhere by this row">nowhere</span>
                     {/if}
                   </div>
@@ -385,23 +421,72 @@
           bind:checked={form.install_in_system}
           disabled={saving}
         />
-        {#each environments as env (env.python_environment_id)}
-          <div class="flex items-center gap-2">
-            <Checkbox
-              label={`Environment ${env.name}`}
-              help="pypackages.install_env"
-              checked={hasEnv(env.python_environment_id)}
-              onChange={(on) => setEnv(env.python_environment_id, on)}
-              disabled={saving}
-            />
-            <Badge tone={statusTone(env.status)} mono>{env.status}</Badge>
+        <!-- uv environments: a compact chip summary plus a picker dialog, so
+             the form stays the same height however many environments exist. -->
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <span class="inline-flex items-center gap-1 text-sm text-surface-800-200">
+              uv environments
+              <span class="text-xs text-surface-500">({form.environment_ids.length} selected)</span>
+              <FieldHint id="pypackages.install_env" />
+            </span>
+            <Button
+              size="sm"
+              icon={ListChecks}
+              onclick={() => (showEnvPicker = true)}
+              disabled={saving || environments.length === 0}
+              title={environments.length === 0 ? 'No environments' : undefined}
+            >
+              {environments.length === 0 ? 'No environments' : 'Choose environments…'}
+            </Button>
           </div>
-        {:else}
-          <p class="text-xs text-surface-500">
-            No uv environments yet — add one on the
-            <a class="underline" href="/admin/python?tab=environments">Environments</a> tab to install there too.
-          </p>
-        {/each}
+
+          {#if selectedEnvs.length > 0}
+            <ul class="flex flex-wrap gap-1.5" aria-label="Selected environments">
+              {#each selectedEnvs.slice(0, FORM_CHIPS) as s (s.id)}
+                {@const name = s.env?.name ?? `unknown (${s.id.slice(0, 8)}…)`}
+                <li
+                  class="inline-flex items-center gap-1.5 max-w-full rounded-md border border-surface-300-700 bg-surface-50-950 pl-2 pr-1 py-0.5"
+                  title={s.env?.description ?? name}
+                >
+                  <span class="font-mono text-xs text-surface-800-200 truncate max-w-[12rem]">{name}</span>
+                  {#if s.env}
+                    <Badge tone={statusTone(s.env.status)} size="xs" mono>{s.env.status}</Badge>
+                  {/if}
+                  <button
+                    type="button"
+                    class="p-0.5 rounded text-surface-500 hover:text-surface-800-200 hover:bg-surface-200-800 transition-colors disabled:opacity-40"
+                    aria-label={`Remove ${name}`}
+                    onclick={() => removeEnv(s.id)}
+                    disabled={saving}
+                  >
+                    <X size={12} />
+                  </button>
+                </li>
+              {/each}
+              {#if selectedEnvs.length > FORM_CHIPS}
+                <li>
+                  <button
+                    type="button"
+                    class="text-xs font-medium rounded-md px-2 py-1 text-primary-500 hover:bg-surface-200-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 disabled:opacity-40"
+                    title={selectedEnvs.slice(FORM_CHIPS).map((s) => s.env?.name ?? s.id).join('\n')}
+                    onclick={() => (showEnvPicker = true)}
+                    disabled={saving || environments.length === 0}
+                  >
+                    +{selectedEnvs.length - FORM_CHIPS} more
+                  </button>
+                </li>
+              {/if}
+            </ul>
+          {/if}
+
+          {#if environments.length === 0}
+            <p class="text-xs text-surface-500">
+              No uv environments yet — add one on the
+              <a class="underline" href="/admin/python?tab=environments">Environments</a> tab to install there too.
+            </p>
+          {/if}
+        </div>
         {#if editing && editing.install_in_system && !form.install_in_system}
           <Alert tone="info">
             Turning System Python off stops installing it there, but does not uninstall it: files from
@@ -425,3 +510,13 @@
     <Button variant="primary" onclick={() => save()} loading={saving}>{editing ? 'Save' : 'Add'}</Button>
   {/snippet}
 </Dialog>
+
+<!-- A sibling of the form dialog, not inside it, so its Esc closes only the
+     picker. Rendered later, it stacks on top. -->
+<PythonEnvironmentMultiPicker
+  bind:open={showEnvPicker}
+  {environments}
+  selected={form.environment_ids}
+  description="Environments that get this package added to their requirements."
+  onApply={(ids) => (form.environment_ids = ids)}
+/>
