@@ -14,6 +14,28 @@ public interface IAllowedPythonModuleRepository : IRepository<AllowedPythonModul
     Task<IReadOnlyList<string>> ListReadyImportNamesAsync(
         CancellationToken ct = default);
 
+    // ─── Install targets ───────────────────────────────────────────────
+
+    // One row with its environment links and their environments loaded.
+    Task<AllowedPythonModule?> GetWithTargetsAsync(
+        Guid id, bool tracking, CancellationToken ct = default);
+
+    // A page of rows (newest first) with their links + environments loaded.
+    Task<IReadOnlyList<AllowedPythonModule>> ListWithTargetsAsync(
+        int limit, int offset, CancellationToken ct = default);
+
+    // The ACTIVE environments among these ids (unknown / soft-deleted ids are
+    // simply absent; the service turns the difference into a 400).
+    Task<IReadOnlyList<PythonEnvironment>> ListActiveEnvironmentsAsync(
+        IReadOnlyCollection<Guid> ids, CancellationToken ct = default);
+
+    // Stages `pending` (and clears LastError) on every ACTIVE environment
+    // among these ids, so the builder rebuilds them with the new effective
+    // requirements. Tracked, so it commits in the caller's SaveChangesAsync
+    // together with the target change itself. Returns the names touched.
+    Task<IReadOnlyList<string>> MarkEnvironmentsPendingAsync(
+        IReadOnlyCollection<Guid> ids, CancellationToken ct = default);
+
     // ─── Provisioner (runs on the worker) ──────────────────────────────
 
     // Atomically claims one pip module that needs installing — a `pending`
@@ -21,6 +43,8 @@ public interface IAllowedPythonModuleRepository : IRepository<AllowedPythonModul
     // crashed mid-install). Flips it to `installing` and returns it, or null
     // when there's nothing to do. Safe to call from multiple processes: the
     // status flip is a single conditional UPDATE, so only one wins each row.
+    // Rows with InstallInSystem = false are never claimed: they have no
+    // system install (their environments get the spec through the builder).
     Task<AllowedPythonModule?> ClaimNextForProvisionAsync(
         DateTime staleBefore, CancellationToken ct = default);
 

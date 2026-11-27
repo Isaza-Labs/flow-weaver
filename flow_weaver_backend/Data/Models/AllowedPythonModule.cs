@@ -49,4 +49,25 @@ public class AllowedPythonModule : BaseModel
 
     // Admin who added it (audit trail).
     public Guid? CreatedBy { get; set; }
+
+    // ─── Install targets (pip rows only) ────────────────────────────────
+    //
+    // Where PipSpec is installed. A stdlib row has no spec and no targets.
+    //
+    // InstallInSystem: the provisioner installs PipSpec into the system
+    // interpreter's shared site dir (`pip --target <PackagesDir>/site`) — the
+    // behaviour before targets existed, so the column defaults to true. When
+    // false the provisioner skips the system install and the row is `ready`
+    // as soon as it is saved (Status tracks the SYSTEM install only). Turning
+    // it off later does NOT remove files a previous install left in the site
+    // dir: the provisioner has no uninstall, so they stay importable from the
+    // system interpreter until the volume is cleaned.
+    public bool InstallInSystem { get; set; } = true;
+
+    // uv environments that get PipSpec. The builder never pip-installs into a
+    // venv ad hoc: an environment's EFFECTIVE requirements are its own
+    // Requirements plus the specs of the rows that target it
+    // (PythonEnvironmentText.BuildEffectiveRequirements), so changing a
+    // target marks the environment `pending` and it rebuilds.
+    public List<PythonModuleEnvironment> EnvironmentLinks { get; set; } = new();
 }

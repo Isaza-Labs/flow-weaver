@@ -8,8 +8,8 @@
   lead="Separate Python virtualenvs, each with its own pinned packages, built on the worker at runtime with uv. SSH devices, Python snippets and Ansible playbooks can each pick one instead of the image's system python3."
 >
   <Callout tone="where" title="Where to find it">
-    Sidebar → <strong>Govern</strong> → <strong>Python environments</strong>
-    (<a href="/admin/python-environments"><code>/admin/python-environments</code></a>).
+    Sidebar → <strong>Govern</strong> → <strong>Python</strong>, <strong>Environments</strong> tab
+    (<a href="/admin/python?tab=environments"><code>/admin/python?tab=environments</code></a>).
   </Callout>
   <Callout tone="admin" title="Admin only">
     Creating, editing, rebuilding and deleting environments requires the

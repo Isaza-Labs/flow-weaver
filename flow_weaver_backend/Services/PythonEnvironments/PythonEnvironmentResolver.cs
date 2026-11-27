@@ -115,7 +115,7 @@ public sealed class PythonEnvironmentResolver : IPythonEnvironmentResolver
         if (!Directory.Exists(envDir) || !File.Exists(interpreter))
             throw new PythonEnvironmentUnavailableException(
                 $"python environment '{env.Name}' is marked ready but '{interpreter}' is missing on this "
-                + "worker — rebuild it from Admin → Python environments (is the python_packages volume "
+                + "worker — rebuild it from Govern → Python → Environments (is the python_packages volume "
                 + "mounted at the same path on every container?).");
 
         return new ResolvedPythonEnvironment(env.PythonEnvironmentId, env.Name, envDir, realEnvDir, binDir, interpreter);

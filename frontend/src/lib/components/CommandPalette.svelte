@@ -8,7 +8,7 @@
   import {
     LayoutDashboard, Workflow, Activity, Server, Bot, Vault,
     CalendarClock, FlaskConical, Cable, BookOpen, Settings2, Network, DatabaseZap,
-    ShieldCheck, Sun, Moon, Layers, Search, Files, Boxes,
+    ShieldCheck, Sun, Moon, Layers, Search, Files, Boxes, Package,
   } from 'lucide-svelte';
   import type { IconComponent } from '$lib/components/ui';
 
@@ -69,7 +69,10 @@
       { id: 'admin-dashboard', label: 'Admin dashboard', section: 'Admin', adminOnly: true, icon: ShieldCheck, run: () => goto('/admin') },
       { id: 'admin-artifacts', label: 'Artifacts', keywords: 'reports exports documents', section: 'Admin', adminOnly: true, icon: Files, run: () => goto('/admin/artifacts') },
       { id: 'admin-policies', label: 'Policies', section: 'Admin', adminOnly: true, icon: ShieldCheck, run: () => goto('/policies') },
-      { id: 'admin-python-environments', label: 'Python environments', keywords: 'uv venv virtualenv paramiko netmiko ansible requirements ssh-legacy', section: 'Admin', adminOnly: true, icon: Boxes, run: () => goto('/admin/python-environments') },
+      // One page, two tabs: each entry opens its own tab so either name finds it.
+      { id: 'admin-python', label: 'Python', keywords: 'packages environments pip uv', section: 'Admin', adminOnly: true, icon: Package, run: () => goto('/admin/python') },
+      { id: 'admin-python-packages', label: 'Python packages', keywords: 'pip pypi import allowlist allow-list modules python_snippet', section: 'Admin', adminOnly: true, icon: Package, run: () => goto('/admin/python?tab=packages') },
+      { id: 'admin-python-environments', label: 'Python environments', keywords: 'uv venv virtualenv paramiko netmiko ansible requirements ssh-legacy', section: 'Admin', adminOnly: true, icon: Boxes, run: () => goto('/admin/python?tab=environments') },
     ];
     const isAdmin = authStore.session?.role === 'admin';
     return list.filter((c) => !c.adminOnly || isAdmin);

@@ -408,6 +408,9 @@ namespace flow_weaver_backend.Data.Db.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool>("InstallInSystem")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("InstalledVersion")
                         .HasColumnType("text");
 
@@ -1799,6 +1802,24 @@ namespace flow_weaver_backend.Data.Db.Migrations
                     b.ToTable("python_environments", (string)null);
                 });
 
+            modelBuilder.Entity("flow_weaver_backend.Models.PythonModuleEnvironment", b =>
+                {
+                    b.Property<Guid>("AllowedPythonModuleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PythonEnvironmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("AllowedPythonModuleId", "PythonEnvironmentId");
+
+                    b.HasIndex("PythonEnvironmentId");
+
+                    b.ToTable("python_module_environments", (string)null);
+                });
+
             modelBuilder.Entity("flow_weaver_backend.Models.RefreshToken", b =>
                 {
                     b.Property<Guid>("RefreshTokenId")
@@ -3005,6 +3026,30 @@ namespace flow_weaver_backend.Data.Db.Migrations
                         .IsUnique();
 
                     b.ToTable("workflow_versions", (string)null);
+                });
+
+            modelBuilder.Entity("flow_weaver_backend.Models.PythonModuleEnvironment", b =>
+                {
+                    b.HasOne("flow_weaver_backend.Models.AllowedPythonModule", "Module")
+                        .WithMany("EnvironmentLinks")
+                        .HasForeignKey("AllowedPythonModuleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("flow_weaver_backend.Models.PythonEnvironment", "Environment")
+                        .WithMany()
+                        .HasForeignKey("PythonEnvironmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Environment");
+
+                    b.Navigation("Module");
+                });
+
+            modelBuilder.Entity("flow_weaver_backend.Models.AllowedPythonModule", b =>
+                {
+                    b.Navigation("EnvironmentLinks");
                 });
 #pragma warning restore 612, 618
         }

@@ -84,8 +84,16 @@ public class PythonEnvironmentResponse
     [JsonPropertyName("resolved_packages")]
     public string? ResolvedPackages { get; set; }
 
+    // SHA-256 of python_version + the EFFECTIVE requirements (requirements
+    // plus included_packages) of the last successful build.
     [JsonPropertyName("requirements_hash")]
     public string? RequirementsHash { get; set; }
+
+    // Pip specs contributed by Packages-allowlist rows that target this
+    // environment (masked). Installed together with `requirements`; managed
+    // on the Packages tab, read-only here.
+    [JsonPropertyName("included_packages")]
+    public List<string> IncludedPackages { get; set; } = new();
 
     [JsonPropertyName("built_at")]
     public DateTime? BuiltAt { get; set; }

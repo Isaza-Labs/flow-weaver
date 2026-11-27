@@ -1,5 +1,6 @@
 using flow_weaver_backend.Data.Db;
 using flow_weaver_backend.Models;
+using flow_weaver_backend.Services.PythonEnvironments;
 using Microsoft.EntityFrameworkCore;
 
 namespace flow_weaver_backend.Data.Repositories;
@@ -38,6 +39,48 @@ public class PythonEnvironmentRepository
         var snippets = await Db.Set<Snippet>().AsNoTracking()
             .CountAsync(s => s.IsActive && s.PythonEnvironmentId == id, ct);
         return (devices, snippets);
+    }
+
+    public async Task<IReadOnlyDictionary<Guid, IReadOnlyList<string>>> ListIncludedSpecsAsync(
+        IReadOnlyCollection<Guid> environmentIds, CancellationToken ct = default)
+    {
+        var result = environmentIds.Distinct()
+            .ToDictionary(id => id, _ => (IReadOnlyList<string>)Array.Empty<string>());
+        if (result.Count == 0) return result;
+
+        var ids = result.Keys.ToList();
+        var rows = await Db.Set<PythonModuleEnvironment>().AsNoTracking()
+            .Where(l => ids.Contains(l.PythonEnvironmentId)
+                && l.Module!.IsActive
+                && l.Module.Source == AllowedPythonModule.SourcePip
+                && l.Module.PipSpec != null)
+            .Select(l => new { l.PythonEnvironmentId, Spec = l.Module!.PipSpec! })
+            .ToListAsync(ct);
+
+        foreach (var group in rows.GroupBy(r => r.PythonEnvironmentId))
+            result[group.Key] = group.Select(r => r.Spec.Trim())
+                .Where(s => s.Length > 0)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(s => s, StringComparer.Ordinal)
+                .ToList();
+        return result;
+    }
+
+    public async Task<string> GetEffectiveRequirementsAsync(
+        PythonEnvironment environment, CancellationToken ct = default)
+    {
+        var included = await ListIncludedSpecsAsync(new[] { environment.PythonEnvironmentId }, ct);
+        return PythonEnvironmentText.BuildEffectiveRequirements(
+            environment.Requirements, included[environment.PythonEnvironmentId]);
+    }
+
+    public async Task<int> RemoveModuleLinksAsync(Guid environmentId, CancellationToken ct = default)
+    {
+        var links = await Db.Set<PythonModuleEnvironment>()
+            .Where(l => l.PythonEnvironmentId == environmentId)
+            .ToListAsync(ct);
+        Db.Set<PythonModuleEnvironment>().RemoveRange(links);
+        return links.Count;
     }
 
     public async Task<PythonEnvironment?> ClaimNextForBuildAsync(

@@ -76,7 +76,7 @@ location (default `/usr/local/lib/flow_weaver_import_guard.py`, shipped by
 `deploy/Dockerfile`). Development falls back to the pre-filter alone so local
 iteration doesn't need the worker image.
 
-An admin can widen the list from `/admin/python-packages`; a PyPI
+An admin can widen the list from the Packages tab of `/admin/python`; a PyPI
 package is installed by the worker into `<Python:PackagesDir>/site`
 (`/app/pyenv/site` in the shipped image, a shared named volume) and that
 directory is `--ro-bind`ed into the sandbox and prepended to

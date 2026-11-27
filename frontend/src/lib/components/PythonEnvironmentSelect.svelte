@@ -1,5 +1,5 @@
 <script lang="ts">
-  // Picker for an admin-defined Python environment (/admin/python-environments).
+  // Picker for an admin-defined Python environment (/admin/python?tab=environments).
   // `value` is the environment id, or '' for the system default (the image's
   // python3 — what every device/snippet used before environments existed).
   // Callers map '' to null on create and to NO_PYTHON_ENVIRONMENT on update.

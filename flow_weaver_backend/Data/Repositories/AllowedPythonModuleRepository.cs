@@ -23,6 +23,52 @@ public class AllowedPythonModuleRepository
             .Select(m => m.ImportName)
             .ToListAsync(ct);
 
+    public async Task<AllowedPythonModule?> GetWithTargetsAsync(
+        Guid id, bool tracking, CancellationToken ct = default)
+        => await Query(activeOnly: true, tracking)
+            .Include(m => m.EnvironmentLinks).ThenInclude(l => l.Environment)
+            .FirstOrDefaultAsync(m => m.AllowedPythonModuleId == id, ct);
+
+    public async Task<IReadOnlyList<AllowedPythonModule>> ListWithTargetsAsync(
+        int limit, int offset, CancellationToken ct = default)
+        => await Query(activeOnly: true, tracking: false)
+            .Include(m => m.EnvironmentLinks).ThenInclude(l => l.Environment)
+            .OrderByDescending(m => m.CreatedAt)
+            .Skip(offset)
+            .Take(limit)
+            .ToListAsync(ct);
+
+    public async Task<IReadOnlyList<PythonEnvironment>> ListActiveEnvironmentsAsync(
+        IReadOnlyCollection<Guid> ids, CancellationToken ct = default)
+    {
+        if (ids.Count == 0) return Array.Empty<PythonEnvironment>();
+        var list = ids.ToList();
+        return await Db.Set<PythonEnvironment>().AsNoTracking()
+            .Where(e => e.IsActive && list.Contains(e.PythonEnvironmentId))
+            .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<string>> MarkEnvironmentsPendingAsync(
+        IReadOnlyCollection<Guid> ids, CancellationToken ct = default)
+    {
+        if (ids.Count == 0) return Array.Empty<string>();
+        var list = ids.ToList();
+        var envs = await Db.Set<PythonEnvironment>()
+            .Where(e => e.IsActive && list.Contains(e.PythonEnvironmentId))
+            .ToListAsync(ct);
+        var now = DateTime.UtcNow;
+        foreach (var env in envs)
+        {
+            // Same reset PythonEnvironmentService applies on a definition
+            // edit. A build in flight for the old effective requirements then
+            // fails MarkReadyAsync's `Status == building` condition.
+            env.Status = PythonEnvironment.StatusPending;
+            env.LastError = null;
+            env.UpdatedAt = now;
+        }
+        return envs.Select(e => e.Name).OrderBy(n => n, StringComparer.Ordinal).ToList();
+    }
+
     public async Task<AllowedPythonModule?> ClaimNextForProvisionAsync(
         DateTime staleBefore, CancellationToken ct = default)
     {
@@ -31,6 +77,7 @@ public class AllowedPythonModuleRepository
         var candidates = await Set.AsNoTracking()
             .Where(m => m.IsActive
                 && m.Source == AllowedPythonModule.SourcePip
+                && m.InstallInSystem
                 && (m.Status == AllowedPythonModule.StatusPending
                     || (m.Status == AllowedPythonModule.StatusInstalling && m.UpdatedAt < staleBefore)))
             .OrderBy(m => m.CreatedAt)
@@ -45,6 +92,7 @@ public class AllowedPythonModuleRepository
             // claimable state to `installing` wins. Others get 0 rows affected.
             var claimed = await Set
                 .Where(m => m.AllowedPythonModuleId == id
+                    && m.InstallInSystem
                     && (m.Status == AllowedPythonModule.StatusPending
                         || (m.Status == AllowedPythonModule.StatusInstalling && m.UpdatedAt < staleBefore)))
                 .ExecuteUpdateAsync(s => s

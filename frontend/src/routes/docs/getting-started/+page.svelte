@@ -361,7 +361,7 @@
         <code>/admin/audit</code>, <code>/admin/traces</code>,
         <code>/admin/artifacts</code>,
         <code>/admin/mcp-servers</code>, <code>/admin/messaging-channels</code>,
-        <code>/admin/python-packages</code>, <code>/admin/slo</code>,
+        <code>/admin/python</code>, <code>/admin/slo</code>,
         <code>/admin/settings</code>, <code>/admin/actions</code>. The
         <a href="/docs/reference">Reference</a> page lists every screen with its
         route, minimum role and chapter.

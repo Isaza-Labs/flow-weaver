@@ -8,8 +8,8 @@
   lead="The allow-list of extra modules that python_snippet scripts may import. A stdlib entry only needs allowing; a pip entry is installed by the worker first."
 >
   <Callout tone="where" title="Where to find it">
-    Sidebar → <strong>Govern</strong> → <strong>Python packages</strong>
-    (<a href="/admin/python-packages"><code>/admin/python-packages</code></a>).
+    Sidebar → <strong>Govern</strong> → <strong>Python</strong>, <strong>Packages</strong> tab
+    (<a href="/admin/python?tab=packages"><code>/admin/python?tab=packages</code></a>).
   </Callout>
   <Callout tone="admin" title="Admin only">
     The page and every <code>/api/admin/python-modules</code> endpoint require the
@@ -365,7 +365,7 @@ def run(ctx):
         <tr><td>Scope</td><td>Every <code>python_snippet</code></td><td>One snippet</td></tr>
         <tr><td>Changes</td><td>Which modules can be imported</td><td>Grants host network and DNS, and allows the netmiko/paramiko/socket module set</td></tr>
         <tr><td>Network</td><td>Still none</td><td>Host network</td></tr>
-        <tr><td>Where to set it</td><td><code>/admin/python-packages</code></td><td>Snippet editor or node <em>Service</em> tab (admin only)</td></tr>
+        <tr><td>Where to set it</td><td><code>/admin/python?tab=packages</code></td><td>Snippet editor or node <em>Service</em> tab (admin only)</td></tr>
       </tbody>
     </table>
     <p>

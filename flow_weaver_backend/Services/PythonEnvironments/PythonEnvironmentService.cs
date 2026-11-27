@@ -19,7 +19,11 @@ namespace flow_weaver_backend.Services.PythonEnvironments;
 //   - requirements are validated, and their URL credentials never leave the
 //     server unmasked (responses, audit rows);
 //   - editing requirements / python_version, or rebuild, puts the row back to
-//     `pending` for the builder.
+//     `pending` for the builder;
+//   - responses carry `included_packages`: the pip specs Packages-allowlist
+//     rows contribute to the environment's effective requirements (masked);
+//   - a delete drops those module -> environment links (it is NOT refused
+//     because rows target the environment).
 public interface IPythonEnvironmentService
 {
     Task<ActionResult<ListResponse<PythonEnvironmentResponse>>> ListAsync(int limit, int offset);
@@ -49,9 +53,11 @@ public class PythonEnvironmentService : IPythonEnvironmentService
         (limit, offset) = Pagination.Clamp(limit, offset);
         var total = await _environments.CountAsync();
         var rows = await _environments.ListAsync(limit, offset);
+        var included = await _environments.ListIncludedSpecsAsync(
+            rows.Select(r => r.PythonEnvironmentId).ToList());
         return new OkObjectResult(new ListResponse<PythonEnvironmentResponse>
         {
-            Data = rows.Select(ToResponse).ToList(),
+            Data = rows.Select(r => ToResponse(r, included[r.PythonEnvironmentId])).ToList(),
             Total = total,
             Limit = limit,
             Offset = offset,
@@ -62,7 +68,7 @@ public class PythonEnvironmentService : IPythonEnvironmentService
     {
         var env = await _environments.GetByIdAsync(id, tracking: false)
             ?? throw new NotFoundException("python environment", id);
-        return ToResponse(env);
+        return await ToResponseAsync(env);
     }
 
     public async Task<ActionResult<PythonEnvironmentResponse>> CreateAsync(CreatePythonEnvironment dto)
@@ -112,7 +118,7 @@ public class PythonEnvironmentService : IPythonEnvironmentService
             actionName: "GetById",
             controllerName: "PythonEnvironment",
             routeValues: new { id = env.PythonEnvironmentId },
-            value: ToResponse(env));
+            value: await ToResponseAsync(env));
     }
 
     public async Task<ActionResult<PythonEnvironmentResponse>> UpdateAsync(Guid id, UpdatePythonEnvironment dto)
@@ -169,7 +175,7 @@ public class PythonEnvironmentService : IPythonEnvironmentService
         await _audit.LogAsync("python_environment", env.PythonEnvironmentId, "update",
             before: before, after: AuditView(env));
 
-        return ToResponse(env);
+        return await ToResponseAsync(env);
     }
 
     public async Task<IActionResult> DeleteAsync(Guid id)
@@ -187,6 +193,11 @@ public class PythonEnvironmentService : IPythonEnvironmentService
                 + "snippet(s) — switch them to another environment (or System default) first.",
                 code: "python_environment_in_use");
 
+        // Install targets are NOT a reason to refuse: the Packages rows that
+        // targeted this environment simply stop targeting it (their other
+        // targets are untouched).
+        var droppedTargets = await _environments.RemoveModuleLinksAsync(id);
+
         // Soft delete. The name becomes free for a new environment; the build
         // directory is left for the builder to overwrite on the next build of
         // that name.
@@ -196,7 +207,7 @@ public class PythonEnvironmentService : IPythonEnvironmentService
         await _environments.SaveChangesAsync();
 
         await _audit.LogAsync("python_environment", env.PythonEnvironmentId, "delete",
-            before: AuditView(env));
+            before: AuditView(env), after: new { dropped_package_targets = droppedTargets });
 
         return new NoContentResult();
     }
@@ -213,7 +224,7 @@ public class PythonEnvironmentService : IPythonEnvironmentService
         await _audit.LogAsync("python_environment", env.PythonEnvironmentId, "rebuild",
             after: AuditView(env));
 
-        return ToResponse(env);
+        return await ToResponseAsync(env);
     }
 
     // ─── rules ──────────────────────────────────────────────────────────
@@ -295,7 +306,14 @@ public class PythonEnvironmentService : IPythonEnvironmentService
         e.Status,
     };
 
-    internal static PythonEnvironmentResponse ToResponse(PythonEnvironment e) => new()
+    private async Task<PythonEnvironmentResponse> ToResponseAsync(PythonEnvironment e)
+    {
+        var included = await _environments.ListIncludedSpecsAsync(new[] { e.PythonEnvironmentId });
+        return ToResponse(e, included[e.PythonEnvironmentId]);
+    }
+
+    internal static PythonEnvironmentResponse ToResponse(
+        PythonEnvironment e, IEnumerable<string>? includedPackages = null) => new()
     {
         PythonEnvironmentId = e.PythonEnvironmentId,
         Name = e.Name,
@@ -307,6 +325,10 @@ public class PythonEnvironmentService : IPythonEnvironmentService
         LastError = PythonEnvironmentText.MaskCredentials(e.LastError),
         ResolvedPackages = PythonEnvironmentText.MaskCredentials(e.ResolvedPackages),
         RequirementsHash = e.RequirementsHash,
+        // Same masking as requirements: a spec is echoed, never its credentials.
+        IncludedPackages = (includedPackages ?? Enumerable.Empty<string>())
+            .Select(spec => PythonEnvironmentText.MaskCredentials(spec) ?? string.Empty)
+            .ToList(),
         BuiltAt = e.BuiltAt,
         CreatedAt = e.CreatedAt,
         UpdatedAt = e.UpdatedAt,

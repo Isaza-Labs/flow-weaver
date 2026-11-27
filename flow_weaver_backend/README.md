@@ -158,7 +158,7 @@ By default a `python_snippet` runs in a sandbox with **no network** (`--unshare-
 
 By default a `python_snippet` may only import a fixed stdlib safe-list
 (`PythonHandler.SafeModules`). An **admin** can extend that list at
-`/admin/python-packages`; for a PyPI package the worker installs it automatically.
+`/admin/python?tab=packages`; for a PyPI package the worker installs it automatically.
 The allow-list only adds *what may be imported* — the sandbox is otherwise
 unchanged (no network unless network-enabled; the `exec`/`eval`/`__import__`/`open`
 bans always apply). Admin-only — the admin is the final barrier.

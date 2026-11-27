@@ -204,7 +204,7 @@ A plain python_snippet has **no network at all**, and that includes
 that means and what to do instead.
 
 **Extra modules (admin-managed).** Beyond the table above, an admin can allow
-more imports at `/admin/python-packages` (a stdlib module, or a PyPI
+more imports at `/admin/python?tab=packages` (a stdlib module, or a PyPI
 package the worker installs). If a snippet you want to write needs a module not
 in the list, **you cannot add it yourself** — it's admin-only. Tell the user an
 admin must add the import there first (note the import name vs the pip package

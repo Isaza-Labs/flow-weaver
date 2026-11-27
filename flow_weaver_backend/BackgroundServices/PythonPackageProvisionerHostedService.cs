@@ -16,6 +16,14 @@ namespace flow_weaver_backend.BackgroundServices;
 // check flips the row to `ready` (the only state the import guard honors); a
 // failure records the error for the admin UI.
 //
+// Install targets: a row installs here only when InstallInSystem is true (the
+// default, and every row created before targets existed). The uv environments
+// a row targets get its spec through PythonEnvironmentBuilderHostedService
+// (their effective requirements), never from this service. Turning the system
+// target OFF later leaves the files a previous install put in <PackagesDir>/site
+// where they are: this provisioner has no uninstall (a `pip --target` dir has
+// no record to uninstall from safely, and packages share dependencies).
+//
 // Security: pip can run packaging code from sdists. We default to wheels-only
 // (Python:PipOnlyBinary=true) so nothing arbitrary is built/executed during
 // install; admins can relax it per deployment. The snippet itself still runs in
@@ -98,6 +106,19 @@ public sealed class PythonPackageProvisionerHostedService : BackgroundService
         var staleBefore = DateTime.UtcNow.AddMinutes(-10);
         var module = await repo.ClaimNextForProvisionAsync(staleBefore, ct);
         if (module is null) return false;
+
+        // The claim query already skips rows without the system target; this
+        // covers a row whose target was switched off between the candidate
+        // query and the claim. Nothing to install: the service has made it
+        // `ready` (Status tracks the system install only).
+        if (!ShouldInstallInSystem(module))
+        {
+            await repo.MarkReadyAsync(module.AllowedPythonModuleId, module.InstalledVersion, ct);
+            _logger.LogInformation(
+                "python.pkg.install.skipped id={Id} import={Import} — system target off",
+                module.AllowedPythonModuleId, module.ImportName);
+            return true;
+        }
 
         var spec = string.IsNullOrWhiteSpace(module.PipSpec) ? module.ImportName : module.PipSpec.Trim();
         var targetDir = Path.Combine(PackagesDir, flow_weaver_backend.Services.Worker.PythonPackagesLayout.SiteDirName);
@@ -189,6 +210,13 @@ public sealed class PythonPackageProvisionerHostedService : BackgroundService
             return true;
         }
     }
+
+    // Whether a claimed row is installed into the system interpreter's site
+    // dir. Only pip rows with the system target on.
+    internal static bool ShouldInstallInSystem(AllowedPythonModule module)
+        => module.IsActive
+            && module.Source == AllowedPythonModule.SourcePip
+            && module.InstallInSystem;
 
     private async Task<(int Exit, string Stdout, string Stderr)> InstallAsync(
         string targetDir, string spec, CancellationToken ct)

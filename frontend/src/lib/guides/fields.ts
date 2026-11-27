@@ -958,6 +958,21 @@ export const FIELD_HINTS: Record<string, FieldHint> = {
     help: 'The pip requirement to install, when it differs from the import name — import bs4 installs beautifulsoup4. Also where you pin a version.',
     detail: 'Installation happens on the worker, so a newly added package becomes usable once that finishes, not the moment you save.',
   },
+  'pypackages.install_in': {
+    label: 'Install in',
+    help: 'Where the worker installs this pip package: the system python3, any of the uv environments, or several at once.',
+    detail: 'The allowlist still decides what a script may import, wherever it runs. A package left out of an environment is not installed there, so importing it in that environment fails unless the environment’s own requirements provide it.',
+  },
+  'pypackages.install_system': {
+    label: 'System Python',
+    help: 'Installs the package for the image’s system python3, used by every step that picks no environment. On by default.',
+    detail: 'Turning it off stops future installs but does not uninstall: files an earlier install put in the shared package dir stay importable from the system python3 until the volume is cleaned. Without it the import name must be the real module name — nothing reads it off an install.',
+  },
+  'pypackages.install_env': {
+    label: 'Environment',
+    help: 'Adds the package to this environment’s requirements. The environment rebuilds with it; its status shows when that is done.',
+    detail: 'Changing the package, its targets or deleting it rebuilds every environment affected. The previous good build keeps serving until the new one is ready.',
+  },
 
   // ------------------------------------------------------------ Python environments
   'pyenvs.name': {
@@ -978,6 +993,11 @@ export const FIELD_HINTS: Record<string, FieldHint> = {
     help: 'requirements.txt format, one requirement per line — pin versions here (e.g. paramiko>=3.5,<5).',
     detail: 'Saving a change rebuilds the environment. Installing runs third-party packaging code on the worker, which is why only admins can edit this.',
   },
+  'pyenvs.included_packages': {
+    label: 'Included from Packages',
+    help: 'Pip packages from the Packages tab that target this environment. They are installed together with the requirements above.',
+    detail: 'Read-only here: change them on the Packages tab (Install in). Adding or removing one rebuilds the environment.',
+  },
   'pyenvs.is_ssh_fallback': {
     label: 'SSH fallback',
     help: 'When an SSH step fails with "no acceptable host key", the runner retries once with this environment. At most one environment can have it.',
@@ -985,7 +1005,7 @@ export const FIELD_HINTS: Record<string, FieldHint> = {
   'pyenvs.select': {
     label: 'Python environment',
     help: 'Which admin-defined Python environment runs this. System default is the image’s python3.',
-    detail: 'Environments are managed under Govern → Python environments. One that is not ready makes the step fail with a clear error rather than silently using another interpreter.',
+    detail: 'Environments are managed under Govern → Python, on the Environments tab. One that is not ready makes the step fail with a clear error rather than silently using another interpreter.',
   },
 
   // ------------------------------------------------------------ Workflow editor
