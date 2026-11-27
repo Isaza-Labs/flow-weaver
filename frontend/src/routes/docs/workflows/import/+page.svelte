@@ -608,7 +608,7 @@ and import again.`}</code></pre>
       </li>
       <li>
         Upload and commit share the per-user write budget (60 per minute). AI
-        snippet generation uses the AI budget (30 per hour).
+        snippet generation uses the AI budget (60 per minute).
       </li>
       <li>Every step (upload, commit, replace, created integrations) is written to the audit log.</li>
     </ul>

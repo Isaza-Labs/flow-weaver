@@ -594,7 +594,7 @@ async function doFetch(path: string, options: ApiOptions, signal: AbortSignal): 
  * `Content-Type: application/json` and JSON-parses the response. Those callers
  * each hand-rolled `fetch`, and each one dropped the refresh with it.
  *
- * That is not a cosmetic difference. The access token lives 15 minutes
+ * That is not a cosmetic difference. The access token lives 60 minutes
  * (`Jwt:AccessTokenMinutes`), so on a tab open longer than that the first action
  * the user takes decides what they see: through `api()` it refreshes and works,
  * through a hand-rolled fetch it returns a bare 401 that reads like a

@@ -34,7 +34,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("refresh")]
     [AllowAnonymous]
-    [EnableRateLimiting(RateLimitingConfiguration.AuthLogin)]
+    [EnableRateLimiting(RateLimitingConfiguration.AuthRefresh)]
     public Task<ActionResult<LoginResponse>> Refresh([FromBody] RefreshRequest request, CancellationToken ct)
         => _auth.RefreshAsync(request, Ip(), UserAgent(), ct);
 

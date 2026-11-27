@@ -335,6 +335,66 @@ public class IntegrationHealthCheckerTests
         Assert.Single(handler.Requests);
     }
 
+    // The Flow Weaver ↔ NetBox case: auth_config is filled in but applies no
+    // header (here an empty token), so every API call went out anonymous and
+    // got 403 while the root answered 200 and the check said healthy.
+    [Fact]
+    public async Task Lenient_auth_config_that_applies_nothing_is_unhealthy()
+    {
+        using var db = TestDb.NewContext();
+        var id = SeedIntegration(db, authConfigJson: """{"method":"token","token":""}""");
+        var checker = NewChecker(db, new FakeHttpMessageHandler(HttpStatusCode.OK));
+
+        var result = Result(await checker.CheckAsync(id, CancellationToken.None));
+        Assert.Equal("unhealthy", result.Status);
+        Assert.False(result.AuthVerified);
+        Assert.Contains("adds no credentials", result.Error);
+    }
+
+    // No credentials configured, the root is public, but the API the actions
+    // use rejects anonymous calls: every real call would fail, so unhealthy.
+    [Fact]
+    public async Task Lenient_no_credentials_but_api_root_requires_them_is_unhealthy()
+    {
+        using var db = TestDb.NewContext();
+        var id = SeedIntegration(db);
+        SeedAction(db, id, "/api/dcim/devices/");
+        var handler = new FakeHttpMessageHandler(req =>
+            req.RequestUri!.AbsolutePath.StartsWith("/api")
+                ? new HttpResponseMessage(HttpStatusCode.Forbidden)
+                : new HttpResponseMessage(HttpStatusCode.OK));
+        var checker = NewChecker(db, handler);
+
+        var result = Result(await checker.CheckAsync(id, CancellationToken.None));
+        Assert.Equal("unhealthy", result.Status);
+        Assert.Contains("/api/", result.Error);
+        Assert.Contains("no credentials configured", result.Error);
+    }
+
+    // No credentials, and the API answers anonymous calls too: a legitimate
+    // credential-less integration stays healthy.
+    [Fact]
+    public async Task Lenient_no_credentials_and_open_api_root_is_healthy()
+    {
+        using var db = TestDb.NewContext();
+        var id = SeedIntegration(db);
+        SeedAction(db, id, "/api/dcim/devices/");
+        var checker = NewChecker(db, new FakeHttpMessageHandler(HttpStatusCode.OK));
+
+        var result = Result(await checker.CheckAsync(id, CancellationToken.None));
+        Assert.Equal("healthy", result.Status);
+    }
+
+    [Theory]
+    [InlineData("""{"method":"token","token":""}""", "token")]
+    [InlineData("""{"method":"nbt_v2","token":"x"}""", "nbt_v2")]
+    [InlineData("""{"method":"","token":"x"}""", "(auto)")]
+    [InlineData("""{"method":"none","token":"x"}""", null)]
+    [InlineData("""{"method":""}""", null)]
+    [InlineData("null", null)]
+    public void InertAuthMethod_names_a_configured_method(string json, string? expected)
+        => Assert.Equal(expected, IntegrationHealthChecker.InertAuthMethod(TestJson.Element(json)));
+
     // oauth2_client_credentials: a successful grant is itself the credential
     // verification (the authorization server validated the client), so the
     // check is healthy + auth_verified without any differential probing.
